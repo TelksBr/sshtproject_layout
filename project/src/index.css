@@ -1,0 +1,127 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-gradient-to-br from-[#2A0A3E] via-[#4B0082] to-[#2A0A3E] min-h-screen text-gray-100;
+    
+  }
+
+  input {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  ::-webkit-scrollbar {
+    @apply w-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-[#2A0A3E];
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-[#4B0082] rounded-full hover:bg-[#3A0A7A] transition-colors;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-6 py-3 text-white rounded-lg transition-all duration-300 font-medium shadow-lg active:scale-95;
+    @apply bg-gradient-to-r from-[#5A0CA3] to-[#4B0082] hover:from-[#4B0082] hover:to-[#3A0A7A];
+  }
+  
+  .btn-outline {
+    @apply px-6 py-3 border-2 border-[#4B0082] text-[#E0E0E0] hover:bg-[#4B0082]/20 rounded-lg transition-all duration-300 font-medium hover:scale-105 active:scale-95 hover:border-[#3A0A7A] hover:text-white backdrop-blur-sm;
+  }
+
+  .card {
+    @apply bg-[#2A0A3E]/30 backdrop-blur-sm rounded-xl p-6 border border-[#3A0A7A]/30 hover:border-[#4B0082]/50 transition-all duration-300 hover:transform hover:scale-[1.02] hover:shadow-xl hover:shadow-[#4B0082]/10 bg-gradient-to-br from-[#4B0082]/50 to-[#2A0A3E]/50;
+  }
+
+  .nav-link {
+    @apply text-[#E0E0E0] hover:text-white transition-colors duration-200 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-[#4B0082] hover:after:w-full after:transition-all;
+  }
+
+  .glass-effect {
+    @apply bg-purple-950/30 backdrop-blur-md border border-purple-800/30 hover:border-purple-600/50 transition-all duration-300;
+  }
+
+  .glow-effect {
+    @apply relative after:absolute after:inset-0 after:bg-gradient-to-r after:from-purple-500/20 after:to-transparent after:blur-xl after:-z-10 after:opacity-0 hover:after:opacity-100 after:transition-opacity;
+  }
+
+  .mobile-menu-enter {
+    @apply transform translate-x-0 transition-transform duration-300 ease-out;
+  }
+
+  .mobile-menu-exit {
+    @apply transform -translate-x-full transition-transform duration-300 ease-in;
+  }
+}
+
+.text-gradient {
+  @apply bg-gradient-to-r from-purple-400 to-purple-200 text-transparent bg-clip-text;
+  letter-spacing: -0.02em;
+}
+
+.hover-glow {
+  @apply hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300;
+}
+
+@keyframes gradient-x {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-gradient-x {
+  animation: gradient-x 3s ease infinite;
+}
+
+.bg-300\% {
+  background-size: 300% 300%;
+}
+
+/* Ajustes de tipografia para visual de app */
+h1, h2, h3, h4, h5, h6 {
+  letter-spacing: -0.02em;
+}
+
+button {
+  letter-spacing: -0.01em;
+}
+
+input {
+  letter-spacing: -0.01em;
+}
+
+/* Ajustes de interação touch */
+@media (hover: none) {
+  .hover\:scale-105:hover {
+    transform: none;
+  }
+  
+  .hover\:scale-\[1\.02\]:hover {
+    transform: none;
+  }
+}
+
+/* Ajustes de feedback visual */
+.active\:scale-95:active {
+  transform: scale(0.98);
+}
+
+.tap-highlight-none {
+  -webkit-tap-highlight-color: transparent;
+}
