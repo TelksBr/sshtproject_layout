@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Modal } from './Modal';
 import { Search, Save, Play, Trash2 } from 'lucide-react';
 import { getStorageItem, setStorageItem } from '../../utils/storageUtils';
+import { setAirplaneMode, getLocalIP } from '../../utils/appFunctions';
 
 interface IpFinderProps {
   onClose: () => void;
@@ -57,7 +58,7 @@ export function IpFinder({ onClose }: IpFinderProps) {
     const waitForNewIP = () => {
       return new Promise<string>((resolve) => {
         const interval = setInterval(() => {
-          const newIP = window?.DtGetLocalIP?.execute();
+          const newIP = getLocalIP();
           if (newIP && newIP !== '127.0.0.1' && isValidLocalIp(newIP)) {
             clearInterval(interval);
             resolve(newIP);
@@ -69,9 +70,9 @@ export function IpFinder({ onClose }: IpFinderProps) {
     for (let i = 0; i < 256; i++) {
       if (stopSearchRef.current) break;
 
-      window?.DtAirplaneActivate?.execute();
+      setAirplaneMode(true);
       await new Promise(resolve => setTimeout(resolve, 3000));
-      window?.DtAirplaneDeactivate?.execute();
+      setAirplaneMode(false);
 
       const newIP = await waitForNewIP();
       const isInRange = ipList.some(range => isIpInRange(newIP, range));

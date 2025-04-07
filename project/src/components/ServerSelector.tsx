@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Settings, RefreshCw, CalendarClock, Wifi, AlertCircle, ChevronLeft, Search, Plane } from 'lucide-react';
 import { getAllConfigs, setActiveConfig, getActiveConfig, ConfigCategory, ConfigItem } from '../utils/configUtils';
-import { checkUserStatus, AppUpdate, getAirplaneState, setAirplaneMode } from '../utils/appFunctions';
+import { checkUserStatus, getAirplaneState, setAirplaneMode, checkForUpdates } from '../utils/appFunctions';
 import { Modal } from './modals/Modal';
 
 export function ServerSelector() {
@@ -79,7 +79,7 @@ export function ServerSelector() {
   };
 
   const handleUpdate = () => {
-    AppUpdate();
+    checkForUpdates();
     loadConfigs(); // Reload configs after update
   };
 

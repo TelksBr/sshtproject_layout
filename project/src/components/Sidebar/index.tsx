@@ -4,8 +4,14 @@ import {
   Wifi, Battery, Network, Trash2, Book,
   RefreshCw, DollarSign, Share2, Shield, CalendarClock, BriefcaseBusiness, Search
 } from 'lucide-react';
-import { checkForUpdates, openApnSettings, openNetworkSettings, checkBatteryOptimization } from '../../utils/systemUtils';
-import { getStatusbarHeight, getNavbarHeight } from '../../utils/appFunctions';
+import {
+  checkForUpdates,
+  openApnSettings,
+  openNetworkSettings,
+  checkBatteryOptimization,
+  getStatusbarHeight,
+  getNavbarHeight
+} from '../../utils/appFunctions';
 import { ModalType } from '../../App';
 
 interface SidebarProps {

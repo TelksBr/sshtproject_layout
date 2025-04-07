@@ -17,7 +17,7 @@ export function Terms({ onClose, onAccept }: TermsProps) {
   };
 
   return (
-    <Modal onClose={onClose}>
+    <Modal onClose={onClose} allowClose={accepted}>
       <div className="relative flex-1 p-4">
         <header className="flex items-center gap-3 mb-6">
           <div className="w-12 h-12 rounded-full bg-[#26074d] flex items-center justify-center">

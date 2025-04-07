@@ -122,6 +122,14 @@ export function getUploadBytes(): number {
   return 0;
 }
 
+// Network Functions
+export function getLocalIP(): string | null {
+  if (window?.DtGetLocalIP?.execute && typeof window?.DtGetLocalIP?.execute === "function") {
+    return window.DtGetLocalIP.execute();
+  }
+  return null;
+}
+
 // Checkuser Functions
 export function checkUserStatus(): void {
   if (window?.DtStartCheckUser?.execute && typeof window?.DtStartCheckUser?.execute === "function") {
@@ -132,7 +140,20 @@ export function checkUserStatus(): void {
 // System Functions
 export function cleanAppData(): boolean {
   if (window?.DtCleanApp?.execute && typeof window.DtCleanApp.execute === "function") {
-    return DtCleanApp.execute();
+    try {
+      return window.DtCleanApp.execute();
+    } catch (e) {
+      console.error('Error cleaning app data:', e);
+      return false;
+    }
+  }
+  return false;
+}
+
+export function checkBatteryOptimization(): boolean {
+  if (window?.DtIgnoreBatteryOptimizations?.execute && 
+      typeof window.DtIgnoreBatteryOptimizations.execute === "function") {
+    return window.DtIgnoreBatteryOptimizations.execute();
   }
   return false;
 }
@@ -149,9 +170,17 @@ export function openNetworkSettings(): void {
   }
 }
 
-export function AppUpdate(): void {
+export function checkForUpdates(): void {
   if (window?.DtStartAppUpdate?.execute && typeof window?.DtStartAppUpdate.execute === "function") {
     window.DtStartAppUpdate.execute();
+  }
+}
+
+export function openWebView(url: string): void {
+  if (window?.DtStartWebViewActivity?.execute && typeof window.DtStartWebViewActivity.execute === "function") {
+    window.DtStartWebViewActivity.execute(url);
+  } else {
+    window.open(url, '_blank');
   }
 }
 

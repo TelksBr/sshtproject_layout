@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Eye, EyeOff, Scroll } from 'lucide-react';
-import { getUsername, getPassword, getUUID, setUsername, setPassword, setUUID, openDialogLogs } from '../utils/appFunctions';
+import { 
+  getUsername, 
+  getPassword, 
+  getUUID, 
+  setUsername as setUsernameApp, 
+  setPassword as setPasswordApp, 
+  setUUID as setUUIDApp, 
+  openDialogLogs 
+} from '../utils/appFunctions';
 import { useVpnConnection } from '../hooks/useVpnConnection';
 import { getActiveConfig, shouldShowInput } from '../utils/configUtils';
 
@@ -26,15 +34,15 @@ export function ConnectionForm() {
       if (activeConfig?.auth) {
         if (activeConfig.auth.username) {
           setUsernameState(activeConfig.auth.username);
-          setUsername(activeConfig.auth.username);
+          setUsernameApp(activeConfig.auth.username);
         }
         if (activeConfig.auth.password) {
           setPasswordState(activeConfig.auth.password);
-          setPassword(activeConfig.auth.password);
+          setPasswordApp(activeConfig.auth.password);
         }
         if (activeConfig.auth.v2ray_uuid) {
           setUUIDState(activeConfig.auth.v2ray_uuid);
-          setUUID(activeConfig.auth.v2ray_uuid);
+          setUUIDApp(activeConfig.auth.v2ray_uuid);
         }
       }
     };
@@ -57,19 +65,19 @@ export function ConnectionForm() {
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setUsernameState(value);
-    setUsername(value);
+    setUsernameApp(value);
   };
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setPasswordState(value);
-    setPassword(value);
+    setPasswordApp(value);
   };
 
   const handleUUIDChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setUUIDState(value);
-    setUUID(value);
+    setUUIDApp(value);
   };
 
   const handleConnection = () => {

@@ -4,9 +4,10 @@ import { X } from 'lucide-react';
 interface ModalProps {
   children: React.ReactNode;
   onClose: () => void;
+  allowClose?: boolean;
 }
 
-export function Modal({ children, onClose }: ModalProps) {
+export function Modal({ children, onClose, allowClose = true }: ModalProps) {
   const [isClosing, setIsClosing] = useState(false);
   const [isOpening, setIsOpening] = useState(true);
 
@@ -28,7 +29,7 @@ export function Modal({ children, onClose }: ModalProps) {
         ${isOpening ? 'opacity-0' : 'opacity-100'}
         ${isClosing ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}
       `}
-      onClick={(e) => e.target === e.currentTarget && handleClose()}
+      onClick={(e) => allowClose && e.target === e.currentTarget && handleClose()}
     >
       <div 
         className={`
@@ -41,12 +42,14 @@ export function Modal({ children, onClose }: ModalProps) {
           max-h-[90vh] flex flex-col backdrop-blur-xl
         `}
       >
-        <button
-          onClick={handleClose}
-          className="absolute top-4 right-4 p-2 rounded-full hover:bg-[#6205D5]/10 transition-colors z-10 group"
-        >
-          <X className="w-6 h-6 text-[#b0a8ff] group-hover:text-white transition-colors" />
-        </button>
+        {allowClose && (
+          <button
+            onClick={handleClose}
+            className="absolute top-4 right-4 p-2 rounded-full hover:bg-[#6205D5]/10 transition-colors z-10 group"
+          >
+            <X className="w-6 h-6 text-[#b0a8ff] group-hover:text-white transition-colors" />
+          </button>
+        )}
         
         <div className="flex-1 overflow-y-auto custom-scrollbar">
           {children}

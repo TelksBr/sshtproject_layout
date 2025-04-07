@@ -1,7 +1,7 @@
 import React from 'react';
 import { AlertTriangle, Wifi, Trash2 } from 'lucide-react';
 import { Modal } from './Modal';
-import { cleanAppData } from '../../utils/systemUtils';
+import { cleanAppData } from '../../utils/appFunctions';
 
 interface CleanDataConfirmProps {
   onClose: () => void;
