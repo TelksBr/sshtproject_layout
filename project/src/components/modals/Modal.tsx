@@ -5,9 +5,10 @@ interface ModalProps {
   children: React.ReactNode;
   onClose: () => void;
   allowClose?: boolean;
+  title?: string;
 }
 
-export function Modal({ children, onClose, allowClose = true }: ModalProps) {
+export function Modal({ children, onClose, allowClose = true, title }: ModalProps) {
   const [isClosing, setIsClosing] = useState(false);
   const [isOpening, setIsOpening] = useState(true);
 
@@ -34,7 +35,7 @@ export function Modal({ children, onClose, allowClose = true }: ModalProps) {
       <div 
         className={`
           relative w-full max-w-2xl bg-gradient-to-br from-[#26074d]/95 to-[#100322]/95
-          rounded-xl shadow-2xl shadow-black/20 overflow-hidden
+          rounded-xl shadow-2xl shadow-black/20
           border border-[#6205D5]/20
           transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
           ${isOpening ? 'scale-95 opacity-0' : 'scale-100 opacity-100'}
@@ -42,15 +43,20 @@ export function Modal({ children, onClose, allowClose = true }: ModalProps) {
           max-h-[90vh] flex flex-col backdrop-blur-xl
         `}
       >
-        {allowClose && (
-          <button
-            onClick={handleClose}
-            className="absolute top-4 right-4 p-2 rounded-full hover:bg-[#6205D5]/10 transition-colors z-10 group"
-          >
-            <X className="w-6 h-6 text-[#b0a8ff] group-hover:text-white transition-colors" />
-          </button>
-        )}
+        {/* Header fixo */}
+        <div className="flex items-center justify-between p-4 border-b border-[#6205D5]/20">
+          {title && <h2 className="text-lg font-bold text-white">{title}</h2>}
+          {allowClose && (
+            <button
+              onClick={handleClose}
+              className="p-2 rounded-full hover:bg-[#6205D5]/10 transition-colors group ml-auto"
+            >
+              <X className="w-6 h-6 text-[#b0a8ff] group-hover:text-white transition-colors" />
+            </button>
+          )}
+        </div>
         
+        {/* Conteúdo com scroll */}
         <div className="flex-1 overflow-y-auto custom-scrollbar">
           {children}
         </div>

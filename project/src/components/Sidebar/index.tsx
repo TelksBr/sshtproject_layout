@@ -13,6 +13,7 @@ import {
   getNavbarHeight
 } from '../../utils/appFunctions';
 import { ModalType } from '../../App';
+import { ServersModal } from '../modals/ServersModal';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -20,8 +21,19 @@ interface SidebarProps {
   onNavigate: (modal: ModalType) => void;
 }
 
+interface MenuCategory {
+  title: string;
+  items: {
+    icon: React.ReactNode;
+    label: string;
+    onClick: () => void;
+    highlight?: boolean;
+  }[];
+}
+
 export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
   const [menuStyle, setMenuStyle] = useState({});
+  const [showServersModal, setShowServersModal] = useState(false);
 
   useEffect(() => {
     const statusBarHeight = getStatusbarHeight();
@@ -32,28 +44,47 @@ export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
     });
   }, []);
 
+  const menuCategories: MenuCategory[] = [
+    {
+      title: "Principais",
+      items: [
+        { icon: <Book className="w-5 h-5" />, label: "Tutoriais", onClick: () => onNavigate('tutorials') },
+        { icon: <Network className="w-5 h-5" />, label: "Servidores", onClick: () => setShowServersModal(true) },
+        { icon: <DollarSign className="w-5 h-5" />, label: "Comprar Login", onClick: () => onNavigate('buy'), highlight: true },
+        { icon: <CalendarClock className="w-5 h-5" />, label: "Check User", onClick: () => onNavigate('checkuser') }
+      ]
+    },
+    {
+      title: "Ferramentas",
+      items: [
+        { icon: <Download className="w-5 h-5" />, label: "Speed Test", onClick: () => onNavigate('speedtest') },
+        { icon: <Share2 className="w-5 h-5" />, label: "Hotspot", onClick: () => onNavigate('hotspot') },
+        { icon: <Search className="w-5 h-5" />, label: "Buscador de IP", onClick: () => onNavigate('ipfinder') },
+        { icon: <BriefcaseBusiness className="w-5 h-5" />, label: "Serviços", onClick: () => onNavigate('services') }
+      ]
+    },
+    {
+      title: "Configurações",
+      items: [
+        { icon: <Battery className="w-5 h-5" />, label: "Bateria", onClick: checkBatteryOptimization },
+        { icon: <Wifi className="w-5 h-5" />, label: "Ajustes de APN", onClick: openApnSettings },
+        { icon: <Network className="w-5 h-5" />, label: "Ajustes de Rede", onClick: openNetworkSettings },
+        { icon: <RefreshCw className="w-5 h-5" />, label: "Verificar Atualizações", onClick: checkForUpdates }
+      ]
+    }
+  ];
+
   return (
     <>
-      {/* Backdrop */}
-      <div
-        className={`
-          fixed inset-0 bg-black/50 backdrop-blur-sm z-40
-          transition-opacity duration-300
-          ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}
-        `}
-        onClick={onClose}
-      />
+      <div className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-opacity duration-300
+        ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={onClose} />
 
-      {/* Sidebar */}
-      <aside
-        className={`
-          fixed inset-y-0 left-0 w-[280px] bg-[#26074d]/95 backdrop-blur-lg
-          transform transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
-          border-r border-[#6205D5]/20 shadow-2xl shadow-black/20 z-50
-          ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-        `}
-        style={menuStyle}
-      >
+      <aside className={`
+        fixed inset-y-0 left-0 w-[300px] max-w-[85vw] bg-[#26074d]/95 backdrop-blur-lg
+        transform transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
+        border-r border-[#6205D5]/20 shadow-2xl shadow-black/20 z-50
+        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+      `} style={menuStyle}>
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between px-4 pb-4 border-b border-[#6205D5]/20">
@@ -79,108 +110,62 @@ export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
             </button>
           </div>
 
-          {/* Menu Items */}
-          <div className="flex-1 overflow-y-auto py-4 px-2">
-            <nav className="space-y-1">
-              <MenuItem
-                icon={<Book className="w-5 h-5" />}
-                label="Tutoriais"
-                onClick={() => onNavigate('tutorials')}
-              />
-              <MenuItem
-                icon={<RefreshCw className="w-5 h-5" />}
-                label="Verificar Atualizações"
-                onClick={checkForUpdates}
-              />
-              <MenuItem
-                icon={<DollarSign className="w-5 h-5" />}
-                label="Comprar Login"
-                onClick={() => onNavigate('buy')}
-              />
-              <MenuItem
-                icon={<CalendarClock className="w-5 h-5" />}
-                label="Check User"
-                onClick={() => onNavigate('checkuser')}
-              />
-              <MenuItem
-                icon={<Download className="w-5 h-5" />}
-                label="Speed Test"
-                onClick={() => onNavigate('speedtest')}
-              />
-              <MenuItem
-                icon={<Share2 className="w-5 h-5" />}
-                label="Hotspot"
-                onClick={() => onNavigate('hotspot')}
-              />
-              <MenuItem
-                icon={<Battery className="w-5 h-5" />}
-                label="Bateria"
-                onClick={checkBatteryOptimization}
-              />
-              <MenuItem
-                icon={<Wifi className="w-5 h-5" />}
-                label="Ajustes de APN"
-                onClick={openApnSettings}
-              />
-              <MenuItem
-                icon={<Network className="w-5 h-5" />}
-                label="Ajustes de Rede"
-                onClick={openNetworkSettings}
-              />
-              <MenuItem
-                icon={<BriefcaseBusiness className="w-5 h-5" />}
-                label="Serviços"
-                onClick={() => onNavigate('services')}
-              />
-              <MenuItem
-                icon={<Search className="w-5 h-5" />}
-                label="Buscador de IP"
-                onClick={() => onNavigate('ipfinder')}
-              />
-              <MenuItem
-                icon={<HelpCircle className="w-5 h-5" />}
-                label="Suporte"
-                onClick={() => onNavigate('support')}
-              />
-
-            </nav>
+          {/* Menu Items com novas categorias */}
+          <div className="flex-1 overflow-y-auto py-4">
+            {menuCategories.map((category, idx) => (
+              <div key={category.title} className={`px-3 ${idx > 0 ? 'mt-6' : ''}`}>
+                <h3 className="text-xs font-semibold text-[#b0a8ff]/50 uppercase tracking-wider mb-2 px-3">
+                  {category.title}
+                </h3>
+                <div className="space-y-1">
+                  {category.items.map((item) => (
+                    <MenuItem
+                      key={item.label}
+                      icon={item.icon}
+                      label={item.label}
+                      onClick={item.onClick}
+                      className={item.highlight ? 'bg-[#6205D5]/10 hover:bg-[#6205D5]/20' : ''}
+                      iconClassName={item.highlight ? 'text-[#b0a8ff]' : ''}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
 
-          {/* Footer */}
-          <div className="px-4 pb-4 border-t border-[#6205D5]/20 pt-4 bg-[#26074d]/95 backdrop-blur-lg">
-            <div className="grid gap-2">
+          {/* Footer com botões */}
+          <div className="px-4 py-4 border-t border-[#6205D5]/20 bg-[#26074d]/95 backdrop-blur-lg space-y-2">
+            <div className="grid grid-cols-2 gap-2">
               <button
-                className="w-full h-10 rounded-lg bg-[#6205D5]/10 text-[#b0a8ff] text-sm font-medium hover:bg-[#6205D5]/20 transition-colors flex items-center justify-center gap-2"
                 onClick={() => onNavigate('terms')}
+                className="px-4 py-2 rounded-lg bg-[#6205D5]/10 hover:bg-[#6205D5]/20 
+                  transition-all duration-200 text-[#b0a8ff] text-sm font-medium"
               >
-                <FileText className="w-4 h-4" />
                 Termos de Uso
               </button>
               <button
-                className="w-full h-10 rounded-lg bg-[#6205D5]/10 text-[#b0a8ff] text-sm font-medium hover:bg-[#6205D5]/20 transition-colors flex items-center justify-center gap-2"
                 onClick={() => onNavigate('privacy')}
+                className="px-4 py-2 rounded-lg bg-[#6205D5]/10 hover:bg-[#6205D5]/20 
+                  transition-all duration-200 text-[#b0a8ff] text-sm font-medium"
               >
-                <Shield className="w-4 h-4" />
-                Política de Privacidade
-              </button>
-              <button
-                className="w-full h-10 rounded-lg bg-[#6205D5]/10 text-[#b0a8ff] text-sm font-medium hover:bg-[#6205D5]/20 transition-colors flex items-center justify-center gap-2"
-                onClick={() => onNavigate('faq')}
-              >
-                <HelpCircle className="w-4 h-4" />
-                FAQ
-              </button>
-              <button
-                className="w-full h-10 rounded-lg bg-[#6205D5]/10 text-red-400 text-sm font-medium hover:bg-[#6205D5]/20 transition-colors flex items-center justify-center gap-2"
-                onClick={() => onNavigate('cleandata')}
-              >
-                <Trash2 className="w-4 h-4" />
-                Limpar Dados
+                Privacidade
               </button>
             </div>
+            <button
+              onClick={() => onNavigate('cleandata')}
+              className="w-full px-4 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 
+                transition-all duration-200 text-red-400 text-sm font-medium"
+            >
+              Limpar Dados
+            </button>
           </div>
         </div>
       </aside>
+
+      {/* Modals */}
+      {showServersModal && (
+        <ServersModal onClose={() => setShowServersModal(false)} />
+      )}
     </>
   );
 }
