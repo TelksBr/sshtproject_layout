@@ -126,6 +126,7 @@ export function ConnectionForm() {
             <input 
               className="w-full h-10 px-3 rounded-lg glass-effect text-white placeholder-gray-400 outline-none focus:border-purple-500 text-sm"
               type="text"
+              autoCapitalize="none"
               placeholder="Usuário"
               value={username}
               onChange={handleUsernameChange}
