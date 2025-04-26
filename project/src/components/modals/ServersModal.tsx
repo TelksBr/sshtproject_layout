@@ -26,28 +26,44 @@ export function ServersModal({ onClose }: ServersModalProps) {
   const [totals, setTotals] = useState<ServerTotals>({ v2ray: 0, premium: 0, free: 0, total: 0 });
   const [refreshing, setRefreshing] = useState(false);
   const [failedServers, setFailedServers] = useState<Set<string>>(new Set());
-  
+
   const premiumV2rayServers = 2;
   const premiumServers = 3;
   const freeServers = 5;
   const token = 'KZQ4h03hLSzhefDAwRvjWVl9dp';
 
-  const calculateTotals = (serverList: Server[]) => {
-    const newTotals = serverList.reduce((acc, server) => {
-      acc[server.type] += server.onlineUsers;
-      acc.total += server.onlineUsers;
-      return acc;
-    }, { v2ray: 0, premium: 0, free: 0, total: 0 });
-    
+  // Função para atualizar totais baseada na lista de servidores
+  const updateTotals = (serverList: Server[]) => {
+    const newTotals = { v2ray: 0, premium: 0, free: 0, total: 0 };
+    serverList.forEach(server => {
+      newTotals[server.type] += server.onlineUsers;
+      newTotals.total += server.onlineUsers;
+    });
     setTotals(newTotals);
   };
 
+  // Função para adicionar ou atualizar um servidor na lista
+  const upsertServer = (newServer: Server) => {
+    setServers(prevServers => {
+      const filtered = prevServers.filter(s => s.name !== newServer.name);
+      const updated = [...filtered, newServer].sort((a, b) => {
+        const typeOrder = { v2ray: 1, premium: 2, free: 3 };
+        if (typeOrder[a.type] !== typeOrder[b.type]) {
+          return typeOrder[a.type] - typeOrder[b.type];
+        }
+        return a.order - b.order;
+      });
+      updateTotals(updated);
+      return updated;
+    });
+  };
+
+  // Função para buscar um servidor com retry
   const fetchWithRetry = async (url: string, retries = 3): Promise<Response> => {
     for (let i = 0; i < retries; i++) {
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000);
-
         const response = await fetch(url, {
           method: 'GET',
           headers: {
@@ -56,13 +72,9 @@ export function ServersModal({ onClose }: ServersModalProps) {
           },
           signal: controller.signal
         });
-
         clearTimeout(timeoutId);
-        
         if (response.ok) return response;
-        
         if (i === retries - 1) throw new Error(`Failed after ${retries} retries`);
-        
         await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
       } catch (error) {
         if (i === retries - 1) throw error;
@@ -71,143 +83,114 @@ export function ServersModal({ onClose }: ServersModalProps) {
     throw new Error('Fetch failed');
   };
 
-  const addServer = (newServer: Server) => {
-    setServers(prevServers => {
-      const filteredServers = prevServers.filter(s => s.name !== newServer.name);
-      const updatedServers = [...filteredServers, newServer].sort((a, b) => {
-        const typeOrder = {
-          v2ray: 1,
-          premium: 2,
-          free: 3
-        };
-        
-        if (typeOrder[a.type] !== typeOrder[b.type]) {
-          return typeOrder[a.type] - typeOrder[b.type];
-        }
-        
-        return a.order - b.order;
-      });
-
-      // Usa a função calculateTotals para atualizar os totais
-      calculateTotals(updatedServers);
-      return updatedServers;
-    });
-  };
-
-  const retryFailedServers = async () => {
-    const currentFailed = Array.from(failedServers);
-    if (currentFailed.length === 0) return;
-
-    for (const serverUrl of currentFailed) {
-      try {
-        const response = await fetchWithRetry(serverUrl);
-        if (response.ok) {
-          setFailedServers(prev => {
-            const next = new Set(prev);
-            next.delete(serverUrl);
-            return next;
-          });
-        }
-      } catch (error) {
-        console.error(`Retry failed for ${serverUrl}`);
-      }
-    }
-  };
-
+  // Função para buscar dados de um servidor específico
   const fetchServer = async (url: string, name: string, type: Server['type'], order: number) => {
     try {
       const response = await fetchWithRetry(url);
       const data = await response.json();
-      
-      const users = data.onlineUsers || data.onlineV2rayUsers || 0;
-      
+      const users = data.onlineUsers ?? data.onlineV2rayUsers ?? 0;
       setFailedServers(prev => {
         const next = new Set(prev);
         next.delete(url);
         return next;
       });
-
-      // Adiciona o servidor com os novos dados
-      addServer({
-        name,
-        onlineUsers: users,
-        type,
-        order
-      });
-
+      upsertServer({ name, onlineUsers: users, type, order });
     } catch (error) {
-      console.error(`Erro ao conectar com ${name}:`, error);
       setFailedServers(prev => new Set(prev).add(url));
-      
-      // Se já temos dados deste servidor, mantemos o valor anterior
-      if (!servers.some(s => s.name === name)) {
-        addServer({
-          name,
-          onlineUsers: 0,
-          type,
-          order
-        });
-      }
+      // Mantém o servidor na lista, mas com 0 usuários
+      upsertServer({ name, onlineUsers: 0, type, order });
     }
   };
 
-  const handleRefresh = async () => {
-    if (refreshing) return;
-    
-    setRefreshing(true);
-    await fetchServerData();
-    setRefreshing(false);
-  };
-
+  // Função para buscar todos os servidores
   const fetchServerData = async () => {
-    if (!loading) setLoading(true);
-
-    const fetchPromises = [
-      // V2Ray servers
-      ...Array(premiumV2rayServers).fill(null).map((_, i) => 
+    setLoading(true);
+    const fetchPromises: Promise<void>[] = [];
+    // V2Ray
+    for (let i = 0; i < premiumV2rayServers; i++) {
+      fetchPromises.push(
         fetchServer(
-          `http://v2premium${i+1}.sshtproject.com:2095/onlines/v2ray?token=${token}`,
-          `Premium V2Ray ${i+1}`,
+          `http://v2premium-${i + 1}.sshtproject.com:2095/onlines/v2ray?token=${token}`,
+          `Premium V2Ray ${i + 1}`,
           'v2ray',
-          i+1
+          i + 1
         )
-      ),
-      // Premium servers  
-      ...Array(premiumServers).fill(null).map((_, i) =>
+      );
+    }
+    // Premium
+    for (let i = 0; i < premiumServers; i++) {
+      fetchPromises.push(
         fetchServer(
-          `http://premium${i+1}.sshtproject.com:2095/onlines/ssh?token=${token}`,
-          `Premium ${i+1}`,
+          `http://premium${i + 1}.sshtproject.com:2095/onlines/ssh?token=${token}`,
+          `Premium ${i + 1}`,
           'premium',
-          i+1
+          i + 1
         )
-      ),
-      // Free servers
-      ...Array(freeServers).fill(null).map((_, i) =>
+      );
+    }
+    // Free
+    for (let i = 0; i < freeServers; i++) {
+      fetchPromises.push(
         fetchServer(
-          `http://free${i+1}.sshtproject.com:2095/onlines/ssh?token=${token}`,
-          `Free ${i+1}`,
+          `http://free${i + 1}.sshtproject.com:2095/onlines/ssh?token=${token}`,
+          `Free ${i + 1}`,
           'free',
-          i+1
+          i + 1
         )
-      )
-    ];
-
+      );
+    }
     await Promise.all(fetchPromises);
     setLoading(false);
   };
 
+  // Função para tentar novamente servidores que falharam
+  const retryFailedServers = async () => {
+    const currentFailed = Array.from(failedServers);
+    if (currentFailed.length === 0) return;
+    for (const url of currentFailed) {
+      let name = '';
+      let type: Server['type'] = 'free';
+      let order = 1;
+      if (url.includes('v2premium')) {
+        type = 'v2ray';
+        order = parseInt(url.match(/v2premium(\d+)/)?.[1] || '1', 10);
+        name = `Premium V2Ray ${order}`;
+      } else if (url.includes('premium')) {
+        type = 'premium';
+        order = parseInt(url.match(/premium(\d+)/)?.[1] || '1', 10);
+        name = `Premium ${order}`;
+      } else if (url.includes('free')) {
+        type = 'free';
+        order = parseInt(url.match(/free(\d+)/)?.[1] || '1', 10);
+        name = `Free ${order}`;
+      }
+      await fetchServer(url, name, type, order);
+    }
+  };
+
+  // Atualiza servidores ao abrir modal
   useEffect(() => {
     fetchServerData();
-    // Removida a atualização automática
   }, []);
 
-  // Tenta reconectar servidores falhos a cada 10 segundos sem atualizar a UI
+  // Tenta reconectar servidores falhos a cada 10 segundos
   useEffect(() => {
     if (failedServers.size === 0) return;
-
     const retryInterval = setInterval(retryFailedServers, 10000);
     return () => clearInterval(retryInterval);
   }, [failedServers]);
+
+  // Atualiza totais sempre que a lista de servidores mudar
+  useEffect(() => {
+    updateTotals(servers);
+  }, [servers]);
+
+  const handleRefresh = async () => {
+    if (refreshing) return;
+    setRefreshing(true);
+    await fetchServerData();
+    setRefreshing(false);
+  };
 
   return (
     <Modal onClose={onClose}>
@@ -261,9 +244,7 @@ export function ServersModal({ onClose }: ServersModalProps) {
               </div>
             ) : (
               <div className="space-y-2 animate-fadeIn">
-                {servers
-                  .filter(server => server.onlineUsers > 0)
-                  .map((server) => (
+                {servers.map((server) => (
                   <div
                     key={`${server.type}-${server.order}`}
                     className={`
@@ -272,6 +253,7 @@ export function ServersModal({ onClose }: ServersModalProps) {
                       ${server.type === 'v2ray' ? 'bg-[#6205D5]/20' : ''}
                       ${server.type === 'premium' ? 'bg-[#6205D5]/15' : ''}
                       ${server.type === 'free' ? 'bg-[#6205D5]/10' : ''}
+                      ${server.onlineUsers > 0 ? '' : 'opacity-60'}
                     `}
                   >
                     <span className="font-medium text-white">{server.name}</span>
