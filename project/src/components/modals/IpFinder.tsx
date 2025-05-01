@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Modal } from './Modal';
 import { Search, Save, Play, Trash2 } from 'lucide-react';
 import { getStorageItem, setStorageItem } from '../../utils/storageUtils';
-import { setAirplaneMode, getLocalIP } from '../../utils/appFunctions';
+import { toggleAirplaneMode, getLocalIP } from '../../utils/appFunctions';
 
 interface IpFinderProps {
   onClose: () => void;
@@ -70,9 +70,9 @@ export function IpFinder({ onClose }: IpFinderProps) {
     for (let i = 0; i < 256; i++) {
       if (stopSearchRef.current) break;
 
-      setAirplaneMode(true);
+      await toggleAirplaneMode(true);
       await new Promise(resolve => setTimeout(resolve, 3000));
-      setAirplaneMode(false);
+      await toggleAirplaneMode(false);
 
       const newIP = await waitForNewIP();
       const isInRange = ipList.some(range => isIpInRange(newIP, range));

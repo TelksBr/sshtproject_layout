@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Settings, RefreshCw, CalendarClock, Wifi, AlertCircle, ChevronLeft, Search, Plane } from 'lucide-react';
 import { getAllConfigs, setActiveConfig, getActiveConfig, ConfigCategory, ConfigItem } from '../utils/configUtils';
-import { checkUserStatus, getAirplaneState, setAirplaneMode, checkForUpdates } from '../utils/appFunctions';
+import { checkUserStatus, getAirplaneState, toggleAirplaneMode, checkForUpdates } from '../utils/appFunctions';
 import { Modal } from './modals/Modal';
 
 export function ServerSelector() {
@@ -93,42 +93,18 @@ export function ServerSelector() {
     setSelectedCategory(null); // Reset selected category on tag filter
   };
 
-  const toggleAirplaneMode = async () => {
-    try {
-      const newState = !airplaneMode;
-      setAirplaneMode(newState); // Atualiza UI imediatamente
-      
-      // Chama a função nativa
-      if (newState) {
-        if (window?.DtAirplaneActivate?.execute) {
-          await window.DtAirplaneActivate.execute();
-        }
-      } else {
-        if (window?.DtAirplaneDeactivate?.execute) {
-          await window.DtAirplaneDeactivate.execute();
-        }
-      }
-
-      // Verifica se o estado foi realmente alterado
-      if (window?.DtAirplaneState?.execute) {
-        const currentState = window.DtAirplaneState.execute() === 'ACTIVE';
-        setAirplaneMode(currentState);
-      }
-    } catch (error) {
-      console.error('Erro ao alterar modo avião:', error);
-      // Reverte o estado em caso de erro
-      setAirplaneMode(!newState);
-    }
+  const toggleAirplaneModeHandler = async () => {
+    const newState = !airplaneMode;
+    const updatedState = await toggleAirplaneMode(newState);
+    setAirplaneMode(updatedState); // Atualiza o estado com o valor retornado
   };
 
   useEffect(() => {
     const checkAirplaneState = () => {
       try {
-        if (window?.DtAirplaneState?.execute) {
-          const state = window.DtAirplaneState.execute() === 'ACTIVE';
-          if (state !== airplaneMode) {
-            setAirplaneMode(state);
-          }
+        const state = getAirplaneState();
+        if (state !== airplaneMode) {
+          setAirplaneMode(state);
         }
       } catch (error) {
         console.error('Erro ao verificar modo avião:', error);
@@ -143,10 +119,12 @@ export function ServerSelector() {
     return () => clearInterval(interval);
   }, [airplaneMode]);
 
-  const filteredConfigs = configs.filter(category => 
-    category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    category.items.some(item => item.name.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredConfigs = configs
+    .filter(category =>
+      (category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        category.items.some(item => item.name.toLowerCase().includes(searchTerm.toLowerCase())))
+      && category.items.length > 0 // <-- só exibe categorias com configs
+    );
 
   const activeCategory = configs.find(category => 
     category.items.some(item => item.id === activeConfig?.id)
@@ -205,7 +183,7 @@ export function ServerSelector() {
             ${airplaneMode ? 'bg-[#6205D5]/30' : ''}
           `}
           type="button"
-          onClick={toggleAirplaneMode}
+          onClick={toggleAirplaneModeHandler}
         >
           <Plane 
             className={`
@@ -281,26 +259,27 @@ export function ServerSelector() {
             ) : filteredConfigs.length > 0 ? (
               <div className="space-y-2 transition-all duration-300">
                 {!selectedCategory ? (
-                  filteredConfigs.map((category) => (
-                    <button
-                      key={category.id}
-                      onClick={() => handleCategorySelect(category)}
-                      className="w-full p-3 rounded-lg glass-effect hover:bg-[#26074d]/40 transition-all duration-200"
-                    >
-                      <div className="flex items-center justify-center">
-                        <div className="flex-1">
-                          <div className="flex items-center justify-center">
-                            <h3 className="font-medium text-sm text-[#b0a8ff] text-center">
-                              {category.name}
-                            </h3>
+                  filteredConfigs
+                    .map((category) => (
+                      <button
+                        key={category.id}
+                        onClick={() => handleCategorySelect(category)}
+                        className="w-full p-3 rounded-lg glass-effect hover:bg-[#26074d]/40 transition-all duration-200"
+                      >
+                        <div className="flex items-center justify-center">
+                          <div className="flex-1">
+                            <div className="flex items-center justify-center">
+                              <h3 className="font-medium text-sm text-[#b0a8ff] text-center">
+                                {category.name}
+                              </h3>
+                            </div>
+                            <p className="text-xs text-[#b0a8ff]/70 mt-0.5 text-center">
+                              {category.items.length} configurações disponíveis
+                            </p>
                           </div>
-                          <p className="text-xs text-[#b0a8ff]/70 mt-0.5 text-center">
-                            {category.items.length} configurações disponíveis
-                          </p>
                         </div>
-                      </div>
-                    </button>
-                  ))
+                      </button>
+                    ))
                 ) : (
                   <div className="grid gap-1.5 transition-all duration-300">
                     {selectedCategory.items.map((config) => (
