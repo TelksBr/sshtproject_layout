@@ -27,9 +27,9 @@ export function ServersModal({ onClose }: ServersModalProps) {
   const [refreshing, setRefreshing] = useState(false);
   const [failedServers, setFailedServers] = useState<Set<string>>(new Set());
 
-  const premiumV2rayServers = 2;
+  const premiumV2rayServers = 3;
   const premiumServers = 3;
-  const freeServers = 5;
+  const freeServers = 0;
   const token = 'KZQ4h03hLSzhefDAwRvjWVl9dp';
 
   // Função para atualizar totais baseada na lista de servidores
@@ -224,7 +224,7 @@ export function ServersModal({ onClose }: ServersModalProps) {
               <p className="text-lg font-bold text-white">{totals.v2ray}</p>
             </div>
             <div className="bg-[#6205D5]/15 p-3 rounded-lg">
-              <span className="text-xs text-[#b0a8ff]/70">Total Premium</span>
+              <span className="text-xs text-[#b0a8ff]/70">Total SSH</span>
               <p className="text-lg font-bold text-white">{totals.premium}</p>
             </div>
             <div className="bg-[#6205D5]/10 p-3 rounded-lg">
