@@ -75,7 +75,7 @@ export function BuyLogin({ onClose }: BuyLoginProps) {
                 WhatsApp
               </a>
               <a
-                onClick={() => openExternalUrl("https://t.me/ssh_t_project_bot")}
+                onClick={() => openExternalUrl("https://t.me/ssh_t_project_vip_bot")}
                 className="btn-outline flex items-center justify-center gap-2"
               >
                 <Send className="w-4 h-4" />
@@ -118,7 +118,7 @@ export function BuyLogin({ onClose }: BuyLoginProps) {
                 WhatsApp
               </a>
               <a
-                onClick={() => openExternalUrl("https://t.me/ssh_t_project_bot")}
+                onClick={() => openExternalUrl("https://t.me/ssh_t_project_vip_bot")}
                 className="btn-outline flex items-center justify-center gap-2"
               >
                 <Send className="w-4 h-4" />
@@ -160,7 +160,7 @@ export function BuyLogin({ onClose }: BuyLoginProps) {
                 WhatsApp
               </a>
               <a
-                onClick={() => openExternalUrl("https://t.me/ssh_t_project_bot")}
+                onClick={() => openExternalUrl("https://t.me/ssh_t_project_vip_bot")}
                 className="btn-outline flex items-center justify-center gap-2"
               >
                 <Send className="w-4 h-4" />
