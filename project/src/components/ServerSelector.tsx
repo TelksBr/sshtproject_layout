@@ -316,6 +316,14 @@ export function ServerSelector() {
                     ))}
                   </div>
                 )}
+                
+                <button
+                  onClick={handleUpdate}
+                  className="w-full h-12 flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#6205D5] to-[#26074d] text-[#b0a8ff] font-medium hover:opacity-90 transition-opacity mt-4"
+                >
+                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                  Atualizar Configurações
+                </button>
               </div>
             ) : (
               <div className="p-4 rounded-lg glass-effect text-center">
@@ -332,6 +340,14 @@ export function ServerSelector() {
                   <Wifi className="w-4 h-4" />
                   <span className="text-xs">Verifique sua conexão e tente novamente</span>
                 </div>
+                
+                <button
+                  onClick={handleUpdate}
+                  className="w-full h-12 flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#6205D5] to-[#26074d] text-[#b0a8ff] font-medium hover:opacity-90 transition-opacity mt-4"
+                >
+                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                  Atualizar Configurações
+                </button>
               </div>
             )}
           </div>
