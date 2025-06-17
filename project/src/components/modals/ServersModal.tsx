@@ -27,7 +27,7 @@ export function ServersModal({ onClose }: ServersModalProps) {
   const [refreshing, setRefreshing] = useState(false);
   const [failedServers, setFailedServers] = useState<Set<string>>(new Set());
 
-  const premiumV2rayServers = 4;
+  const premiumV2rayServers = 3;
   const premiumServers = 4;
   const freeServers = 0;
   const token = 'KZQ4h03hLSzhefDAwRvjWVl9dp';
