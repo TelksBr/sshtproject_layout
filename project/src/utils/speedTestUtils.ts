@@ -31,10 +31,11 @@ export interface TestServer {
     country: string;
   };
   ping?: number;
+  ip?: string | null; // Permite null para compatibilidade com getIpFromUrl
 }
 
 const FAST_API_URL = 'https://api.fast.com/netflix/speedtest/v2?https=true&token=YXNkZmFzZGxmbnNkYWZoYXNkZmhrYWxm&urlCount=10';
-const TEST_DURATION = 10000;
+const TEST_DURATION = 30000;
 const PING_TIMEOUT = 2000;
 const MAX_ACCEPTABLE_PING = 200; // ms
 const PARALLEL_CONNECTIONS = 8; // Aumentado para 8 conexões simultâneas
@@ -44,7 +45,6 @@ const STABILITY_SAMPLES = 5; // Número de amostras para confirmar estabilidade
 const MIN_TEST_DURATION = 5000; // Mínimo de 5 segundos de teste
 const LATENCY_MEASUREMENTS_FREQUENCY_MS = 1000; // Intervalo entre medições
 const LATENCY_WINDOW_SIZE = 5; // Tamanho da janela para média móvel
-const MIN_LATENCY_MEASUREMENTS = 3; // Mínimo de medições para considerar estável
 
 function decodeSpecialCharacters(text: string): string {
   try {
@@ -56,7 +56,36 @@ function decodeSpecialCharacters(text: string): string {
   }
 }
 
-export async function getSpeedTestServers(): Promise<TestServer[]> {
+// Função utilitária para extrair hostname de uma URL
+function extractHostname(url: string): string | null {
+  try {
+    const u = new URL(url);
+    return u.hostname;
+  } catch {
+    return null;
+  }
+}
+
+// Função para obter o IP de um hostname usando DNS-over-HTTPS (Google)
+export async function getIpFromUrl(url: string): Promise<string | null> {
+  const hostname = extractHostname(url);
+  if (!hostname) return null;
+  try {
+    const res = await fetch(`https://dns.google/resolve?name=${hostname}&type=A`);
+    const data = await res.json();
+    if (data && data.Answer && data.Answer.length > 0) {
+      // Pega o primeiro IP v4
+      const ip = data.Answer.find((a: any) => a.type === 1)?.data;
+      return ip || null;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export async function getSpeedTestServers(initial = false): Promise<TestServer[]> {
+  console.time('getSpeedTestServers');
   try {
     const response = await fetch(FAST_API_URL);
     if (!response.ok) throw new Error('Failed to fetch speed test servers');
@@ -64,26 +93,37 @@ export async function getSpeedTestServers(): Promise<TestServer[]> {
     const rawText = await response.text();
     const data: FastAPIResponse = JSON.parse(rawText);
     
-    const serversWithPing = await Promise.all(
-      data.targets.map(async server => ({
+    // Decodifica nomes e salva IP
+    const servers: TestServer[] = await Promise.all(data.targets.map(async server => {
+      const ip = await getIpFromUrl(server.url);
+      return {
         ...server,
         location: {
           city: decodeSpecialCharacters(server.location.city),
           country: decodeSpecialCharacters(server.location.country)
         },
-        ping: await measureLatency(server.url)
-      }))
-    );
-
-    // Filtra servidores com ping aceitável
-    const goodServers = serversWithPing.filter(s => 
-      s.ping !== undefined && 
-      s.ping < MAX_ACCEPTABLE_PING
-    );
-
-    return goodServers.length > 0 ? 
-      goodServers.sort((a, b) => (a.ping || Infinity) - (b.ping || Infinity)) :
-      serversWithPing.sort((a, b) => (a.ping || Infinity) - (b.ping || Infinity));
+        ping: undefined, // Lazy measurement
+        ip
+      };
+    }));
+    
+    // Se não for inicial, mede ping já na listagem
+    if (!initial) {
+      const serversWithPing = await Promise.all(
+        servers.map(async s => ({
+          ...s,
+          ping: await measureLatency(s.url, false)
+        }))
+      );
+      const goodServers = serversWithPing.filter(s => s.ping !== undefined && s.ping < MAX_ACCEPTABLE_PING);
+      console.timeEnd('getSpeedTestServers');
+      return goodServers.length > 0 ? 
+        goodServers.sort((a, b) => (a.ping || Infinity) - (b.ping || Infinity)) :
+        serversWithPing.sort((a, b) => (a.ping || Infinity) - (b.ping || Infinity));
+    }
+    // Inicial: retorna sem ping
+    console.timeEnd('getSpeedTestServers');
+    return servers;
   } catch (error) {
     console.error('Error fetching speed test servers:', error);
     throw error;
@@ -96,88 +136,97 @@ interface LatencyMeasurement {
   time: number;
 }
 
-async function measureLatency(url: string): Promise<number> {
+export async function measureLatency(url: string, singleSample = false): Promise<number> {
+  console.time(`measureLatency:${url}`);
   const measurements: LatencyMeasurement[] = [];
   const startTime = performance.now();
   let lastMeasurementTime = 0;
+  const samplesToMeasure = singleSample ? 1 : 5;
+
+  // Tenta obter o IP
+  const ip = await getIpFromUrl(url);
+  let pingUrl = url;
+  if (ip) {
+    // Substitui hostname pelo IP na URL
+    try {
+      const u = new URL(url);
+      u.hostname = ip;
+      pingUrl = u.toString();
+    } catch {}
+  }
 
   // Função para uma única medição
   const takeMeasurement = async (): Promise<LatencyMeasurement | null> => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), PING_TIMEOUT);
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), PING_TIMEOUT);
-      
       const start = performance.now();
-      await fetch(url, {
+      await fetch(pingUrl, {
         method: 'HEAD',
         cache: 'no-store',
         signal: controller.signal,
         headers: {
           'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
+          'Pragma': 'no-cache',
+          // Host header para SNI
+          ...(ip ? { Host: extractHostname(url) || '' } : {})
         }
       });
       const end = performance.now();
       clearTimeout(timeoutId);
-      
       return {
         value: end - start,
         time: end
       };
-    } catch {
+    } catch (err: any) {
+      clearTimeout(timeoutId);
+      // Se falhar com IP, tenta hostname (DNS)
+      if (ip && err.name !== 'AbortError') {
+        try {
+          const start = performance.now();
+          await fetch(url, {
+            method: 'HEAD',
+            cache: 'no-store',
+            signal: controller.signal,
+            headers: {
+              'Cache-Control': 'no-cache',
+              'Pragma': 'no-cache'
+            }
+          });
+          const end = performance.now();
+          return {
+            value: end - start,
+            time: end
+          };
+        } catch {}
+      }
+      if (err.name === 'AbortError') return null;
       return null;
     }
   };
 
-  // Função para calcular média das últimas medições
-  const calculateAverage = (measurements: LatencyMeasurement[]): number => {
-    const recentMeasurements = measurements
-      .slice(-LATENCY_WINDOW_SIZE)
-      .map(m => m.value)
-      .sort((a, b) => a - b);
-
-    // Remove outliers se tivermos medições suficientes
-    if (recentMeasurements.length >= 4) {
-      recentMeasurements.pop(); // Remove maior
-      recentMeasurements.shift(); // Remove menor
-    }
-
-    return recentMeasurements.reduce((a, b) => a + b, 0) / recentMeasurements.length;
-  };
 
   // Coleta medições até ter amostras suficientes ou timeout
-  while (performance.now() - startTime < TEST_DURATION) {
+  while (performance.now() - startTime < TEST_DURATION && measurements.length < samplesToMeasure) {
     const now = performance.now();
-    
-    // Respeita o intervalo entre medições
     if (now - lastMeasurementTime >= LATENCY_MEASUREMENTS_FREQUENCY_MS) {
       const measurement = await takeMeasurement();
-      
       if (measurement) {
         measurements.push(measurement);
         lastMeasurementTime = now;
-
-        // Verifica se temos medições suficientes e estáveis
-        if (measurements.length >= MIN_LATENCY_MEASUREMENTS) {
-          const avg = calculateAverage(measurements);
-          const isStable = measurements
-            .slice(-MIN_LATENCY_MEASUREMENTS)
-            .every(m => Math.abs(m.value - avg) / avg <= STABILITY_THRESHOLD);
-
-          if (isStable) {
-            return Math.round(avg);
-          }
+        if (singleSample && measurements.length === 1) {
+          console.timeEnd(`measureLatency:${url}`);
+          return Math.round(measurement.value);
         }
       }
     }
-
-    // Pequena pausa para não sobrecarregar
     await new Promise(resolve => setTimeout(resolve, 100));
   }
 
   // Se não conseguiu estabilizar, retorna média das medições válidas
+  console.timeEnd(`measureLatency:${url}`);
   return measurements.length > 0 ? 
-    Math.round(calculateAverage(measurements)) : 
+    Math.round(measurements.reduce((a, b) => a + b.value, 0) / measurements.length) : 
     Infinity;
 }
 

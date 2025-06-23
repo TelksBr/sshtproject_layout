@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Settings, RefreshCw, CalendarClock, Wifi, AlertCircle, ChevronLeft, Search, Plane } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Settings, RefreshCw, CalendarClock, Wifi, AlertCircle, ChevronLeft, Search, Plane, Zap } from 'lucide-react';
 import { getAllConfigs, setActiveConfig, getActiveConfig, ConfigCategory, ConfigItem } from '../utils/configUtils';
 import { checkUserStatus, getAirplaneState, toggleAirplaneMode, checkForUpdates } from '../utils/appFunctions';
 import { Modal } from './modals/Modal';
+import { AutoConnectModal } from './modals/AutoConnectModal';
+import { autoConnectTest } from '../utils/autoConnectUtils';
 
 export function ServerSelector() {
   const [showConfigModal, setShowConfigModal] = useState(false);
@@ -13,6 +15,17 @@ export function ServerSelector() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [airplaneMode, setAirplaneMode] = useState(false);
+
+  // Estados para o modal de conexão automática
+  const [autoConnectModalOpen, setAutoConnectModalOpen] = useState(false);
+  const [autoConnectCurrentName, setAutoConnectCurrentName] = useState<string | null>(null);
+  const [autoConnectTotal, setAutoConnectTotal] = useState(0);
+  const [autoConnectTested, setAutoConnectTested] = useState(0);
+  const [autoConnectSuccess, setAutoConnectSuccess] = useState<string | null>(null);
+  const [autoConnecting, setAutoConnecting] = useState(false);
+
+  // Ref para controle de cancelamento
+  const autoConnectCancelRef = useRef<{ cancelled: boolean }>({ cancelled: false });
 
   useEffect(() => {
     loadConfigs();
@@ -134,6 +147,55 @@ export function ServerSelector() {
     category.name.match(/\[([^\]]+)\]/g)?.map(tag => tag.replace(/[\[\]]/g, '')) || []
   )));
 
+  // Função de conexão automática (agora só abre o modal, não inicia o teste)
+  const handleOpenAutoConnectModal = () => {
+    setShowConfigModal(false);
+    setTimeout(() => setAutoConnectModalOpen(true), 200);
+    setAutoConnectSuccess(null);
+    setError(null);
+    setAutoConnecting(false);
+    autoConnectCancelRef.current.cancelled = false;
+    // Não chama autoConnectTest aqui!
+  };
+
+  // Função para iniciar o teste automático (chamada pelo botão Start do modal)
+  const handleStartAutoConnect = async () => {
+    setAutoConnecting(true);
+    setAutoConnectSuccess(null);
+    setError(null);
+    autoConnectCancelRef.current.cancelled = false;
+
+    const allConfigs: ConfigItem[] = configs.flatMap(c => c.items);
+    setAutoConnectTotal(allConfigs.length);
+    setAutoConnectTested(0);
+
+    try {
+      const result = await autoConnectTest({
+        configs: allConfigs,
+        setCurrentName: setAutoConnectCurrentName,
+        setTested: setAutoConnectTested,
+        setActiveConfig,
+        setActiveConfigState,
+        setSelectedCategory,
+        setSuccess: setAutoConnectSuccess,
+        setError,
+        cancelRef: autoConnectCancelRef,
+      });
+      setAutoConnecting(false);
+      if (!result) setAutoConnectSuccess(null);
+    } catch (e) {
+      setError('Erro na conexão automática.');
+      setAutoConnecting(false);
+    }
+  };
+
+  // Ao fechar o modal, cancelar o loop
+  const handleCloseAutoConnectModal = () => {
+    autoConnectCancelRef.current.cancelled = true;
+    setAutoConnectModalOpen(false);
+    setAutoConnecting(false);
+  };
+
   return (
     <>
       <section className="flex gap-1.5">
@@ -192,6 +254,16 @@ export function ServerSelector() {
               ${airplaneMode ? 'rotate-45' : ''}
             `}
           />
+        </button>
+
+        {/* Botão de teste automático (AutoConnect) */}
+        <button
+          className="w-10 h-10 flex items-center justify-center rounded-lg glass-effect"
+          type="button"
+          onClick={handleOpenAutoConnectModal}
+          title="Teste Automático"
+        >
+          <Zap className="w-4 h-4 text-[#6205D5]" />
         </button>
       </section>
 
@@ -316,14 +388,6 @@ export function ServerSelector() {
                     ))}
                   </div>
                 )}
-                
-                <button
-                  onClick={handleUpdate}
-                  className="w-full h-12 flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#6205D5] to-[#26074d] text-[#b0a8ff] font-medium hover:opacity-90 transition-opacity mt-4"
-                >
-                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                  Atualizar Configurações
-                </button>
               </div>
             ) : (
               <div className="p-4 rounded-lg glass-effect text-center">
@@ -340,19 +404,23 @@ export function ServerSelector() {
                   <Wifi className="w-4 h-4" />
                   <span className="text-xs">Verifique sua conexão e tente novamente</span>
                 </div>
-                
-                <button
-                  onClick={handleUpdate}
-                  className="w-full h-12 flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#6205D5] to-[#26074d] text-[#b0a8ff] font-medium hover:opacity-90 transition-opacity mt-4"
-                >
-                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                  Atualizar Configurações
-                </button>
               </div>
             )}
           </div>
         </Modal>
       )}
+
+      {/* Modal de progresso da conexão automática */}
+      <AutoConnectModal
+        open={autoConnectModalOpen}
+        onClose={handleCloseAutoConnectModal}
+        currentConfigName={autoConnectCurrentName}
+        totalConfigs={autoConnectTotal}
+        testedConfigs={autoConnectTested}
+        successConfigName={autoConnectSuccess}
+        running={autoConnecting}
+        onStart={handleStartAutoConnect}
+      />
     </>
   );
 }

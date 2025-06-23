@@ -25,13 +25,35 @@ export function SpeedTest({ onClose }: SpeedTestProps) {
     loadServers();
   }, []);
 
+  // Lazy ping measurement após carregar servidores
+  useEffect(() => {
+    if (servers.length > 0) {
+      servers.forEach((server, idx) => {
+        if (server.ping === undefined) {
+          // Medir ping em background
+          import('../../utils/speedTestUtils').then(utils => {
+            utils.measureLatency(server.url, true).then((ping: number) => {
+              setServers(prevServers => {
+                const updated = [...prevServers];
+                updated[idx] = { ...updated[idx], ping };
+                return updated;
+              });
+              // Atualiza ping do servidor selecionado se for o mesmo
+              setSelectedServer(prev => prev && prev.url === server.url ? { ...prev, ping } : prev);
+            });
+          });
+        }
+      });
+    }
+  }, [servers]);
+
   const loadServers = async () => {
     setLoading(true);
     setError(null);
     try {
-      const availableServers = await getSpeedTestServers();
+      const availableServers = await getSpeedTestServers(true); // lazy: initial=true
       setServers(availableServers);
-      setSelectedServer(availableServers[0]); // Select best server by default
+      setSelectedServer(availableServers[0]);
     } catch (err) {
       setError('Falha ao carregar servidores de teste');
       console.error('Error loading servers:', err);
@@ -112,7 +134,7 @@ export function SpeedTest({ onClose }: SpeedTestProps) {
                   </span>
                   {selectedServer && (
                     <span className="block text-xs text-[#b0a8ff]/70">
-                      Ping: {selectedServer.ping}ms
+                      Ping: {selectedServer?.ping === undefined ? 'Medindo...' : `${selectedServer.ping}ms`}
                     </span>
                   )}
                 </div>
@@ -141,7 +163,12 @@ export function SpeedTest({ onClose }: SpeedTestProps) {
                       </span>
                     </div>
                     <span className="text-sm text-[#6205D5]">
-                      {server.ping}ms
+                      {server.ping === undefined ? (
+                        <span className="inline-flex items-center gap-1">
+                          <svg className="animate-spin w-3 h-3 mr-1 text-[#6205D5]" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
+                          Medindo...
+                        </span>
+                      ) : `${server.ping}ms`}
                     </span>
                   </button>
                 ))}
