@@ -80,4 +80,10 @@ interface Window {
   DtAirplaneDeactivate?: {
     execute: () => void;
   };
+  DtGetConfigs?: {
+    execute: () => string;
+  };
+  DtSetConfig?: {
+    execute: (id: string) => void;
+  };
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { ServerSelector } from './components/ServerSelector';
 import { ConnectionForm } from './components/ConnectionForm';
@@ -20,8 +20,26 @@ import { Faq } from './components/modals/Faq';
 import { getConfigVersion, getStatusbarHeight, getNavbarHeight, getConnectionState } from './utils/appFunctions';
 import { getStorageItem } from './utils/storageUtils';
 import { appLogo } from './constants/appLogo';
+import { onDtunnelEvent, DtVpnStateEvent } from './utils/dtEvents';
+import { ActiveConfigProvider } from './context/ActiveConfigContext';
 
 export type ModalType = 'buy' | 'tutorials' | 'support' | 'speedtest' | 'terms' | 'privacy' | 'checkuser' | 'cleandata' | 'autherror' | 'hotspot' | 'services' | 'ipfinder' | 'faq' | null;
+
+const modalComponents = {
+  buy: BuyLogin,
+  tutorials: Tutorials,
+  support: Support,
+  speedtest: SpeedTest,
+  terms: Terms,
+  privacy: Privacy,
+  checkuser: CheckUser,
+  cleandata: CleanDataConfirm,
+  autherror: AuthError,
+  hotspot: Hotspot,
+  services: ServicesModal,
+  ipfinder: IpFinder,
+  faq: Faq,
+};
 
 function App() {
   const [showMenu, setShowMenu] = useState(false);
@@ -49,103 +67,81 @@ function App() {
     });
   }, []);
 
-  // Monitor connection state for auth errors
+  // Monitor de erro de autenticação via evento global e checagem inicial
   useEffect(() => {
-    const checkAuthStatus = () => {
-      const state = getConnectionState();
-      if (state === 'LBL_STATE_AUTH_FAILED') {
+    // Verificação inicial ao montar
+    const state = getConnectionState();
+    if (state === 'AUTH_FAILED') {
+      setCurrentModal('autherror');
+    }
+    // Handler para evento global
+    const handleVpnState = (payload: DtVpnStateEvent) => {
+      if (payload && payload.state === 'AUTH_FAILED') {
         setCurrentModal('autherror');
       }
     };
-
-    const interval = setInterval(checkAuthStatus, 1000);
-    return () => clearInterval(interval);
+    onDtunnelEvent<DtVpnStateEvent>('DtVpnStateEvent', handleVpnState);
+    return () => {
+      onDtunnelEvent('DtVpnStateEvent', () => {});
+    };
   }, []);
 
-  return (
-    <main className="w-full h-screen flex flex-col bg-gradient-to-br from-[#1A0628] via-[#2A0A3E] to-[#1A0628] relative">
-      <Sidebar 
-        isOpen={showMenu}
-        onClose={() => setShowMenu(false)}
-        onNavigate={(modal: ModalType) => {
-          setCurrentModal(modal);
-          setShowMenu(false);
-        }}
-      />
+  const renderModal = () => {
+    if (!currentModal) return null;
+    const ModalComponent = modalComponents[currentModal];
+    if (!ModalComponent) return null;
+    if (currentModal === 'terms') {
+      return <Terms onClose={() => setCurrentModal(null)} onAccept={() => setCurrentModal('privacy')} />;
+    }
+    if (currentModal === 'privacy') {
+      return <Privacy onClose={() => setCurrentModal(null)} onAccept={() => setCurrentModal(null)} />;
+    }
+    // Cast para evitar erro de tipagem caso algum modal exija props extras
+    return <ModalComponent onClose={() => setCurrentModal(null)} />;
+  };
 
-      <section 
-        className="w-full h-full flex flex-col overflow-hidden" 
-        id="container-home"
-        style={containerStyle}
-      >
-        <Header 
-          onMenuClick={() => setShowMenu(true)}
-          version={version}
+  return (
+    <ActiveConfigProvider>
+      <main className="w-full h-screen flex flex-col bg-gradient-to-br from-[#1A0628] via-[#2A0A3E] to-[#1A0628] relative">
+        <Sidebar 
+          isOpen={showMenu}
+          onClose={() => setShowMenu(false)}
+          onNavigate={(modal: ModalType) => {
+            setCurrentModal(modal);
+            setShowMenu(false);
+          }}
         />
 
-        <section className="flex justify-center mt-3">
-          <img 
-            className="w-28 h-28 sm:w-32 sm:h-32 object-contain hover-glow" 
-            id="app-logo" 
-            src={appLogo}
-            alt="SSH T PROJECT"
+        <section 
+          className="w-full h-full flex flex-col overflow-hidden" 
+          id="container-home"
+          style={containerStyle}
+        >
+          <Header 
+            onMenuClick={() => setShowMenu(true)}
+            version={version}
           />
+
+          <section className="flex justify-center mt-3">
+            <img 
+              className="w-30 h-30 sm:w-28 sm:h-28 object-contain" 
+              id="app-logo" 
+              src={appLogo}
+              alt="SSH T PROJECT"
+            />
+          </section>
+
+          <div className="flex-1 flex flex-col gap-1.5 mt-2">
+            <ServerSelector />
+            <ConnectionForm />
+          </div>
+          <NetworkStats />
         </section>
 
-        <div className="flex-1 flex flex-col gap-1.5 mt-2">
-          <ServerSelector />
-          <ConnectionForm />
-          <NetworkStats />
-        </div>
-      </section>
-
-      {/* Modals */}
-      {currentModal === 'buy' && (
-        <BuyLogin onClose={() => setCurrentModal(null)} />
-      )}
-      {currentModal === 'tutorials' && (
-        <Tutorials onClose={() => setCurrentModal(null)} />
-      )}
-      {currentModal === 'support' && (
-        <Support onClose={() => setCurrentModal(null)} />
-      )}
-      {currentModal === 'speedtest' && (
-        <SpeedTest onClose={() => setCurrentModal(null)} />
-      )}
-      {currentModal === 'terms' && (
-        <Terms 
-          onClose={() => setCurrentModal(null)}
-          onAccept={() => setCurrentModal('privacy')}
-        />
-      )}
-      {currentModal === 'privacy' && (
-        <Privacy 
-          onClose={() => setCurrentModal(null)}
-          onAccept={() => setCurrentModal(null)}
-        />
-      )}
-      {currentModal === 'checkuser' && (
-        <CheckUser onClose={() => setCurrentModal(null)} />
-      )}
-      {currentModal === 'cleandata' && (
-        <CleanDataConfirm onClose={() => setCurrentModal(null)} />
-      )}
-      {currentModal === 'autherror' && (
-        <AuthError onClose={() => setCurrentModal(null)} />
-      )}
-      {currentModal === 'hotspot' && (
-        <Hotspot onClose={() => setCurrentModal(null)} />
-      )}
-      {currentModal === 'services' && (
-        <ServicesModal onClose={() => setCurrentModal(null)} />
-      )}
-      {currentModal === 'ipfinder' && (
-        <IpFinder onClose={() => setCurrentModal(null)} />
-      )}
-      {currentModal === 'faq' && (
-        <Faq onClose={() => setCurrentModal(null)} />
-      )}
-    </main>
+        {/* Modals */}
+        {renderModal()}
+      </main>
+    </ActiveConfigProvider>
   );
 }
 

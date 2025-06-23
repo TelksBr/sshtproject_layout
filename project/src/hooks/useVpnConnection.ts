@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getConnectionState, startConnection, stopConnection } from '../utils/appFunctions';
-import { getActiveConfig } from '../utils/configUtils';
+import { getConnectionState, startConnection, stopConnection, getActiveConfig } from '../utils/appFunctions';
 
 export function useVpnConnection() {
   const [connectionState, setConnectionState] = useState<string>('DISCONNECTED');

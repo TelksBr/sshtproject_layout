@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Settings, RefreshCw, CalendarClock, Wifi, AlertCircle, ChevronLeft, Search, Plane, Zap } from 'lucide-react';
-import { getAllConfigs, setActiveConfig, getActiveConfig, ConfigCategory, ConfigItem } from '../utils/configUtils';
-import { checkUserStatus, getAirplaneState, toggleAirplaneMode, checkForUpdates } from '../utils/appFunctions';
+import { getAllConfigs, checkUserStatus, getAirplaneState, toggleAirplaneMode, checkForUpdates } from '../utils/appFunctions';
 import { Modal } from './modals/Modal';
 import { AutoConnectModal } from './modals/AutoConnectModal';
 import { autoConnectTest } from '../utils/autoConnectUtils';
+import { ConfigCategory, ConfigItem } from '../types/config';
+import { useActiveConfig } from '../context/ActiveConfigContext';
 
 export function ServerSelector() {
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [configs, setConfigs] = useState<ConfigCategory[]>([]);
-  const [activeConfig, setActiveConfigState] = useState<ConfigItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<ConfigCategory | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -26,6 +26,8 @@ export function ServerSelector() {
 
   // Ref para controle de cancelamento
   const autoConnectCancelRef = useRef<{ cancelled: boolean }>({ cancelled: false });
+
+  const { activeConfig, setActiveConfigId, refreshActiveConfig } = useActiveConfig();
 
   useEffect(() => {
     loadConfigs();
@@ -58,8 +60,7 @@ export function ServerSelector() {
       console.log('Loaded configs:', allConfigs);
       setConfigs(allConfigs);
       
-      const currentConfig = getActiveConfig();
-      setActiveConfigState(currentConfig);
+      refreshActiveConfig(); // Atualiza a configuração ativa a partir do contexto
     } catch (e) {
       setError('Erro ao carregar configurações');
       console.error('Error loading configs:', e);
@@ -69,18 +70,9 @@ export function ServerSelector() {
   };
 
   const handleConfigSelect = (config: ConfigItem) => {
-    try {
-      const success = setActiveConfig(config.id);
-      if (success) {
-        setActiveConfigState(config);
-        setShowConfigModal(false);
-        setSelectedCategory(null);
-      } else {
-        setError('Falha ao definir configuração');
-      }
-    } catch (e) {
-      setError('Erro ao aplicar configuração');
-    }
+    setActiveConfigId(config.id);
+    setShowConfigModal(false);
+    setSelectedCategory(null);
   };
 
   const handleCategorySelect = (category: ConfigCategory) => {
@@ -174,8 +166,8 @@ export function ServerSelector() {
         configs: allConfigs,
         setCurrentName: setAutoConnectCurrentName,
         setTested: setAutoConnectTested,
-        setActiveConfig,
-        setActiveConfigState,
+        setActiveConfig: setActiveConfigId,
+        setActiveConfigState: () => {}, // não é mais necessário
         setSelectedCategory,
         setSuccess: setAutoConnectSuccess,
         setError,
@@ -281,7 +273,7 @@ export function ServerSelector() {
               {selectedCategory && (
                 <button
                   onClick={handleBack}
-                  className="p-1.5 -ml-1.5 rounded-full hover:bg-[#6205D5]/10 transition-colors"
+                  className="p-1.5 -ml-1.5 rounded-full transition-colors"
                 >
                   <ChevronLeft className="w-5 h-5 text-[#b0a8ff]" />
                 </button>
@@ -336,7 +328,7 @@ export function ServerSelector() {
                       <button
                         key={category.id}
                         onClick={() => handleCategorySelect(category)}
-                        className="w-full p-3 rounded-lg glass-effect hover:bg-[#26074d]/40 transition-all duration-200"
+                        className="w-full p-3 rounded-lg glass-effect transition-all duration-200"
                       >
                         <div className="flex items-center justify-center">
                           <div className="flex-1">
@@ -359,8 +351,7 @@ export function ServerSelector() {
                         key={config.id}
                         onClick={() => handleConfigSelect(config)}
                         className={`
-                          w-full p-2.5 rounded-lg glass-effect hover:bg-[#26074d]/40 
-                          transition-all duration-200
+                          w-full p-2.5 rounded-lg glass-effect transition-all duration-200
                           ${activeConfig?.id === config.id ? 'border-[#6205D5]' : ''}
                         `}
                       >

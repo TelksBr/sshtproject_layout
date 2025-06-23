@@ -54,10 +54,6 @@
     @apply bg-purple-950/30 backdrop-blur-md border border-purple-800/30 hover:border-purple-600/50 transition-all duration-300;
   }
 
-  .glow-effect {
-    @apply relative after:absolute after:inset-0 after:bg-gradient-to-r after:from-purple-500/20 after:to-transparent after:blur-xl after:-z-10 after:opacity-0 hover:after:opacity-100 after:transition-opacity;
-  }
-
   .mobile-menu-enter {
     @apply transform translate-x-0 transition-transform duration-300 ease-out;
   }
@@ -70,10 +66,6 @@
 .text-gradient {
   @apply bg-gradient-to-r from-purple-400 to-purple-200 text-transparent bg-clip-text;
   letter-spacing: -0.02em;
-}
-
-.hover-glow {
-  @apply hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300;
 }
 
 @keyframes gradient-x {

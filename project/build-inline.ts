@@ -32,13 +32,16 @@ const cssContent = readFileSync(join(assetsPath, cssFile), "utf8");
 const jsContent = readFileSync(join(assetsPath, jsFile), "utf8");
 
 // 4. Gerar novo HTML
-const finalHtml = `<!doctype html>
-<html lang="en">
+const finalHtml = `<!DOCTYPE html>
+<html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DTunnel Debug Interface</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#2A0A3E" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <link rel="icon" href="data:,">
+    <title>@SSH_T_PROJECT @Telks13 - SSH T PROJECT LAYOUT</title>
     <style>${cssContent}</style>
   </head>
   <body>
@@ -46,6 +49,7 @@ const finalHtml = `<!doctype html>
     <script>${jsContent}</script>
   </body>
 </html>
+
 `;
 
 writeFileSync(join(distPath, "index.html"), finalHtml);

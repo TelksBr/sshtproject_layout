@@ -1,11 +1,10 @@
-import React from 'react';
-import { FileText, Check, ShieldCheck } from 'lucide-react'; // Remover X
+import { FileText, Check, ShieldCheck } from 'lucide-react';
 import { Modal } from './Modal';
 import { useTermsAcceptance } from '../../hooks/useTermsAcceptance';
 
 interface TermsProps {
   onClose: () => void;
-  onAccept: () => void;
+  onAccept?: () => void;
 }
 
 export function Terms({ onClose, onAccept }: TermsProps) {
@@ -13,7 +12,7 @@ export function Terms({ onClose, onAccept }: TermsProps) {
 
   const handleAccept = () => {
     acceptTerms();
-    onAccept();
+    if (onAccept) onAccept();
   };
 
   return (

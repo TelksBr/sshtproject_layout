@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { getStorageItem, setStorageItem } from '../utils/storageUtils';
 
 export function useTermsAcceptance() {

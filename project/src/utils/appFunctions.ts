@@ -1,3 +1,14 @@
+import type { ConfigCategory, ConfigItem } from '../types/config';
+
+// Tipos para funções nativas
+export type VpnState = 'CONNECTED' | 'DISCONNECTED' | 'CONNECTING' | 'STOPPING' | 'NO_NETWORK' | 'AUTH' | 'AUTH_FAILED';
+export type NetworkType = 'MOBILE' | 'WIFI';
+export type AirplaneState = 'ACTIVE' | 'INACTIVE';
+
+// Exemplo de uso de eventos globais:
+// import { onDtunnelEvent } from './dtEvents';
+// onDtunnelEvent('DtVpnStateEvent', (state: VpnState) => { ... });
+
 // App Status Functions
 export function getStatusbarHeight(): number {
   if (window?.DtGetStatusBarHeight?.execute && typeof window.DtGetStatusBarHeight.execute === "function") {
@@ -88,9 +99,16 @@ export function setUUID(uuid: string): void {
 }
 
 // Connection Functions
-export function getConnectionState(): string | null {
+export function getConnectionState(): VpnState | null {
   if (window?.DtGetVpnState?.execute && typeof window.DtGetVpnState.execute === "function") {
-    return window.DtGetVpnState.execute();
+    const state = window.DtGetVpnState.execute();
+    const validStates: VpnState[] = [
+      'CONNECTED', 'DISCONNECTED', 'CONNECTING', 'STOPPING', 'NO_NETWORK', 'AUTH', 'AUTH_FAILED'
+    ];
+    if (typeof state === 'string' && validStates.includes(state as VpnState)) {
+      return state as VpnState;
+    }
+    return null;
   }
   return null;
 }
@@ -187,7 +205,7 @@ export function openWebView(url: string): void {
 // Airplane Mode Functions
 export function getAirplaneState(): boolean {
   if (window?.DtAirplaneState?.execute && typeof window.DtAirplaneState.execute === "function") {
-    return window.DtAirplaneState.execute() === 'on';
+    return window.DtAirplaneState.execute() === 'ACTIVE';
   }
   return false;
 }
@@ -209,5 +227,74 @@ export async function toggleAirplaneMode(enable: boolean): Promise<boolean> {
   } catch (error) {
     console.error('Erro ao alternar modo avião:', error);
     return !enable; // Retorna o estado anterior em caso de erro
+  }
+}
+
+// Remover tipos duplicados, usar apenas importados
+// Funções de configuração centralizadas
+export function getAllConfigs(): ConfigCategory[] {
+  if (window?.DtGetConfigs?.execute && typeof window.DtGetConfigs.execute === "function") {
+    try {
+      const configs = JSON.parse(window.DtGetConfigs.execute());
+      configs.sort((a: ConfigCategory, b: ConfigCategory) => a.sorter - b.sorter);
+      configs.forEach((category: ConfigCategory) => {
+        category.items.sort((a, b) => a.sorter - b.sorter);
+      });
+      return configs;
+    } catch (e) {
+      console.error('Error parsing configs:', e);
+      return [];
+    }
+  }
+  return [];
+}
+
+export function setActiveConfig(configId: string): boolean {
+  if (window?.DtSetConfig?.execute && typeof window.DtSetConfig.execute === "function") {
+    try {
+      window.DtSetConfig.execute(configId);
+      return true;
+    } catch (e) {
+      console.error('Error setting config:', e);
+      return false;
+    }
+  }
+  return false;
+}
+
+export function getActiveConfig(): ConfigItem | null {
+  if (window?.DtGetDefaultConfig?.execute && typeof window.DtGetDefaultConfig.execute === "function") {
+    try {
+      const defaultConfig = window.DtGetDefaultConfig.execute();
+      if (defaultConfig) {
+        return JSON.parse(defaultConfig);
+      }
+    } catch (e) {
+      console.error('Error getting default config:', e);
+    }
+  }
+  return null;
+}
+
+export function shouldShowInput(type: 'username' | 'password' | 'uuid'): boolean {
+  const config = getActiveConfig();
+  if (!config) return true;
+
+  if (config.mode?.toLowerCase().startsWith("v2ray")) {
+    if (type === 'uuid') {
+      return !config.auth?.v2ray_uuid;
+    }
+    return false;
+  }
+
+  switch (type) {
+    case 'username':
+      return !config.auth?.username;
+    case 'password':
+      return !config.auth?.password;
+    case 'uuid':
+      return false;
+    default:
+      return true;
   }
 }

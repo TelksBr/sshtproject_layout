@@ -29,6 +29,10 @@ export function useNetworkStats(pollInterval = 1000) {
       setTotalDownloaded(currentDownload);
       setTotalUploaded(currentUpload);
 
+      // Salva totais em localStorage
+      localStorage.setItem('dtunnel_total_downloaded', String(currentDownload));
+      localStorage.setItem('dtunnel_total_uploaded', String(currentUpload));
+
       // Update previous values
       previousDownload = currentDownload;
       previousUpload = currentUpload;

@@ -1,11 +1,10 @@
-import React from 'react';
-import { Shield, Check, ShieldCheck, X } from 'lucide-react';
+import { Shield, Check, ShieldCheck } from 'lucide-react';
 import { Modal } from './Modal';
 import { usePrivacyAcceptance } from '../../hooks/usePrivacyAcceptance';
 
 interface PrivacyProps {
   onClose: () => void;
-  onAccept: () => void;
+  onAccept?: () => void;
 }
 
 export function Privacy({ onClose, onAccept }: PrivacyProps) {
@@ -13,7 +12,7 @@ export function Privacy({ onClose, onAccept }: PrivacyProps) {
 
   const handleAccept = () => {
     acceptPrivacy();
-    onAccept();
+    if (onAccept) onAccept();
   };
 
   return (

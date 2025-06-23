@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Download, Upload, RefreshCw, Server, ChevronDown } from 'lucide-react';
 import { Modal } from './Modal';
-import { getSpeedTestServers, runSpeedTest, TestServer } from '../../utils/speedTestUtils';
+import { getSpeedTestServers, runSpeedTest, measureLatency } from '../../utils/speedTestUtils';
 
 interface SpeedTestProps {
   onClose: () => void;
@@ -11,8 +11,8 @@ export function SpeedTest({ onClose }: SpeedTestProps) {
   const [testing, setTesting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showServers, setShowServers] = useState(false);
-  const [servers, setServers] = useState<TestServer[]>([]);
-  const [selectedServer, setSelectedServer] = useState<TestServer | null>(null);
+  const [servers, setServers] = useState<any[]>([]); // TestServer
+  const [selectedServer, setSelectedServer] = useState<any | null>(null); // TestServer | null
   const [currentPhase, setCurrentPhase] = useState<'ping' | 'download' | 'upload' | null>(null);
   const [results, setResults] = useState({
     download: '0',
@@ -30,17 +30,13 @@ export function SpeedTest({ onClose }: SpeedTestProps) {
     if (servers.length > 0) {
       servers.forEach((server, idx) => {
         if (server.ping === undefined) {
-          // Medir ping em background
-          import('../../utils/speedTestUtils').then(utils => {
-            utils.measureLatency(server.url, true).then((ping: number) => {
-              setServers(prevServers => {
-                const updated = [...prevServers];
-                updated[idx] = { ...updated[idx], ping };
-                return updated;
-              });
-              // Atualiza ping do servidor selecionado se for o mesmo
-              setSelectedServer(prev => prev && prev.url === server.url ? { ...prev, ping } : prev);
+          measureLatency(server.url, true).then((ping: number) => {
+            setServers(prevServers => {
+              const updated = [...prevServers];
+              updated[idx] = { ...updated[idx], ping };
+              return updated;
             });
+            setSelectedServer((prev: typeof server | null) => prev && prev.url === server.url ? { ...prev, ping } : prev);
           });
         }
       });
@@ -70,9 +66,8 @@ export function SpeedTest({ onClose }: SpeedTestProps) {
 
     setTesting(true);
     setError(null);
-    
     try {
-      await runSpeedTest(selectedServer, (phase, value) => {
+      await runSpeedTest(selectedServer, (phase: 'ping' | 'download' | 'upload', value: any) => {
         setCurrentPhase(phase);
         switch (phase) {
           case 'ping':
