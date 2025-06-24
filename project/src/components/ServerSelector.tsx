@@ -201,23 +201,23 @@ export function ServerSelector() {
     <>
       <section className="flex gap-1.5">
         <button
-          className="flex-1 h-10 flex items-center justify-between px-3 rounded-lg glass-effect"
+          className="flex-1 min-w-0 max-w-full h-10 flex items-center justify-between px-3 rounded-lg glass-effect overflow-hidden"
           type="button"
           onClick={() => setShowConfigModal(true)}
         >
-          <Settings className="w-4 h-4 text-[#6205D5]" />
-          <div className="flex-1 text-center">
+          <Settings className="w-4 h-4 text-[#6205D5] flex-shrink-0" />
+          <div className="flex-1 min-w-0 text-center px-1">
             {activeConfig ? (
               <div className="space-y-0.5">
-                <span className="text-[#b0a8ff] text-xs font-medium block">
+                <span className="text-[#b0a8ff] text-xs font-medium block truncate max-w-full">
                   {activeConfig.name}
                 </span>
-                <span className="text-[#b0a8ff]/50 text-[10px] block">
+                <span className="text-[#b0a8ff]/50 text-[10px] block truncate max-w-full">
                   {activeCategory?.name || 'Sem categoria'}
                 </span>
               </div>
             ) : (
-              <span className="text-[#b0a8ff] text-xs font-medium">
+              <span className="text-[#b0a8ff] text-xs font-medium truncate block max-w-full">
                 ESCOLHA UMA CONFIGURAÇÃO
               </span>
             )}
