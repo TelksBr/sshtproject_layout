@@ -1,5 +1,4 @@
-import React from 'react';
-import { DollarSign, Shield, Zap, Clock, Users, Check, Phone, Send, ArrowRight } from 'lucide-react';
+import { Shield, Zap, Clock, Users, Check, Phone, Send, ArrowRight } from 'lucide-react';
 import { Modal } from './Modal';
 import { openExternalUrl } from '../../utils/externalUtils';
 

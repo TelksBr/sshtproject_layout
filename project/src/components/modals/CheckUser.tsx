@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { CalendarClock, User, Clock, Calendar, RefreshCw, AlertTriangle, Search } from 'lucide-react';
 import { Modal } from './Modal';
 import { fetchUserInfo, UserInfo } from '../../utils/checkUserUtils';

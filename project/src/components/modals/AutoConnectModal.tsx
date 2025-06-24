@@ -1,4 +1,3 @@
-import React from 'react';
 import { Zap, Pause, Info } from 'lucide-react';
 import { Modal } from './Modal';
 

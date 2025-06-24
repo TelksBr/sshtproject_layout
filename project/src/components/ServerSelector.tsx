@@ -1,12 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Settings, RefreshCw, CalendarClock, Wifi, AlertCircle, ChevronLeft, Search, Plane, Zap } from 'lucide-react';
-import { getAllConfigs, checkUserStatus, getAirplaneState, toggleAirplaneMode, checkForUpdates } from '../utils/appFunctions';
+import { getAllConfigs, checkUserStatus, getAirplaneState, toggleAirplaneMode, checkForUpdates, setActiveConfig } from '../utils/appFunctions';
 import { Modal } from './modals/Modal';
-import { AutoConnectModal } from './modals/AutoConnectModal';
-import { autoConnectTest } from '../utils/autoConnectUtils';
+import { useAutoConnect } from '../hooks/useAutoConnect';
+import { AutoConnectModal } from './AutoConnectModal';
 import { ConfigCategory, ConfigItem } from '../types/config';
 import { useActiveConfig } from '../context/ActiveConfigContext';
-import { emitDtunnelEvent } from '../utils/dtEvents';
 
 export function ServerSelector() {
   const [showConfigModal, setShowConfigModal] = useState(false);
@@ -17,29 +16,14 @@ export function ServerSelector() {
   const [searchTerm, setSearchTerm] = useState('');
   const [airplaneMode, setAirplaneMode] = useState(false);
 
-  // Estados para o modal de conexão automática
-  const [autoConnectModalOpen, setAutoConnectModalOpen] = useState(false);
-  const [autoConnectCurrentName, setAutoConnectCurrentName] = useState<string | null>(null);
-  const [autoConnectTotal, setAutoConnectTotal] = useState(0);
-  const [autoConnectTested, setAutoConnectTested] = useState(0);
-  const [autoConnectSuccess, setAutoConnectSuccess] = useState<string | null>(null);
-  const [autoConnecting, setAutoConnecting] = useState(false);
-
-  // Ref para controle de cancelamento
-  const autoConnectCancelRef = useRef<{ cancelled: boolean }>({ cancelled: false });
-
   const { activeConfig, setActiveConfigId, refreshActiveConfig } = useActiveConfig();
+
+  // Lógica e estado do AutoConnect movidos para o hook useAutoConnect
+  const autoConnect = useAutoConnect();
 
   useEffect(() => {
     loadConfigs();
   }, []);
-
-  // Garante que ao abrir o app com uma config já selecionada, o evento global é disparado
-  useEffect(() => {
-    if (activeConfig) {
-      emitDtunnelEvent('DtConfigSelectedEvent', activeConfig);
-    }
-  }, [activeConfig]);
 
   useEffect(() => {
     if (showConfigModal) {
@@ -65,24 +49,58 @@ export function ServerSelector() {
     setError(null);
     try {
       const allConfigs = getAllConfigs();
-      console.log('Loaded configs:', allConfigs);
       setConfigs(allConfigs);
       
       refreshActiveConfig(); // Atualiza a configuração ativa a partir do contexto
     } catch (e) {
       setError('Erro ao carregar configurações');
-      console.error('Error loading configs:', e);
     } finally {
       setLoading(false);
     }
   };
 
+  // Adiciona estado de loading para feedback visual ao selecionar config
+  const [pendingConfigId, setPendingConfigId] = useState<number | null>(null);
+  const [isPending, setIsPending] = useState(false);
+
   const handleConfigSelect = (config: ConfigItem) => {
-    setActiveConfigId(config.id);
-    setShowConfigModal(false);
-    setSelectedCategory(null);
-    emitDtunnelEvent('DtConfigSelectedEvent', config);
+    console.log('Selecionando config:', config, 'id:', config.id, 'typeof:', typeof config.id);
+    setPendingConfigId(config.id); // number
+    setIsPending(true);
+    setActiveConfigId(config.id); // number
+    const setResult = setActiveConfig(config.id); // number
+    console.log('Retorno de setActiveConfig:', setResult, 'Tipo enviado:', typeof config.id);
+    // Polling: tenta atualizar o contexto até a config ativa mudar ou timeout
+    let tentativas = 0;
+    const maxTentativas = 8; // até 1.6s
+    const poll = () => {
+      refreshActiveConfig();
+      setTimeout(() => {
+        tentativas++;
+        console.log('Polling: activeConfig.id=', activeConfig?.id, 'esperado=', config.id);
+        if (activeConfig?.id && activeConfig.id === config.id) {
+          console.log('Config ativa confirmada:', activeConfig);
+          // O useEffect já vai fechar o modal
+        } else if (tentativas < maxTentativas) {
+          poll();
+        } else {
+          console.warn('Timeout ao aguardar atualização da config ativa!');
+          setIsPending(false);
+        }
+      }, 200);
+    };
+    poll();
   };
+
+  // Fecha o modal apenas quando o contexto refletir a config selecionada
+  useEffect(() => {
+    if (pendingConfigId && activeConfig?.id && activeConfig.id === pendingConfigId) {
+      setShowConfigModal(false);
+      setSelectedCategory(null);
+      setPendingConfigId(null);
+      setIsPending(false);
+    }
+  }, [activeConfig, pendingConfigId]);
 
   const handleCategorySelect = (category: ConfigCategory) => {
     setSelectedCategory(category);
@@ -148,55 +166,7 @@ export function ServerSelector() {
     category.name.match(/\[([^\]]+)\]/g)?.map(tag => tag.replace(/[\[\]]/g, '')) || []
   )));
 
-  // Função de conexão automática (agora só abre o modal, não inicia o teste)
-  const handleOpenAutoConnectModal = () => {
-    setShowConfigModal(false);
-    setTimeout(() => setAutoConnectModalOpen(true), 200);
-    setAutoConnectSuccess(null);
-    setError(null);
-    setAutoConnecting(false);
-    autoConnectCancelRef.current.cancelled = false;
-    // Não chama autoConnectTest aqui!
-  };
-
-  // Função para iniciar o teste automático (chamada pelo botão Start do modal)
-  const handleStartAutoConnect = async () => {
-    setAutoConnecting(true);
-    setAutoConnectSuccess(null);
-    setError(null);
-    autoConnectCancelRef.current.cancelled = false;
-
-    const allConfigs: ConfigItem[] = configs.flatMap(c => c.items);
-    setAutoConnectTotal(allConfigs.length);
-    setAutoConnectTested(0);
-
-    try {
-      const result = await autoConnectTest({
-        configs: allConfigs,
-        setCurrentName: setAutoConnectCurrentName,
-        setTested: setAutoConnectTested,
-        setActiveConfig: setActiveConfigId,
-        setActiveConfigState: () => {}, // não é mais necessário
-        setSelectedCategory,
-        setSuccess: setAutoConnectSuccess,
-        setError,
-        cancelRef: autoConnectCancelRef,
-      });
-      setAutoConnecting(false);
-      if (!result) setAutoConnectSuccess(null);
-    } catch (e) {
-      setError('Erro na conexão automática.');
-      setAutoConnecting(false);
-    }
-  };
-
-  // Ao fechar o modal, cancelar o loop
-  const handleCloseAutoConnectModal = () => {
-    autoConnectCancelRef.current.cancelled = true;
-    setAutoConnectModalOpen(false);
-    setAutoConnecting(false);
-  };
-
+  // Substitui o botão de AutoConnect para abrir o modal externo
   return (
     <>
       <section className="flex gap-1.5">
@@ -261,7 +231,10 @@ export function ServerSelector() {
         <button
           className="w-10 h-10 flex items-center justify-center rounded-lg glass-effect"
           type="button"
-          onClick={handleOpenAutoConnectModal}
+          onClick={() => {
+            autoConnect.openModal();
+            autoConnect.startAutoConnect();
+          }}
           title="Teste Automático"
         >
           <Zap className="w-4 h-4 text-[#6205D5]" />
@@ -276,8 +249,14 @@ export function ServerSelector() {
         <Modal onClose={() => {
           setShowConfigModal(false);
           setSelectedCategory(null);
+          setIsPending(false);
         }}>
-          <div className="flex-1 p-3">
+          <div className="flex-1 p-3 relative">
+            {isPending && (
+              <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-50">
+                <RefreshCw className="w-8 h-8 text-[#6205D5] animate-spin" />
+              </div>
+            )}
             <header className="flex items-center gap-2 mb-4">
               {selectedCategory && (
                 <button
@@ -361,7 +340,7 @@ export function ServerSelector() {
                         onClick={() => handleConfigSelect(config)}
                         className={`
                           w-full p-2.5 rounded-lg glass-effect transition-all duration-200
-                          ${activeConfig?.id === config.id ? 'border-[#6205D5]' : ''}
+                          ${String(activeConfig?.id) === String(config.id) ? 'border-2 border-[#6205D5] bg-[#26074d]/40' : ''}
                         `}
                       >
                         <div className="flex items-center gap-2">
@@ -410,16 +389,16 @@ export function ServerSelector() {
         </Modal>
       )}
 
-      {/* Modal de progresso da conexão automática */}
       <AutoConnectModal
-        open={autoConnectModalOpen}
-        onClose={handleCloseAutoConnectModal}
-        currentConfigName={autoConnectCurrentName}
-        totalConfigs={autoConnectTotal}
-        testedConfigs={autoConnectTested}
-        successConfigName={autoConnectSuccess}
-        running={autoConnecting}
-        onStart={handleStartAutoConnect}
+        open={autoConnect.open}
+        onClose={autoConnect.closeModal}
+        currentConfigName={autoConnect.currentName}
+        totalConfigs={autoConnect.total}
+        testedConfigs={autoConnect.tested}
+        successConfigName={autoConnect.success}
+        running={autoConnect.running}
+        onStart={autoConnect.startAutoConnect}
+        error={autoConnect.error}
       />
     </>
   );

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Modal } from './Modal';
 import { Search, Save, Play, Trash2 } from 'lucide-react';
 import { getStorageItem, setStorageItem } from '../../utils/storageUtils';

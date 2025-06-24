@@ -4,48 +4,28 @@ import { ServerSelector } from './components/ServerSelector';
 import { ConnectionForm } from './components/ConnectionForm';
 import { NetworkStats } from './components/NetworkStats';
 import { Sidebar } from './components/Sidebar';
-import { BuyLogin } from './components/modals/BuyLogin';
-import { Tutorials } from './components/modals/Tutorials';
-import { Support } from './components/modals/Support';
-import { SpeedTest } from './components/modals/SpeedTest';
-import { Terms } from './components/modals/Terms';
-import { Privacy } from './components/modals/Privacy';
-import { CheckUser } from './components/modals/CheckUser';
-import { CleanDataConfirm } from './components/modals/CleanDataConfirm';
-import { AuthError } from './components/modals/AuthError';
-import { Hotspot } from './components/modals/Hotspot';
-import { ServicesModal } from './components/modals/ServicesModal';
-import { IpFinder } from './components/modals/IpFinder';
-import { Faq } from './components/modals/Faq';
-import { getConfigVersion, getStatusbarHeight, getNavbarHeight, getConnectionState } from './utils/appFunctions';
+import { getConfigVersion } from './utils/appFunctions';
 import { getStorageItem } from './utils/storageUtils';
 import { appLogo } from './constants/appLogo';
-import { onDtunnelEvent, DtVpnStateEvent } from './utils/dtEvents';
 import { ActiveConfigProvider } from './context/ActiveConfigContext';
+import { useAppPolling } from './hooks/useAppPolling';
+import { useVpnEvents } from './hooks/useVpnEvents';
+import { useAppLayout } from './hooks/useAppLayout';
+import { useModalRenderer } from './hooks/useModalRenderer';
+import { EventNotificationPopup } from './components/EventNotificationPopup';
+import { onDtunnelEvent, DtunnelEvent } from './utils/dtEvents';
 
-export type ModalType = 'buy' | 'tutorials' | 'support' | 'speedtest' | 'terms' | 'privacy' | 'checkuser' | 'cleandata' | 'autherror' | 'hotspot' | 'services' | 'ipfinder' | 'faq' | null;
-
-const modalComponents = {
-  buy: BuyLogin,
-  tutorials: Tutorials,
-  support: Support,
-  speedtest: SpeedTest,
-  terms: Terms,
-  privacy: Privacy,
-  checkuser: CheckUser,
-  cleandata: CleanDataConfirm,
-  autherror: AuthError,
-  hotspot: Hotspot,
-  services: ServicesModal,
-  ipfinder: IpFinder,
-  faq: Faq,
-};
+export type ModalType = 'buy' | 'tutorials' | 'support' | 'speedtest' | 'terms' | 'privacy' | 'checkuser' | 'cleandata' | 'hotspot' | 'services' | 'ipfinder' | 'faq' | null;
 
 function App() {
   const [showMenu, setShowMenu] = useState(false);
   const [currentModal, setCurrentModal] = useState<ModalType>(null);
+  const [notification, setNotification] = useState<{ event: string; visible: boolean }>({ event: '', visible: false });
   const version = getConfigVersion() || '1.0';
-  const [containerStyle, setContainerStyle] = useState({});
+  const { containerStyle } = useAppLayout();
+  const { localIP } = useAppPolling();
+  const { vpnState } = useVpnEvents();
+  const { getModal } = useModalRenderer();
 
   useEffect(() => {
     const termsAccepted = getStorageItem<boolean>('terms-accepted-23-03-2025');
@@ -58,47 +38,35 @@ function App() {
     }
   }, []);
 
+  // Usa o hook de eventos VPN para disparar popup
+  useVpnEvents((eventName) => {
+    setNotification({ event: eventName, visible: true });
+  });
+
   useEffect(() => {
-    const statusBarHeight = getStatusbarHeight();
-    const navBarHeight = getNavbarHeight();
-    
-    setContainerStyle({
-      padding: `${statusBarHeight + 8}px 8px ${navBarHeight + 8}px 8px`
+    // Listener genérico para eventos globais NÃO-VPN
+    const relevantEvents: DtunnelEvent[] = [
+      'DtCheckUserStartedEvent',
+      'DtCheckUserModelEvent',
+      'DtNewDefaultConfigEvent',
+      'DtMessageErrorEvent',
+      'DtNewLogEvent',
+      'DtErrorToastEvent',
+      'DtSuccessToastEvent',
+      'DtConfigSelectedEvent',
+    ];
+    const handlers: Array<() => void> = [];
+    relevantEvents.forEach(eventName => {
+      const handler = () => {
+        setNotification({ event: eventName, visible: true });
+      };
+      onDtunnelEvent(eventName, handler as any);
+      handlers.push(() => onDtunnelEvent(eventName, () => {}));
     });
-  }, []);
-
-  // Monitor de erro de autenticação via evento global e checagem inicial
-  useEffect(() => {
-    // Verificação inicial ao montar
-    const state = getConnectionState();
-    if (state === 'AUTH_FAILED') {
-      setCurrentModal('autherror');
-    }
-    // Handler para evento global
-    const handleVpnState = (payload: DtVpnStateEvent) => {
-      if (payload && payload.state === 'AUTH_FAILED') {
-        setCurrentModal('autherror');
-      }
-    };
-    onDtunnelEvent<DtVpnStateEvent>('DtVpnStateEvent', handleVpnState);
     return () => {
-      onDtunnelEvent('DtVpnStateEvent', () => {});
+      handlers.forEach(unregister => unregister());
     };
   }, []);
-
-  const renderModal = () => {
-    if (!currentModal) return null;
-    const ModalComponent = modalComponents[currentModal];
-    if (!ModalComponent) return null;
-    if (currentModal === 'terms') {
-      return <Terms onClose={() => setCurrentModal(null)} onAccept={() => setCurrentModal('privacy')} />;
-    }
-    if (currentModal === 'privacy') {
-      return <Privacy onClose={() => setCurrentModal(null)} onAccept={() => setCurrentModal(null)} />;
-    }
-    // Cast para evitar erro de tipagem caso algum modal exija props extras
-    return <ModalComponent onClose={() => setCurrentModal(null)} />;
-  };
 
   return (
     <ActiveConfigProvider>
@@ -120,6 +88,8 @@ function App() {
           <Header 
             onMenuClick={() => setShowMenu(true)}
             version={version}
+            localIP={localIP}
+            vpnState={vpnState}
           />
 
           <section className="flex justify-center mt-3">
@@ -138,8 +108,13 @@ function App() {
           <NetworkStats />
         </section>
 
-        {/* Modals */}
-        {renderModal()}
+        {getModal(currentModal, setCurrentModal)}
+
+        <EventNotificationPopup
+          eventName={notification.event}
+          visible={notification.visible}
+          onClose={() => setNotification(n => ({ ...n, visible: false }))}
+        />
       </main>
     </ActiveConfigProvider>
   );

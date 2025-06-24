@@ -84,6 +84,6 @@ interface Window {
     execute: () => string;
   };
   DtSetConfig?: {
-    execute: (id: string) => void;
+    execute: (id: number) => void;
   };
 }

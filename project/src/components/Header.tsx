@@ -1,14 +1,12 @@
-import { useEffect, useState } from 'react';
 import { Logs, EthernetPort, GitFork } from 'lucide-react';
-import { onDtunnelEvent } from '../utils/dtEvents';
-import { getConnectionState } from '../utils/appFunctions';
+import { VpnState } from '../types/vpn';
 
 interface HeaderProps {
   onMenuClick: () => void;
   version: string;
+  localIP: string;
+  vpnState: VpnState;
 }
-
-type VpnState = 'CONNECTED' | 'DISCONNECTED' | 'CONNECTING' | 'STOPPING' | 'NO_NETWORK' | 'AUTH' | 'AUTH_FAILED';
 
 function getStateMessage(state: VpnState) {
   switch (state) {
@@ -23,50 +21,7 @@ function getStateMessage(state: VpnState) {
   }
 }
 
-export function Header({ onMenuClick, version }: HeaderProps) {
-  const [vpnState, setVpnState] = useState<VpnState>('DISCONNECTED');
-  const [localIP, setLocalIP] = useState('127.0.0.1');
-
-  // Encapsula todos os eventos de status da VPN
-  useEffect(() => {
-    // Atualiza status inicial (caso app já esteja conectado)
-    const initialState = getConnectionState();
-    if (initialState && [
-      'CONNECTED', 'DISCONNECTED', 'CONNECTING', 'STOPPING', 'NO_NETWORK', 'AUTH', 'AUTH_FAILED'
-    ].includes(initialState)) {
-      setVpnState(initialState as VpnState);
-    }
-
-    // Handler único para todos os eventos relevantes
-    const handleVpnStatus = (payload: any) => {
-      if (typeof payload === 'object' && payload.state) {
-        setVpnState(payload.state);
-      } else if (typeof payload === 'string') {
-        // Para eventos que só enviam string
-        setVpnState(payload as VpnState);
-      }
-    };
-    onDtunnelEvent('DtVpnStateEvent', handleVpnStatus);
-    onDtunnelEvent('DtVpnStartedSuccessEvent', () => setVpnState('CONNECTED'));
-    onDtunnelEvent('DtVpnStoppedSuccessEvent', () => setVpnState('DISCONNECTED'));
-    return () => {
-      onDtunnelEvent('DtVpnStateEvent', () => {});
-      onDtunnelEvent('DtVpnStartedSuccessEvent', () => {});
-      onDtunnelEvent('DtVpnStoppedSuccessEvent', () => {});
-    };
-  }, []);
-
-  // Atualiza IP local a cada 1.5s em qualquer estado
-  useEffect(() => {
-    const updateIP = () => {
-      const ip = window?.DtGetLocalIP?.execute?.() ?? '127.0.0.1';
-      setLocalIP(ip);
-    };
-    updateIP();
-    const interval = setInterval(updateIP, 1500);
-    return () => clearInterval(interval);
-  }, []);
-
+export function Header({ onMenuClick, version, localIP, vpnState }: HeaderProps) {
   const getStatusColor = () => {
     switch (vpnState) {
       case "CONNECTED":

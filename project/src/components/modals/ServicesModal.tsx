@@ -1,4 +1,3 @@
-import React from 'react';
 import { Modal } from './Modal';
 import { Helmet } from 'react-helmet';
 import { 

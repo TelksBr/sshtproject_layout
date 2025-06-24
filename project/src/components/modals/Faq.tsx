@@ -1,6 +1,5 @@
-import React from 'react';
 import { Modal } from './Modal';
-import { HelpCircle, ChevronDown } from 'lucide-react';
+import { HelpCircle } from 'lucide-react';
 
 interface FaqProps {
   onClose: () => void;

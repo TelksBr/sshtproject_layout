@@ -44,7 +44,6 @@ const STABILITY_THRESHOLD = 0.1; // 10% de variação máxima
 const STABILITY_SAMPLES = 5; // Número de amostras para confirmar estabilidade
 const MIN_TEST_DURATION = 5000; // Mínimo de 5 segundos de teste
 const LATENCY_MEASUREMENTS_FREQUENCY_MS = 1000; // Intervalo entre medições
-const LATENCY_WINDOW_SIZE = 5; // Tamanho da janela para média móvel
 
 function decodeSpecialCharacters(text: string): string {
   try {

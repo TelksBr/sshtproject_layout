@@ -130,15 +130,15 @@ Versão atual do aplicativo.
 
 ## Usuário e Autenticação
 
-#### `window.DtUsername.get(): string` / `DtUsername.set(username: string): void`
+### `window.DtUsername.get(): string` / `DtUsername.set(username: string): void`
 
 Obtem/define nome de usuário.
 
-#### `window.DtPassword.get(): string` / `DtPassword.set(password: string): void`
+### `window.DtPassword.get(): string` / `DtPassword.set(password: string): void`
 
 Obtem/define senha.
 
-#### `window.DtUuid.get(): string` / `DtUuid.set(uuid: string): void`
+### `window.DtUuid.get(): string` / `DtUuid.set(uuid: string): void`
 
 Obtem/define UUID (v2ray).
 
@@ -262,20 +262,61 @@ window.DtVpnStateEvent = function(state) {
 };
 ```
 
-Abaixo está a lista dos eventos atualmente disponíveis:
+Abaixo está a lista dos eventos atualmente disponíveis e exemplos de payload:
 
-| Evento                     | Descrição                                                               |
-| -------------------------- | ----------------------------------------------------------------------- |
-| `DtCheckUserStartedEvent`  | Emitido quando o processo de checagem de usuário inicia.                |
-| `DtCheckUserModelEvent`    | Fornece informações detalhadas do modelo do usuário durante a checagem. |
-| `DtNewDefaultConfigEvent`  | Disparado ao definir uma nova configuração padrão.                      |
-| `DtMessageErrorEvent`      | Mensagem de erro genérica do sistema.                                   |
-| `DtNewLogEvent`            | Enviado quando um novo log de conexão é registrado.                     |
-| `DtErrorToastEvent`        | Usado para exibir mensagens de erro em forma de toast.                  |
-| `DtSuccessToastEvent`      | Exibe notificações de sucesso via toast.                                |
-| `DtVpnStartedSuccessEvent` | Indica que a VPN foi iniciada com sucesso.                              |
-| `DtVpnStateEvent`          | Reflete mudanças no estado da VPN (e.g. CONNECTED).                     |
-| `DtVpnStoppedSuccessEvent` | Disparado quando a VPN é parada com sucesso.                            |
+| Evento                     | Payload/Exemplo                                                                                       | Descrição                                                               |
+|----------------------------|------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------|
+| `DtCheckUserStartedEvent`  | `undefined`                                                                                           | Emitido quando o processo de checagem de usuário inicia.                |
+| `DtCheckUserModelEvent`    | `{ "expiration_days": "983", "limit_connections": "09", "expiration_date": "02/03/2028", "username": "094d26d6-fe52-42f6-bfac-ef99dcdd3e50", "count_connections": "01" }` | Fornece informações detalhadas do modelo do usuário durante a checagem. |
+| `DtNewDefaultConfigEvent`  | `undefined`                                                                                           | Disparado ao definir uma nova configuração padrão.                      |
+| `DtMessageErrorEvent`      | `undefined`                                                                                           | Mensagem de erro genérica do sistema.                                   |
+| `DtNewLogEvent`            | `undefined`                                                                                           | Enviado quando um novo log de conexão é registrado.                     |
+| `DtErrorToastEvent`        | `undefined`                                                                                           | Usado para exibir mensagens de erro em forma de toast.                  |
+| `DtSuccessToastEvent`      | `undefined`                                                                                           | Exibe notificações de sucesso via toast.                                |
+| `DtVpnStartedSuccessEvent` | `undefined`                                                                                           | Indica que a VPN foi iniciada com sucesso.                              |
+| `DtVpnStateEvent`          | `'STOPPING'`, `'CONNECTING'`, `'CONNECTED'`, `'AUTH'`, `'AUTH_FAILED'`, `'DISCONNECTED'`             | Reflete mudanças no estado da VPN.                                      |
+| `DtVpnStoppedSuccessEvent` | `undefined`                                                                                           | Disparado quando a VPN é parada com sucesso.                            |
+| `DtConfigSelectedEvent`    | `{...}` (ver exemplos abaixo)                                                                         | Disparado ao selecionar uma configuração.                               |
+
+**Exemplo de payload para `DtConfigSelectedEvent` (V2RAY):**
+
+```json
+{
+  "auth": { "v2ray_uuid": "6897ee2e-a49f-4d5d-b169-cd497d7b8cd9" },
+  "category_id": 45300,
+  "config_openvpn": "",
+  "config_payload": { "payload": "", "sni": "" },
+  "config_v2ray": "dmxlc3M6Ly9zZXUtdXVpZEBjZG5iLmRpYWxteWFwcC5jb206NDQzP21vZGU9YXV0byZwYXRoPSUyRiZzZWN1cml0eT10bHMmZW5jcnlwdGlvbj1ub25lJmhvc3Q9djJwcmVtaXVtLTF0LmItY2RuLm5ldCZ0eXBlPXhodHRwJnNuaT1jZG5iLmRpYWxteWFwcC5jb20jQ0xBUk8lMjBWMiUyMFNTSFQ=",
+  "description": "claro pré/planos",
+  "dns_server": { "dns1": "8.8.8.8", "dns2": "8.8.4.4" },
+  "dnstt_key": "",
+  "dnstt_name_server": "",
+  "dnstt_server": "",
+  "icon": "https://raw.githubusercontent.com/TelksBr/SSH_T_PROJECT_VPN/page/null/IC/CLARO_P.png",
+  "id": 695925,
+  "mode": "V2RAY",
+  "name": "✅ CLARO V2RAY [1]",
+  "proxy": { "host": "", "port": 0 },
+  "server": { "host": "", "port": 0 },
+  "sorter": 5,
+  "tls_version": "TLSv1.2",
+  "udp_ports": [7300],
+  "url_check_user": "https://bot.sshtproject.com"
+}
+```
+
+**Exemplo de payload para `DtConfigSelectedEvent` (SSH):**
+
+```json
+{
+  "id": 696010,
+  "name": "VIVO CLOUDFLARE [6]",
+  "description": "Vivo Easy Prime → Vivo Controle",
+  "mode": "SSH_PROXY",
+  "sorter": 6,
+  "icon": "https://raw.githubusercontent.com/TelksBr/SSH_T_PROJECT_VPN/page/null/IC/VIVO_P.png"
+}
+```
 
 > **Dica:** para fins de debug, é possível interceptar todos os eventos criando funções globais no `window` com os nomes acima. Essas funções serão chamadas automaticamente quando o evento ocorrer.
 

@@ -1,3 +1,5 @@
+import { getHotspotNativeStatus, startHotspotNative, stopHotspotNative } from './appFunctions';
+
 export interface HotspotDebugInfo {
   nativeStatus: string | null;
   nativeFunction: boolean;
@@ -9,16 +11,9 @@ export interface HotspotDebugInfo {
 
 export function getHotspotStatus(): 'STOPPED' | 'RUNNING' | null {
   try {
-    const nativeFunction = !!(window?.DtGetStatusHotSpotService?.execute && 
-      typeof window?.DtGetStatusHotSpotService?.execute === "function");
-
-    if (!nativeFunction) {
-      return null;
-    }
-
-    const rawResponse = window.DtGetStatusHotSpotService.execute();
-    const normalizedStatus = String(rawResponse).toUpperCase();
-
+    const nativeStatus = getHotspotNativeStatus();
+    if (!nativeStatus) return null;
+    const normalizedStatus = String(nativeStatus).toUpperCase();
     return normalizedStatus === 'RUNNING' ? 'RUNNING' : 'STOPPED';
   } catch {
     return null;
@@ -27,10 +22,7 @@ export function getHotspotStatus(): 'STOPPED' | 'RUNNING' | null {
 
 export function startHotspot(): void {
   try {
-    if (window?.DtStartHotSpotService?.execute && 
-        typeof window?.DtStartHotSpotService?.execute === "function") {
-      window.DtStartHotSpotService.execute();
-    }
+    startHotspotNative();
   } catch {
     // Error will be captured in debug info on next status check
   }
@@ -38,10 +30,7 @@ export function startHotspot(): void {
 
 export function stopHotspot(): void {
   try {
-    if (window?.DtStopHotSpotService?.execute && 
-        typeof window?.DtStopHotSpotService?.execute === "function") {
-      window.DtStopHotSpotService.execute();
-    }
+    stopHotspotNative();
   } catch {
     // Error will be captured in debug info on next status check
   }

@@ -34,7 +34,6 @@ export async function autoConnectTest({
   setActiveConfigState,
   setSelectedCategory,
   setSuccess,
-  setError,
   cancelRef,
   timeout = 8000,
   fetchTimeout = 4000,

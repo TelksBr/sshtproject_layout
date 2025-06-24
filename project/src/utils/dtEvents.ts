@@ -1,38 +1,73 @@
 // dtEvents.ts
 // Arquivo para capturar e tipar eventos globais do DTunnel
 
-// Tipos de eventos disponíveis
-export type DtunnelEvent =
-  | 'DtCheckUserStartedEvent'
-  | 'DtCheckUserModelEvent'
-  | 'DtNewDefaultConfigEvent'
-  | 'DtMessageErrorEvent'
-  | 'DtNewLogEvent'
-  | 'DtErrorToastEvent'
-  | 'DtSuccessToastEvent'
-  | 'DtVpnStartedSuccessEvent'
-  | 'DtVpnStateEvent'
-  | 'DtVpnStoppedSuccessEvent'
-  | 'DtConfigSelectedEvent'; // NOVO
-
-// Interface para cada evento (exemplo, pode ser expandida conforme necessário)
-export interface DtVpnStateEvent {
-  state: 'CONNECTED' | 'DISCONNECTED' | 'CONNECTING' | 'STOPPING' | 'NO_NETWORK' | 'AUTH' | 'AUTH_FAILED';
+// Tipos de eventos disponíveis e seus payloads
+export interface DtCheckUserModelEventPayload {
+  expiration_days: string;
+  limit_connections: string;
+  expiration_date: string;
+  username: string;
+  count_connections: string;
 }
 
+export interface DtConfigSelectedEventPayload {
+  id: number;
+  name: string;
+  description: string;
+  mode: string;
+  sorter?: number;
+  icon?: string;
+  // Campos opcionais comuns
+  auth?: { v2ray_uuid?: string };
+  category_id?: number;
+  config_openvpn?: string;
+  config_payload?: { payload?: string; sni?: string };
+  config_v2ray?: string;
+  dns_server?: { dns1?: string; dns2?: string };
+  dnstt_key?: string;
+  dnstt_name_server?: string;
+  dnstt_server?: string;
+  proxy?: { host?: string; port?: number };
+  server?: { host?: string; port?: number };
+  tls_version?: string;
+  udp_ports?: number[];
+  url_check_user?: string;
+  // Permite extensibilidade
+  [key: string]: any;
+}
+
+export type DtVpnStateEventPayload =
+  | 'STOPPING'
+  | 'CONNECTING'
+  | 'CONNECTED'
+  | 'AUTH'
+  | 'AUTH_FAILED'
+  | 'DISCONNECTED';
+
+export type DtunnelEventMap = {
+  DtCheckUserStartedEvent: undefined;
+  DtCheckUserModelEvent: DtCheckUserModelEventPayload;
+  DtNewDefaultConfigEvent: undefined;
+  DtMessageErrorEvent: undefined;
+  DtNewLogEvent: undefined;
+  DtErrorToastEvent: undefined;
+  DtSuccessToastEvent: undefined;
+  DtVpnStartedSuccessEvent: undefined;
+  DtVpnStateEvent: DtVpnStateEventPayload;
+  DtVpnStoppedSuccessEvent: undefined;
+  DtConfigSelectedEvent: DtConfigSelectedEventPayload;
+};
+
+export type DtunnelEvent = keyof DtunnelEventMap;
+
 // Função utilitária para registrar listeners tipados
-export function onDtunnelEvent<T = any>(event: DtunnelEvent, handler: (payload: T) => void) {
+export function onDtunnelEvent<K extends DtunnelEvent>(event: K, handler: (payload: DtunnelEventMap[K]) => void) {
   (window as any)[event] = handler;
 }
 
 // Função utilitária para disparar eventos globais
-export function emitDtunnelEvent<T = any>(event: DtunnelEvent, payload: T) {
+export function emitDtunnelEvent<K extends DtunnelEvent>(event: K, payload: DtunnelEventMap[K]) {
   if (typeof (window as any)[event] === 'function') {
     (window as any)[event](payload);
   }
 }
-
-// Exemplo de uso:
-// onDtunnelEvent<DtVpnStateEvent>('DtVpnStateEvent', (payload) => {
-//   console.log('Novo estado da VPN:', payload.state);
-// });

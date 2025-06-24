@@ -1,13 +1,5 @@
 import type { ConfigCategory, ConfigItem } from '../types/config';
-
-// Tipos para funções nativas
-export type VpnState = 'CONNECTED' | 'DISCONNECTED' | 'CONNECTING' | 'STOPPING' | 'NO_NETWORK' | 'AUTH' | 'AUTH_FAILED';
-export type NetworkType = 'MOBILE' | 'WIFI';
-export type AirplaneState = 'ACTIVE' | 'INACTIVE';
-
-// Exemplo de uso de eventos globais:
-// import { onDtunnelEvent } from './dtEvents';
-// onDtunnelEvent('DtVpnStateEvent', (state: VpnState) => { ... });
+import type { VpnState, } from '../types/vpn';
 
 // App Status Functions
 export function getStatusbarHeight(): number {
@@ -147,6 +139,38 @@ export function getLocalIP(): string | null {
   }
   return null;
 }
+   
+/**
+ * Retorna o tipo de rede detectado pelo app/container.
+ */
+export function getNetworkType(): string {
+  if (window?.DtGetNetworkType?.execute && typeof window.DtGetNetworkType.execute === "function") {
+    return window.DtGetNetworkType.execute();
+  }
+  return 'unknown';
+}
+
+/**
+ * Verifica se há conectividade de rede.
+ */
+export function checkNetworkConnectivity(): boolean {
+  if (window?.DtCheckNetworkConnectivity?.execute && 
+      typeof window.DtCheckNetworkConnectivity.execute === "function") {
+    return window.DtCheckNetworkConnectivity.execute() === true;
+  }
+  return false;
+}
+
+/**
+ * Retorna o status da rede (ex: CONNECTED, NO_NETWORK).
+ */
+export function getNetworkStatus(): string {
+  if (window?.DtGetNetworkStatus?.execute && 
+      typeof window.DtGetNetworkStatus.execute === "function") {
+    return window.DtGetNetworkStatus.execute();
+  }
+  return 'NO_NETWORK';
+}
 
 // Checkuser Functions
 export function checkUserStatus(): void {
@@ -161,7 +185,6 @@ export function cleanAppData(): boolean {
     try {
       return window.DtCleanApp.execute();
     } catch (e) {
-      console.error('Error cleaning app data:', e);
       return false;
     }
   }
@@ -225,7 +248,6 @@ export async function toggleAirplaneMode(enable: boolean): Promise<boolean> {
     // Verifica o estado atual após a tentativa de alteração
     return getAirplaneState();
   } catch (error) {
-    console.error('Erro ao alternar modo avião:', error);
     return !enable; // Retorna o estado anterior em caso de erro
   }
 }
@@ -235,27 +257,26 @@ export async function toggleAirplaneMode(enable: boolean): Promise<boolean> {
 export function getAllConfigs(): ConfigCategory[] {
   if (window?.DtGetConfigs?.execute && typeof window.DtGetConfigs.execute === "function") {
     try {
-      const configs = JSON.parse(window.DtGetConfigs.execute());
+      const configsRaw = window.DtGetConfigs.execute();
+      const configs = JSON.parse(configsRaw);
       configs.sort((a: ConfigCategory, b: ConfigCategory) => a.sorter - b.sorter);
       configs.forEach((category: ConfigCategory) => {
         category.items.sort((a, b) => a.sorter - b.sorter);
       });
       return configs;
     } catch (e) {
-      console.error('Error parsing configs:', e);
       return [];
     }
   }
   return [];
 }
 
-export function setActiveConfig(configId: string): boolean {
+export function setActiveConfig(configId: number): boolean {
   if (window?.DtSetConfig?.execute && typeof window.DtSetConfig.execute === "function") {
     try {
       window.DtSetConfig.execute(configId);
       return true;
     } catch (e) {
-      console.error('Error setting config:', e);
       return false;
     }
   }
@@ -270,7 +291,6 @@ export function getActiveConfig(): ConfigItem | null {
         return JSON.parse(defaultConfig);
       }
     } catch (e) {
-      console.error('Error getting default config:', e);
     }
   }
   return null;
@@ -296,5 +316,46 @@ export function shouldShowInput(type: 'username' | 'password' | 'uuid'): boolean
       return false;
     default:
       return true;
+  }
+}
+
+// Função de tradução centralizada
+export function translateText(key: string): string {
+  if (window?.DtTranslateText?.execute && typeof window.DtTranslateText.execute === "function") {
+    return window.DtTranslateText.execute(key) || key;
+  }
+  return key;
+}
+
+// Hotspot Native Functions
+export function getHotspotNativeStatus(): string | null {
+  if (window?.DtGetStatusHotSpotService?.execute && typeof window.DtGetStatusHotSpotService.execute === "function") {
+    return window.DtGetStatusHotSpotService.execute();
+  }
+  return null;
+}
+
+export function startHotspotNative(): void {
+  if (window?.DtStartHotSpotService?.execute && typeof window.DtStartHotSpotService.execute === "function") {
+    window.DtStartHotSpotService.execute();
+  }
+}
+
+export function stopHotspotNative(): void {
+  if (window?.DtStopHotSpotService?.execute && typeof window.DtStopHotSpotService.execute === "function") {
+    window.DtStopHotSpotService.execute();
+  }
+}
+
+// Tipagem global para DtTranslateText e funções de Hotspot
+declare global {
+  interface Window {
+    DtGetNetworkType?: { execute: () => string };
+    DtCheckNetworkConnectivity?: { execute: () => boolean };
+    DtGetNetworkStatus?: { execute: () => string };
+    DtTranslateText?: { execute: (key: string) => string };
+    DtGetStatusHotSpotService?: { execute: () => string };
+    DtStartHotSpotService?: { execute: () => void };
+    DtStopHotSpotService?: { execute: () => void };
   }
 }

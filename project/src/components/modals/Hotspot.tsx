@@ -1,4 +1,3 @@
-import React, { useState } from 'react';
 import { Wifi, WifiOff, Settings, Bell } from 'lucide-react';
 import { Modal } from './Modal';
 import { useHotspot } from '../../hooks/useHotspot';
