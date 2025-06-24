@@ -27,27 +27,28 @@ export function Header({ onMenuClick, version }: HeaderProps) {
   const [vpnState, setVpnState] = useState<VpnState>('DISCONNECTED');
   const [localIP, setLocalIP] = useState('127.0.0.1');
 
-  // Verificação inicial do status da VPN
+  // Encapsula todos os eventos de status da VPN
   useEffect(() => {
+    // Atualiza status inicial (caso app já esteja conectado)
     const initialState = getConnectionState();
     if (initialState && [
       'CONNECTED', 'DISCONNECTED', 'CONNECTING', 'STOPPING', 'NO_NETWORK', 'AUTH', 'AUTH_FAILED'
     ].includes(initialState)) {
       setVpnState(initialState as VpnState);
     }
-  }, []);
 
-  useEffect(() => {
-    // Handler para eventos de estado da VPN
-    const handleVpnEvent = (payload: { state: VpnState }) => {
-      if (payload && payload.state) {
+    // Handler único para todos os eventos relevantes
+    const handleVpnStatus = (payload: any) => {
+      if (typeof payload === 'object' && payload.state) {
         setVpnState(payload.state);
+      } else if (typeof payload === 'string') {
+        // Para eventos que só enviam string
+        setVpnState(payload as VpnState);
       }
     };
-    onDtunnelEvent('DtVpnStateEvent', handleVpnEvent);
+    onDtunnelEvent('DtVpnStateEvent', handleVpnStatus);
     onDtunnelEvent('DtVpnStartedSuccessEvent', () => setVpnState('CONNECTED'));
     onDtunnelEvent('DtVpnStoppedSuccessEvent', () => setVpnState('DISCONNECTED'));
-    // Limpeza
     return () => {
       onDtunnelEvent('DtVpnStateEvent', () => {});
       onDtunnelEvent('DtVpnStartedSuccessEvent', () => {});
@@ -55,15 +56,15 @@ export function Header({ onMenuClick, version }: HeaderProps) {
     };
   }, []);
 
-  // Atualiza IP local a cada 5s
+  // Atualiza IP local a cada 1.5s em qualquer estado
   useEffect(() => {
     const updateIP = () => {
-      const ip = window?.DtGetLocalIP?.execute() ?? '127.0.0.1';
+      const ip = window?.DtGetLocalIP?.execute?.() ?? '127.0.0.1';
       setLocalIP(ip);
     };
-    const intervalId = setInterval(updateIP, 2000);
     updateIP();
-    return () => clearInterval(intervalId);
+    const interval = setInterval(updateIP, 1500);
+    return () => clearInterval(interval);
   }, []);
 
   const getStatusColor = () => {
@@ -82,36 +83,37 @@ export function Header({ onMenuClick, version }: HeaderProps) {
   };
 
   return (
-    <section className="flex justify-between items-center p-2 rounded-lg border border-[#6205D5]/20 bg-[#26074d]/30 backdrop-blur-sm">
+    <section className="flex justify-between items-center p-3 rounded-xl border border-[#6205D5]/30 bg-[#26074d]/40 backdrop-blur-md shadow-lg">
       <button
         onClick={onMenuClick}
-        className="p-1.5 rounded-full hover:bg-[#6205D5]/10 transition-colors"
+        className="p-2 rounded-lg hover:bg-[#6205D5]/20 active:bg-[#6205D5]/30 transition-all duration-200"
+        aria-label="Abrir menu"
       >
         <Logs   
-          className="w-5 h-5 text-[#b0a8ff]"
+          className="w-5 h-5 text-[#b0a8ff] opacity-90"
           id="open-menu" 
         />
       </button>
 
-      <div className="flex flex-col items-start gap-1.5 bg-[#6205D5]/10 px-2.5 py-0.5 rounded-lg">
-        <div className="flex items-center gap-1.5">
-          <div className={`w-1.5 h-1.5 rounded-full ${getStatusColor()}`} />
-          <span className="text-[#b0a8ff] text-xs text-medium" id="vpn-status">
+      <div className="flex flex-col items-start gap-2 bg-[#6205D5]/15 px-3 py-1.5 rounded-xl min-w-[140px] shadow-inner">
+        <div className="flex items-center gap-2 w-full">
+          <div className={`w-2.5 h-2.5 rounded-full ${getStatusColor()} shadow-md transition-colors duration-300 animate-pulse`} />
+          <span className="text-[#b0a8ff] text-xs font-medium tracking-wide" id="vpn-status">
             {getStateMessage(vpnState)}
           </span>
         </div>
-        <div className="w-full h-0.5 bg-[#4B0082]/50 "></div>
-        <div className="flex items-center gap-1.5">
-          <EthernetPort className="w-4 h-4 text-[#b0a8ff]" />
-          <span className="text-[#b0a8ff] text-xs font-mono" id="ip-status">
+        <div className="w-full h-[1px] bg-gradient-to-r from-transparent via-[#6205D5]/30 to-transparent"></div>
+        <div className="flex items-center gap-2">
+          <EthernetPort className="w-4 h-4 text-[#b0a8ff] opacity-75" />
+          <span className="text-[#b0a8ff] text-xs font-mono tracking-wide opacity-90" id="ip-status">
             {localIP}
           </span>
         </div>
       </div>
 
-      <div className="flex items-center gap-1.5 bg-[#6205D5]/10 px-2.5 py-0.5 rounded-full">
-        <GitFork className="w-4 h-4 text-[#b0a8ff]" />
-        <span className="text-[#b0a8ff] text-sm font-medium" id="version">
+      <div className="flex items-center gap-2 bg-[#6205D5]/15 px-3 py-1.5 rounded-xl shadow-inner">
+        <GitFork className="w-4 h-4 text-[#b0a8ff] opacity-75" />
+        <span className="text-[#b0a8ff] text-xs font-medium tracking-wide opacity-90" id="version">
           {version}
         </span>
       </div>

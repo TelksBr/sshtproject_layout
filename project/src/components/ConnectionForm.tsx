@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Eye, EyeOff, Scroll } from 'lucide-react';
+import { Eye, EyeOff, Scroll, HelpCircle } from 'lucide-react';
 import { 
   getUsername, 
   getPassword, 
@@ -199,7 +199,7 @@ export function ConnectionForm() {
             </button>
             <div className="absolute right-2 top-1/2 -translate-y-1/2 group">
               <button className="text-[#b0a8ff] cursor-pointer flex items-center" type="button" tabIndex={-1}>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                <HelpCircle className="w-4 h-4" />
               </button>
               {/* Tooltip visível ao hover */}
               <div className="absolute bottom-full right-0 mb-2 w-64 text-sm bg-[#26074d] text-[#b0a8ff] p-3 rounded-lg shadow-lg z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none border border-[#6205D5]/30">
