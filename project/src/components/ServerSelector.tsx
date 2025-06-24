@@ -6,6 +6,7 @@ import { AutoConnectModal } from './modals/AutoConnectModal';
 import { autoConnectTest } from '../utils/autoConnectUtils';
 import { ConfigCategory, ConfigItem } from '../types/config';
 import { useActiveConfig } from '../context/ActiveConfigContext';
+import { emitDtunnelEvent } from '../utils/dtEvents';
 
 export function ServerSelector() {
   const [showConfigModal, setShowConfigModal] = useState(false);
@@ -32,6 +33,13 @@ export function ServerSelector() {
   useEffect(() => {
     loadConfigs();
   }, []);
+
+  // Garante que ao abrir o app com uma config já selecionada, o evento global é disparado
+  useEffect(() => {
+    if (activeConfig) {
+      emitDtunnelEvent('DtConfigSelectedEvent', activeConfig);
+    }
+  }, [activeConfig]);
 
   useEffect(() => {
     if (showConfigModal) {
@@ -73,6 +81,7 @@ export function ServerSelector() {
     setActiveConfigId(config.id);
     setShowConfigModal(false);
     setSelectedCategory(null);
+    emitDtunnelEvent('DtConfigSelectedEvent', config);
   };
 
   const handleCategorySelect = (category: ConfigCategory) => {

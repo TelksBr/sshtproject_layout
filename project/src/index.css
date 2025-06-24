@@ -12,7 +12,6 @@
 
   body {
     @apply bg-gradient-to-br from-[#2A0A3E] via-[#4B0082] to-[#2A0A3E] min-h-screen text-gray-100;
-    
   }
 
   input {
@@ -28,38 +27,38 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-[#4B0082] rounded-full hover:bg-[#3A0A7A] transition-colors;
+    @apply bg-[#4B0082] rounded-full;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply px-6 py-3 text-white rounded-lg transition-all duration-300 font-medium shadow-lg active:scale-95;
-    @apply bg-gradient-to-r from-[#5A0CA3] to-[#4B0082] hover:from-[#4B0082] hover:to-[#3A0A7A];
+    @apply px-6 py-3 text-white rounded-lg font-medium active:scale-95;
+    @apply bg-gradient-to-r from-[#5A0CA3] to-[#4B0082];
   }
   
   .btn-outline {
-    @apply px-6 py-3 border-2 border-[#4B0082] text-[#E0E0E0] hover:bg-[#4B0082]/20 rounded-lg transition-all duration-300 font-medium hover:scale-105 active:scale-95 hover:border-[#3A0A7A] hover:text-white backdrop-blur-sm;
+    @apply px-6 py-3 border-2 border-[#4B0082] text-[#E0E0E0] rounded-lg font-medium active:scale-95 hover:text-white backdrop-blur-sm;
   }
 
   .card {
-    @apply bg-[#2A0A3E]/30 backdrop-blur-sm rounded-xl p-6 border border-[#3A0A7A]/30 hover:border-[#4B0082]/50 transition-all duration-300 hover:transform hover:scale-[1.02] hover:shadow-xl hover:shadow-[#4B0082]/10 bg-gradient-to-br from-[#4B0082]/50 to-[#2A0A3E]/50;
+    @apply bg-[#2A0A3E]/30 backdrop-blur-sm rounded-xl p-6 border border-[#3A0A7A]/30 bg-gradient-to-br from-[#4B0082]/50 to-[#2A0A3E]/50;
   }
 
   .nav-link {
-    @apply text-[#E0E0E0] hover:text-white transition-colors duration-200 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-[#4B0082] hover:after:w-full after:transition-all;
+    @apply text-[#E0E0E0] hover:text-white duration-200 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-[#4B0082] hover:after:w-full;
   }
 
   .glass-effect {
-    @apply bg-purple-950/30 backdrop-blur-md border border-purple-800/30 hover:border-purple-600/50 transition-all duration-300;
+    @apply bg-purple-950/30 backdrop-blur-md border border-purple-800/30;
   }
 
   .mobile-menu-enter {
-    @apply transform translate-x-0 transition-transform duration-300 ease-out;
+    @apply transform translate-x-0 duration-300 ease-out;
   }
 
   .mobile-menu-exit {
-    @apply transform -translate-x-full transition-transform duration-300 ease-in;
+    @apply transform -translate-x-full duration-300 ease-in;
   }
 }
 

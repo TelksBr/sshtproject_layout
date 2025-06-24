@@ -12,6 +12,7 @@ import {
 import { useVpnConnection } from '../hooks/useVpnConnection';
 import { getActiveConfig, shouldShowInput } from '../utils/configUtils';
 import { configManager } from '../utils/configManager';
+import { onDtunnelEvent } from '../utils/dtEvents';
 
 export function ConnectionForm() {
   const [showPassword, setShowPassword] = useState(false);
@@ -56,6 +57,23 @@ export function ConnectionForm() {
     
     // Cleanup ao desmontar
     return () => unsubscribe();
+  }, []);
+
+  // Atualiza campos ao receber evento global de seleção de config
+  useEffect(() => {
+    const handleConfigSelected = (config: any) => {
+      const mode = (config?.mode || '').toLowerCase();
+      setIsV2Ray(mode.includes('v2ray'));
+      setUsernameState(config?.auth?.username ?? getUsername());
+      setPasswordState(config?.auth?.password ?? getPassword());
+      setUUIDState(config?.auth?.v2ray_uuid ?? getUUID());
+    };
+    onDtunnelEvent('DtConfigSelectedEvent', handleConfigSelected);
+    return () => {
+      if (window && (window as any).DtConfigSelectedEvent) {
+        (window as any).DtConfigSelectedEvent = undefined;
+      }
+    };
   }, []);
 
   // Monitor connection state changes
@@ -162,15 +180,16 @@ export function ConnectionForm() {
         {showUUIDInput && (
           <div className="relative">
             <input 
-              className="w-full h-10 px-3 pr-10 rounded-lg glass-effect text-white placeholder-gray-400 outline-none focus:border-purple-500 text-sm"
+              className="w-full h-10 px-3 pr-20 rounded-lg glass-effect text-white placeholder-gray-400 outline-none focus:border-purple-500 text-sm"
               type={showUUID ? "text" : "password"}
               placeholder="UUID"
               value={uuid}
               onChange={handleUUIDChange}
             />
             <button 
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-400 hover:text-purple-300 transition-colors"
+              className="absolute right-12 top-1/2 -translate-y-1/2 text-purple-400 hover:text-purple-300 transition-colors"
               onClick={() => setShowUUID(!showUUID)}
+              type="button"
             >
               {showUUID ? (
                 <EyeOff className="w-4 h-4" />
@@ -178,6 +197,25 @@ export function ConnectionForm() {
                 <Eye className="w-4 h-4" />
               )}
             </button>
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 group">
+              <button className="text-[#b0a8ff] cursor-pointer flex items-center" type="button" tabIndex={-1}>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+              </button>
+              {/* Tooltip visível ao hover */}
+              <div className="absolute bottom-full right-0 mb-2 w-64 text-sm bg-[#26074d] text-[#b0a8ff] p-3 rounded-lg shadow-lg z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none border border-[#6205D5]/30">
+                <div className="font-bold mb-1 text-[#b0a8ff]">O que é o UUID?</div>
+                <div className="mb-1">É a chave única de login do seu V2Ray.</div>
+                <div className="mb-1">Recebida no bot após a compra.</div>
+                <div className="mb-1">
+                  <span className="font-semibold text-[#b0a8ff]">Exemplo:</span>
+                  <br />
+                  <span className="font-mono select-all break-all text-[#b0a8ff]/90">
+                    {crypto.randomUUID ? crypto.randomUUID() : 'e.g. 123e4567-e89b-12d3-a456-426614174000'}
+                  </span>
+                </div>
+                <div className="text-[#ff5c8a] font-semibold">⚠️ Copie sem espaços extras!</div>
+              </div>
+            </div>
           </div>
         )}
 
