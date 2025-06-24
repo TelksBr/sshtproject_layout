@@ -36,6 +36,8 @@ export async function autoConnectTest({
   setSuccess,
   setError,
   cancelRef,
+  timeout = 8000,
+  fetchTimeout = 4000,
 }: {
   configs: any[],
   setCurrentName: (name: string) => void,
@@ -45,7 +47,9 @@ export async function autoConnectTest({
   setSelectedCategory: (cat: any) => void,
   setSuccess: (name: string | null) => void,
   setError: (msg: string) => void,
-  cancelRef: React.MutableRefObject<{ cancelled: boolean }>
+  cancelRef: React.MutableRefObject<{ cancelled: boolean }>,
+  timeout?: number,
+  fetchTimeout?: number,
 }): Promise<boolean> {
   for (let i = 0; i < configs.length; i++) {
     if (cancelRef.current.cancelled) return false;
@@ -58,12 +62,12 @@ export async function autoConnectTest({
 
     startConnection();
 
-    const connected = await waitForConnectionState('CONNECTED', 10000, cancelRef);
+    const connected = await waitForConnectionState('CONNECTED', timeout, cancelRef);
 
     if (cancelRef.current.cancelled) return false;
 
     if (connected) {
-      const ok = await testInternet(4000);
+      const ok = await testInternet(fetchTimeout);
       if (cancelRef.current.cancelled) return false;
       if (ok) {
         setSuccess(config.name);
