@@ -8,6 +8,7 @@ export function useVpnEvents(onEvent?: (eventName: string, payload?: any) => voi
   const [vpnState, setVpnState] = useState<VpnState>('DISCONNECTED');
 
   useEffect(() => {
+    // Busca estado inicial
     const initialState = getConnectionState();
     if (initialState) setVpnState(initialState);
 
@@ -20,19 +21,27 @@ export function useVpnEvents(onEvent?: (eventName: string, payload?: any) => voi
         onEvent?.('DtVpnStateEvent', payload);
       }
     };
-    onDtunnelEvent('DtVpnStateEvent', handleVpnStatus);
-    onDtunnelEvent('DtVpnStartedSuccessEvent', () => {
+
+    const handleVpnStarted = () => {
       setVpnState('CONNECTED');
       onEvent?.('DtVpnStartedSuccessEvent');
-    });
-    onDtunnelEvent('DtVpnStoppedSuccessEvent', () => {
+    };
+
+    const handleVpnStopped = () => {
       setVpnState('DISCONNECTED');
       onEvent?.('DtVpnStoppedSuccessEvent');
-    });
+    };
+
+    // Registra os eventos
+    onDtunnelEvent('DtVpnStateEvent', handleVpnStatus);
+    onDtunnelEvent('DtVpnStartedSuccessEvent', handleVpnStarted);
+    onDtunnelEvent('DtVpnStoppedSuccessEvent', handleVpnStopped);
+
+    // Cleanup - remove os handlers específicos
     return () => {
-      onDtunnelEvent('DtVpnStateEvent', () => {});
-      onDtunnelEvent('DtVpnStartedSuccessEvent', () => {});
-      onDtunnelEvent('DtVpnStoppedSuccessEvent', () => {});
+      (window as any).DtVpnStateEvent = undefined;
+      (window as any).DtVpnStartedSuccessEvent = undefined;
+      (window as any).DtVpnStoppedSuccessEvent = undefined;
     };
   }, [onEvent]);
 

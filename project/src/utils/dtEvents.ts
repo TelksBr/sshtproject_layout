@@ -44,6 +44,26 @@ export type DtVpnStateEventPayload =
   | 'AUTH_FAILED'
   | 'DISCONNECTED';
 
+// Novos payloads para eventos expandidos
+export interface DtHotspotStateEventPayload {
+  state: 'RUNNING' | 'STOPPED';
+}
+
+export interface DtNetworkStatsEventPayload {
+  downloadBytes: number;
+  uploadBytes: number;
+  downloadSpeed: string;
+  uploadSpeed: string;
+}
+
+export interface DtLocalIPEventPayload {
+  ip: string;
+}
+
+export interface DtAirplaneModeEventPayload {
+  enabled: boolean;
+}
+
 export type DtunnelEventMap = {
   DtCheckUserStartedEvent: undefined;
   DtCheckUserModelEvent: DtCheckUserModelEventPayload;
@@ -56,6 +76,11 @@ export type DtunnelEventMap = {
   DtVpnStateEvent: DtVpnStateEventPayload;
   DtVpnStoppedSuccessEvent: undefined;
   DtConfigSelectedEvent: DtConfigSelectedEventPayload;
+  // Novos eventos para sistema centralizado
+  DtHotspotStateEvent: DtHotspotStateEventPayload;
+  DtNetworkStatsEvent: DtNetworkStatsEventPayload;  
+  DtLocalIPEvent: DtLocalIPEventPayload;
+  DtAirplaneModeEvent: DtAirplaneModeEventPayload;
 };
 
 export type DtunnelEvent = keyof DtunnelEventMap;

@@ -95,9 +95,29 @@ export function useVpnConnection() {
   }, []);
 
   useEffect(() => {
+    // Verifica estado inicial apenas uma vez
     checkConnection();
-    const interval = setInterval(checkConnection, 1000);
-    return () => clearInterval(interval);
+    
+    // Usa eventos para atualizar o estado em vez de polling
+    const handleStateChange = () => {
+      checkConnection();
+    };
+
+    // Registra eventos nativos se disponíveis
+    if (typeof window !== 'undefined') {
+      (window as any).DtVpnStateEvent = handleStateChange;
+      (window as any).DtVpnStartedSuccessEvent = handleStateChange;
+      (window as any).DtVpnStoppedSuccessEvent = handleStateChange;
+    }
+
+    return () => {
+      // Cleanup dos eventos
+      if (typeof window !== 'undefined') {
+        (window as any).DtVpnStateEvent = undefined;
+        (window as any).DtVpnStartedSuccessEvent = undefined;
+        (window as any).DtVpnStoppedSuccessEvent = undefined;
+      }
+    };
   }, [checkConnection]);
 
   return {

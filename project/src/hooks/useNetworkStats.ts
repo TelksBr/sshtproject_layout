@@ -1,53 +1,74 @@
 import { useState, useEffect } from 'react';
 import { getDownloadBytes, getUploadBytes } from '../utils/appFunctions';
-import { formatBytes, calculateSpeed } from '../utils/networkUtils';
 
-export function useNetworkStats(pollInterval = 1000) {
-  const [downloadSpeed, setDownloadSpeed] = useState('0 B/s');
-  const [uploadSpeed, setUploadSpeed] = useState('0 B/s');
-  const [totalDownloaded, setTotalDownloaded] = useState(0);
-  const [totalUploaded, setTotalUploaded] = useState(0);
+/**
+ * Hook para estatísticas de rede com polling próprio.
+ * Conforme padrão documentado, faz seu próprio polling para estatísticas.
+ */
+export function useNetworkStats() {
+  const [stats, setStats] = useState({
+    downloadSpeed: '0 B/s',
+    uploadSpeed: '0 B/s',
+    totalDownloaded: 0,
+    totalUploaded: 0,
+  });
+
+  const [previousStats, setPreviousStats] = useState({
+    downloadBytes: 0,
+    uploadBytes: 0,
+    timestamp: Date.now(),
+  });
 
   useEffect(() => {
-    let previousDownload = getDownloadBytes();
-    let previousUpload = getUploadBytes();
-    let lastUpdate = Date.now();
-
-    const interval = setInterval(() => {
+    const updateStats = () => {
       const currentDownload = getDownloadBytes();
       const currentUpload = getUploadBytes();
       const now = Date.now();
-      const timeDiff = now - lastUpdate;
+      const timeDiff = now - previousStats.timestamp;
 
-      // Calculate speeds
-      const downloadSpeed = calculateSpeed(currentDownload, previousDownload, timeDiff);
-      const uploadSpeed = calculateSpeed(currentUpload, previousUpload, timeDiff);
+      if (timeDiff > 0) {
+        const downloadSpeed = ((currentDownload - previousStats.downloadBytes) / timeDiff) * 1000;
+        const uploadSpeed = ((currentUpload - previousStats.uploadBytes) / timeDiff) * 1000;
 
-      // Update states
-      setDownloadSpeed(formatBytes(downloadSpeed));
-      setUploadSpeed(formatBytes(uploadSpeed));
-      setTotalDownloaded(currentDownload);
-      setTotalUploaded(currentUpload);
+        setStats({
+          downloadSpeed: formatBytes(downloadSpeed),
+          uploadSpeed: formatBytes(uploadSpeed),
+          totalDownloaded: currentDownload,
+          totalUploaded: currentUpload,
+        });
 
-      // Salva totais em localStorage
-      localStorage.setItem('dtunnel_total_downloaded', String(currentDownload));
-      localStorage.setItem('dtunnel_total_uploaded', String(currentUpload));
+        setPreviousStats({
+          downloadBytes: currentDownload,
+          uploadBytes: currentUpload,
+          timestamp: now,
+        });
+      }
+    };
 
-      // Update previous values
-      previousDownload = currentDownload;
-      previousUpload = currentUpload;
-      lastUpdate = now;
-    }, pollInterval);
+    // Atualiza a cada 2 segundos
+    const interval = setInterval(updateStats, 2000);
+    
+    // Primeira atualização imediata
+    updateStats();
 
     return () => clearInterval(interval);
-  }, [pollInterval]);
+  }, [previousStats]);
 
   return {
-    downloadSpeed,
-    uploadSpeed,
-    totalDownloaded,
-    totalUploaded,
-    formattedTotalDownloaded: formatBytes(totalDownloaded),
-    formattedTotalUploaded: formatBytes(totalUploaded)
+    downloadSpeed: stats.downloadSpeed,
+    uploadSpeed: stats.uploadSpeed,
+    totalDownloaded: stats.totalDownloaded,
+    totalUploaded: stats.totalUploaded,
+    formattedTotalDownloaded: formatBytes(stats.totalDownloaded),
+    formattedTotalUploaded: formatBytes(stats.totalUploaded),
   };
+}
+
+// Mantém as funções utilitárias
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }

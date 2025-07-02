@@ -4,16 +4,15 @@ import { ServerSelector } from './components/ServerSelector';
 import { ConnectionForm } from './components/ConnectionForm';
 import { NetworkStats } from './components/NetworkStats';
 import { Sidebar } from './components/Sidebar';
-import { getConfigVersion } from './utils/appFunctions';
+import { getConfigVersion, getLocalIP, getConnectionState } from './utils/appFunctions';
 import { getStorageItem } from './utils/storageUtils';
 import { appLogo } from './constants/appLogo';
 import { ActiveConfigProvider } from './context/ActiveConfigContext';
-import { useAppPolling } from './hooks/useAppPolling';
-import { useVpnEvents } from './hooks/useVpnEvents';
 import { useAppLayout } from './hooks/useAppLayout';
 import { useModalRenderer } from './hooks/useModalRenderer';
 import { EventNotificationPopup } from './components/EventNotificationPopup';
 import { onDtunnelEvent, DtunnelEvent } from './utils/dtEvents';
+import { VpnState } from './types/vpn';
 
 export type ModalType = 'buy' | 'tutorials' | 'support' | 'speedtest' | 'terms' | 'privacy' | 'checkuser' | 'cleandata' | 'hotspot' | 'services' | 'ipfinder' | 'faq' | null;
 
@@ -21,11 +20,65 @@ function App() {
   const [showMenu, setShowMenu] = useState(false);
   const [currentModal, setCurrentModal] = useState<ModalType>(null);
   const [notification, setNotification] = useState<{ event: string; visible: boolean }>({ event: '', visible: false });
+  
+  // Estados gerenciados pelo App conforme padrão documentado
+  const [vpnState, setVpnState] = useState<VpnState>('DISCONNECTED');
+  const [localIP, setLocalIP] = useState<string>('127.0.0.1');
+  
   const version = getConfigVersion() || '1.0';
   const { containerStyle } = useAppLayout();
-  const { localIP } = useAppPolling();
-  const { vpnState } = useVpnEvents();
   const { getModal } = useModalRenderer();
+
+  // Inicialização dos estados conforme padrão documentado
+  useEffect(() => {
+    // Busca estados iniciais das funções nativas
+    const initialVpnState = getConnectionState() || 'DISCONNECTED';
+    const initialLocalIP = getLocalIP() || '127.0.0.1';
+    
+    setVpnState(initialVpnState);
+    setLocalIP(initialLocalIP);
+  }, []);
+
+  // Polling para IP local conforme padrão documentado
+  useEffect(() => {
+    const updateLocalIP = () => {
+      const currentIP = getLocalIP() || '127.0.0.1';
+      setLocalIP(currentIP);
+    };
+
+    // Atualiza IP a cada 5 segundos conforme padrão documentado
+    const ipInterval = setInterval(updateLocalIP, 5000);
+    
+    return () => clearInterval(ipInterval);
+  }, []);
+
+  // Gerenciamento de eventos VPN conforme padrão documentado
+  useEffect(() => {
+    // Handler para mudanças de estado da VPN
+    const handleVpnStateEvent = (state: VpnState) => {
+      setVpnState(state);
+    };
+
+    const handleVpnStarted = () => {
+      setVpnState('CONNECTED');
+    };
+
+    const handleVpnStopped = () => {
+      setVpnState('DISCONNECTED');
+    };
+
+    // Registra eventos VPN conforme padrão documentado
+    onDtunnelEvent('DtVpnStateEvent', handleVpnStateEvent);
+    onDtunnelEvent('DtVpnStartedSuccessEvent', handleVpnStarted);
+    onDtunnelEvent('DtVpnStoppedSuccessEvent', handleVpnStopped);
+
+    // Cleanup dos eventos
+    return () => {
+      onDtunnelEvent('DtVpnStateEvent', () => {});
+      onDtunnelEvent('DtVpnStartedSuccessEvent', () => {});
+      onDtunnelEvent('DtVpnStoppedSuccessEvent', () => {});
+    };
+  }, []);
 
   useEffect(() => {
     const termsAccepted = getStorageItem<boolean>('terms-accepted-23-03-2025');
@@ -38,22 +91,20 @@ function App() {
     }
   }, []);
 
-  // Usa o hook de eventos VPN para disparar popup
-  useVpnEvents((eventName) => {
-    setNotification({ event: eventName, visible: true });
-  });
-
   useEffect(() => {
-    // Listener genérico para eventos globais NÃO-VPN
+    // Listener genérico para eventos globais (NÃO-VPN e VPN)
     const relevantEvents: DtunnelEvent[] = [
       'DtCheckUserStartedEvent',
-      'DtCheckUserModelEvent',
+      'DtCheckUserModelEvent', 
       'DtNewDefaultConfigEvent',
       'DtMessageErrorEvent',
       'DtNewLogEvent',
       'DtErrorToastEvent',
       'DtSuccessToastEvent',
       'DtConfigSelectedEvent',
+      'DtVpnStateEvent',
+      'DtVpnStartedSuccessEvent',
+      'DtVpnStoppedSuccessEvent',
     ];
     const handlers: Array<() => void> = [];
     relevantEvents.forEach(eventName => {
@@ -85,6 +136,7 @@ function App() {
           id="container-home"
           style={containerStyle}
         >
+          {/* Header recebe props conforme padrão documentado */}
           <Header 
             onMenuClick={() => setShowMenu(true)}
             version={version}
