@@ -8,10 +8,9 @@ interface SupportProps {
 
 export function Support({ onClose }: SupportProps) {
   return (
-    <Modal onClose={onClose}>
+    <Modal onClose={onClose} title="Suporte" icon={Phone}>
       <div className="max-w-md mx-auto p-4">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-4">Suporte</h1>
           <p className="text-lg text-gray-300">
             Precisa de ajuda? Entre em contato com nosso suporte ou junte-se ao nosso grupo de suporte.
           </p>

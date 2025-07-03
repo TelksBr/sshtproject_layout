@@ -16,13 +16,12 @@ export function Terms({ onClose, onAccept }: TermsProps) {
   };
 
   return (
-    <Modal onClose={onClose} allowClose={accepted}>
+    <Modal onClose={onClose} allowClose={accepted} title="Termos de Uso" icon={FileText}>
       <div className="relative flex-1 p-4">
         <header className="flex items-center gap-3 mb-6">
           <div className="w-12 h-12 rounded-full bg-[#26074d] flex items-center justify-center">
             <FileText className="w-6 h-6 text-[#b0a8ff]" />
           </div>
-          <h1 className="text-xl font-medium text-[#b0a8ff]">Termos de Uso</h1>
         </header>
         {accepted && (
           <div className="flex justify-center mb-6">

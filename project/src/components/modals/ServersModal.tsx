@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Modal } from './Modal';
-import { Loader, RefreshCw } from 'lucide-react';
+import { Loader, RefreshCw, Server } from 'lucide-react';
 
 interface Server {
   name: string;
@@ -193,11 +193,10 @@ export function ServersModal({ onClose }: ServersModalProps) {
   };
 
   return (
-    <Modal onClose={onClose}>
+    <Modal onClose={onClose} title="Status dos Servidores" icon={Server}>
       <div className="p-4 md:p-6">
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-lg font-bold text-white">Status dos Servidores</h2>
             <button
               onClick={handleRefresh}
               disabled={refreshing}

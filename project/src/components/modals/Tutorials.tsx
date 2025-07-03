@@ -90,13 +90,10 @@ export function Tutorials({ onClose }: { onClose: () => void }) {
   const [selectedTutorial, setSelectedTutorial] = useState<Tutorial | null>(null);
 
   return (
-    <Modal onClose={onClose}>
+    <Modal onClose={onClose} title="Tutoriais" icon={Book}>
       <div className="flex-1 p-4">
         <header className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 rounded-full bg-[#26074d] flex items-center justify-center">
-            <Book className="w-6 h-6 text-[#b0a8ff]" />
-          </div>
-          <h1 className="text-xl font-medium text-[#b0a8ff]">Tutoriais</h1>
+
         </header>
 
         <div className="grid gap-4">

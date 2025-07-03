@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { X } from 'lucide-react';
+import { X, LucideIcon } from 'lucide-react';
 
 interface ModalProps {
   children: React.ReactNode;
   onClose: () => void;
   allowClose?: boolean;
   title?: string;
+  icon?: LucideIcon;
 }
 
-export function Modal({ children, onClose, allowClose = true, title }: ModalProps) {
+export function Modal({ children, onClose, allowClose = true, title, icon: Icon }: ModalProps) {
   const [isClosing, setIsClosing] = useState(false);
   const [isOpening, setIsOpening] = useState(true);
 
@@ -34,7 +35,7 @@ export function Modal({ children, onClose, allowClose = true, title }: ModalProp
     >
       <div 
         className={`
-          relative w-full max-w-2xl bg-gradient-to-br from-[#26074d]/95 to-[#100322]/95
+          relative w-full max-w-3xl bg-gradient-to-br from-[#26074d]/95 to-[#100322]/95
           rounded-xl shadow-2xl shadow-black/20
           border border-[#6205D5]/20
           transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
@@ -45,7 +46,16 @@ export function Modal({ children, onClose, allowClose = true, title }: ModalProp
       >
         {/* Header fixo */}
         <div className="flex items-center justify-between p-4 border-b border-[#6205D5]/20">
-          {title && <h2 className="text-lg font-bold text-white">{title}</h2>}
+          {(title || Icon) && (
+            <div className="flex items-center gap-3">
+              {Icon && (
+                <div className="w-8 h-8 rounded-full bg-[#6205D5]/20 flex items-center justify-center">
+                  <Icon className="w-5 h-5 text-[#6205D5]" />
+                </div>
+              )}
+              {title && <h2 className="text-lg font-bold text-white">{title}</h2>}
+            </div>
+          )}
           {allowClose && (
             <button
               onClick={handleClose}

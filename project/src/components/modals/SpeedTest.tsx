@@ -104,14 +104,9 @@ export function SpeedTest({ onClose }: SpeedTestProps) {
   };
 
   return (
-    <Modal onClose={onClose}>
+    <Modal onClose={onClose} title="Speed Test" icon={Download}>
       <div className="flex-1 p-4">
-        <header className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 rounded-full bg-[#26074d] flex items-center justify-center">
-            <Download className="w-6 h-6 text-[#b0a8ff]" />
-          </div>
-          <h1 className="text-xl font-medium text-[#b0a8ff]">Speed Test</h1>
-        </header>
+
 
         <div className="grid gap-4">
           {/* Server Selection */}

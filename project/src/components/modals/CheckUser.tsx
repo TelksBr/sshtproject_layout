@@ -34,13 +34,12 @@ export function CheckUser({ onClose }: CheckUserProps) {
 
   if (error) {
     return (
-      <Modal onClose={onClose}>
+      <Modal onClose={onClose} title="Erro" icon={AlertTriangle}>
         <div className="flex-1 p-4">
           <header className="flex items-center gap-3 mb-6">
             <div className="w-12 h-12 rounded-full bg-[#26074d] flex items-center justify-center">
               <AlertTriangle className="w-6 h-6 text-[#b0a8ff]" />
             </div>
-            <h1 className="text-xl font-medium text-[#b0a8ff]">Erro</h1>
           </header>
 
           <div className="p-6 rounded-lg glass-effect text-center">
@@ -58,14 +57,8 @@ export function CheckUser({ onClose }: CheckUserProps) {
   }
 
   return (
-    <Modal onClose={onClose}>
+    <Modal onClose={onClose} title="Consultar Usuário" icon={CalendarClock}>
       <div className="flex-1 p-4">
-        <header className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 rounded-full bg-[#26074d] flex items-center justify-center">
-            <CalendarClock className="w-6 h-6 text-[#b0a8ff]" />
-          </div>
-          <h1 className="text-xl font-medium text-[#b0a8ff]">Consultar Usuário</h1>
-        </header>
 
         {!userInfo ? (
           <div className="p-4 rounded-lg glass-effect">

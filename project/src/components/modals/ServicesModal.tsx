@@ -42,7 +42,7 @@ const services = [
 
 export function ServicesModal({ onClose }: { onClose: () => void }) {
   return (
-    <Modal onClose={onClose}>
+    <Modal onClose={onClose} title="Serviços" icon={BriefcaseBusiness}>
       <div className="max-w-md mx-auto p-4">
         <Helmet>
           <title>Serviços - SSH T Project</title>
@@ -57,9 +57,9 @@ export function ServicesModal({ onClose }: { onClose: () => void }) {
                 <BriefcaseBusiness className="w-6 h-6 text-purple-400" />
               </div>
             </div>
-            <h1 className="text-3xl font-bold mb-2">
+            <p className="text-lg text-gray-300 mb-4">
               Nossos Serviços
-            </h1>
+            </p>
             <p className="text-lg text-gray-300">
               Soluções profissionais para todas as suas necessidades de infraestrutura digital
             </p>

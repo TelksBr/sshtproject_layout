@@ -17,7 +17,7 @@ export function Hotspot({ onClose }: HotspotProps) {
 
   return (
 
-    <Modal onClose={onClose}>
+    <Modal onClose={onClose} title="Hotspot" icon={Wifi}>
       <div className="flex-1 p-4">
         <header className="flex items-center gap-3 mb-6">
           <div className="flex items-center gap-3">
@@ -25,7 +25,6 @@ export function Hotspot({ onClose }: HotspotProps) {
               <Wifi className="w-6 h-6 text-[#b0a8ff]" />
             </div>
             <div>
-              <h1 className="text-xl font-medium text-[#b0a8ff]">Hotspot</h1>
               <p className="text-sm text-[#b0a8ff]/70">Compartilhe sua conexão VPN</p>
             </div>
           </div>

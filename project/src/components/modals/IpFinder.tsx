@@ -140,10 +140,9 @@ export function IpFinder({ onClose }: IpFinderProps) {
   };
 
   return (
-    <Modal onClose={handleClose}>
+    <Modal onClose={handleClose} title="Buscador de IP" icon={Search}>
       <div className="max-w-md mx-auto p-4">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-4">Buscador de IP</h1>
           <p className="text-lg text-gray-300">
             Insira intervalos de endereços IP separados por vírgula para buscar.
           </p>

@@ -7,10 +7,9 @@ interface FaqProps {
 
 export function Faq({ onClose }: FaqProps) {
   return (
-    <Modal onClose={onClose}>
+    <Modal onClose={onClose} title="Perguntas Frequentes" icon={HelpCircle}>
       <div className="max-w-3xl mx-auto p-4">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-4">Perguntas Frequentes</h1>
           <p className="text-lg text-gray-300">
             Encontre respostas rápidas para as dúvidas mais comuns.
           </p>

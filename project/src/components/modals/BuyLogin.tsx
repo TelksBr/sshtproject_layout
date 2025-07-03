@@ -1,4 +1,4 @@
-import { Shield, Zap, Clock, Users, Check, Phone, Send, ArrowRight } from 'lucide-react';
+import { Shield, Zap, Clock, Users, Check, Phone, Send, ArrowRight, ShoppingCart } from 'lucide-react';
 import { Modal } from './Modal';
 import { openExternalUrl } from '../../utils/externalUtils';
 
@@ -8,10 +8,9 @@ interface BuyLoginProps {
 
 export function BuyLogin({ onClose }: BuyLoginProps) {
   return (
-    <Modal onClose={onClose}>
+    <Modal onClose={onClose} title="Planos Premium SSH T Project" icon={ShoppingCart}>
       <div className="max-w-md mx-auto p-4">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-4">Planos Premium SSH T Project</h1>
           <p className="text-lg text-gray-300">
             Eleve sua experiência com nossos planos premium. Mais velocidade, mais segurança e suporte prioritário.
           </p>

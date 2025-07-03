@@ -225,7 +225,7 @@ export function AutoConnectModal({
           </button>
           
           {showConfigTypeDropdown && (
-            <div className="absolute bottom-full left-0 right-0 mb-1 bg-[#1a0533] border border-[#6205D5]/30 rounded-lg shadow-xl z-50">
+            <div className="absolute bottom-full left-0 right-0 mb-1 bg-[#1a0533] border border-[#6205D5]/30 rounded-lg shadow-xl z-50 max-h-64 overflow-y-auto">
               {[
                 { value: 'all', label: '🌐 Todas as configurações', desc: 'Testa SSH e V2Ray' },
                 { value: 'ssh', label: '🔐 Apenas SSH/Proxy', desc: 'SSH, Proxy, SOCKS' },
@@ -273,7 +273,7 @@ export function AutoConnectModal({
           </button>
           
           {showCategoriesDropdown && (
-            <div className="absolute bottom-full left-0 right-0 mb-1 bg-[#1a0533] border border-[#6205D5]/30 rounded-lg shadow-xl z-50 max-h-48 overflow-y-auto">
+            <div className="absolute bottom-full left-0 right-0 mb-1 bg-[#1a0533] border border-[#6205D5]/30 rounded-lg shadow-xl z-50 max-h-64 overflow-y-auto custom-scrollbar">
               <div className="p-2">
                 <button
                   onClick={() => {
@@ -440,7 +440,7 @@ export function AutoConnectModal({
             {logs.length} eventos
           </span>
         </div>
-        <div className="bg-[#0f0221] border border-[#6205D5]/30 rounded-lg max-h-48 overflow-y-auto">
+        <div className="bg-[#0f0221] border border-[#6205D5]/30 rounded-lg max-h-60 overflow-y-auto custom-scrollbar">
           {logs.length > 0 ? (
             <div className="p-4 space-y-3">
               {logs.slice(-10).map((log) => (
@@ -480,7 +480,7 @@ export function AutoConnectModal({
       </div>
 
       {/* Action Buttons */}
-      <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-[#6205D5]/20 bg-[#1a0533]/80 rounded-b-2xl">
+      <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-[#6205D5]/20">
         {!running ? (
           <button
             onClick={onStart}
@@ -510,31 +510,44 @@ export function AutoConnectModal({
   );
 
   return (
-    <Modal onClose={onClose}>
-      <div
-        className="p-4 sm:p-6 w-full max-w-[98vw] md:max-w-[540px] max-h-[92vh] flex flex-col gap-6 rounded-2xl bg-[#1a0533]/95 shadow-2xl border border-[#6205D5]/30"
-        style={{ minWidth: 0 }}
-      >
-        {/* Header fixo para mobile */}
-        <div className="sticky top-0 z-10 bg-[#1a0533]/95 pb-2 mb-2 rounded-t-2xl">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-[#b0a8ff] flex items-center gap-2">
-              <RefreshCw className={`w-6 h-6 ${running ? 'animate-spin text-[#6205D5]' : 'text-[#b0a8ff]'}`} />
-              Teste Automático
-            </h2>
-            <button
-              onClick={() => setShowSettings(!showSettings)}
-              className="p-2 rounded-lg bg-[#26074d] hover:bg-[#6205D5] transition-colors group"
-              title="Configurações"
-            >
-              <Settings className="w-5 h-5 text-[#b0a8ff] group-hover:text-white" />
-            </button>
-          </div>
+    <Modal onClose={onClose} title="Teste Automático" icon={RefreshCw}>
+      <div className="p-4 sm:p-6 w-full flex flex-col gap-6">
+        {/* Botão de configurações no canto superior direito */}
+        <div className="flex justify-end">
+          <button
+            onClick={() => setShowSettings(!showSettings)}
+            className="p-2 rounded-lg bg-[#26074d] hover:bg-[#6205D5] transition-colors group"
+            title="Configurações"
+          >
+            <Settings className="w-5 h-5 text-[#b0a8ff] group-hover:text-white" />
+          </button>
         </div>
         
-        <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-6">
+        {/* Conteúdo principal */}
+        <div className="flex flex-col gap-6">
           {showSettings ? renderSettings() : renderMainScreen()}
         </div>
+
+        {/* Estilos personalizados para barras de rolagem */}
+        <style>{`
+          .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+          }
+          
+          .custom-scrollbar::-webkit-scrollbar-track {
+            background: #1a0533;
+            border-radius: 6px;
+          }
+          
+          .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #6205D5;
+            border-radius: 6px;
+          }
+          
+          .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #7c4dff;
+          }
+        `}</style>
       </div>
     </Modal>
   );
