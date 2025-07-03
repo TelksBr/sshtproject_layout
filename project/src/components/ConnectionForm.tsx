@@ -237,16 +237,16 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
   };
 
   return (
-    <section className="card">
-      <h1 className="text-gradient text-base font-medium text-center mb-3">
+    <section className="card md:p-8 md:rounded-2xl lg:p-6">
+      <h1 className="text-gradient text-base md:text-lg lg:text-base font-medium text-center mb-3 md:mb-5 lg:mb-4">
         Dados de Acesso
       </h1>
-      <div className="space-y-3">
+      <div className="space-y-3 md:space-y-5 lg:space-y-4">
         {/* Input de usuário */}
         {showUsernameInput && (
           <div className="relative">
             <input
-              className="w-full h-10 px-3 rounded-lg glass-effect text-white placeholder-gray-400 outline-none focus:border-purple-500 text-sm"
+              className="w-full h-10 md:h-12 lg:h-11 px-3 md:px-4 lg:px-3 rounded-lg glass-effect text-white placeholder-gray-400 outline-none focus:border-purple-500 text-sm md:text-base lg:text-sm"
               type="text"
               autoCapitalize="none"
               placeholder="Usuário"
@@ -260,7 +260,7 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
         {showPasswordInput && (
           <div className="relative">
             <input
-              className="w-full h-10 px-3 pr-10 rounded-lg glass-effect text-white placeholder-gray-400 outline-none focus:border-purple-500 text-sm"
+              className="w-full h-10 md:h-12 lg:h-11 px-3 md:px-4 lg:px-3 pr-10 rounded-lg glass-effect text-white placeholder-gray-400 outline-none focus:border-purple-500 text-sm md:text-base lg:text-sm"
               type={showPassword ? 'text' : 'password'}
               placeholder="Senha"
               value={passwordValue}
@@ -271,7 +271,7 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
               onClick={() => setShowPassword(!showPassword)}
               type="button"
             >
-              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              {showPassword ? <EyeOff className="w-4 h-4 md:w-5 md:h-5 lg:w-4 lg:h-4" /> : <Eye className="w-4 h-4 md:w-5 md:h-5 lg:w-4 lg:h-4" />}
             </button>
           </div>
         )}
@@ -280,7 +280,7 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
         {showUUIDInput && (
           <div className="relative">
             <input
-              className="w-full h-10 px-3 pr-20 rounded-lg glass-effect text-white placeholder-gray-400 outline-none focus:border-purple-500 text-sm"
+              className="w-full h-10 md:h-12 lg:h-11 px-3 md:px-4 lg:px-3 pr-20 rounded-lg glass-effect text-white placeholder-gray-400 outline-none focus:border-purple-500 text-sm md:text-base lg:text-sm"
               type={showUUID ? 'text' : 'password'}
               placeholder="UUID"
               value={uuidValue}
@@ -291,13 +291,13 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
               onClick={() => setShowUUID(!showUUID)}
               type="button"
             >
-              {showUUID ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              {showUUID ? <EyeOff className="w-4 h-4 md:w-5 md:h-5 lg:w-4 lg:h-4" /> : <Eye className="w-4 h-4 md:w-5 md:h-5 lg:w-4 lg:h-4" />}
             </button>
             <div className="absolute right-2 top-1/2 -translate-y-1/2 group">
               <button className="text-[#b0a8ff] cursor-pointer flex items-center" type="button" tabIndex={-1}>
-                <HelpCircle className="w-4 h-4" />
+                <HelpCircle className="w-4 h-4 md:w-5 md:h-5 lg:w-4 lg:h-4" />
               </button>
-              <div className="absolute bottom-full right-0 mb-2 w-64 text-sm bg-[#26074d] text-[#b0a8ff] p-3 rounded-lg shadow-lg z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none border border-[#6205D5]/30">
+              <div className="absolute bottom-full right-0 mb-2 w-64 md:w-80 lg:w-72 text-sm md:text-base lg:text-sm bg-[#26074d] text-[#b0a8ff] p-3 rounded-lg shadow-lg z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none border border-[#6205D5]/30">
                 <div className="font-bold mb-1 text-[#b0a8ff]">O que é o UUID?</div>
                 <div className="mb-1">É a chave única de login do seu V2Ray.</div>
                 <div className="mb-1">Recebida no bot após a compra.</div>
@@ -314,11 +314,9 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
           </div>
         )}
 
-
-
         {/* Botão de conexão */}
         <button
-          className={`btn-primary w-full h-10 text-sm ${getButtonStyle()}`}
+          className={`btn-primary w-full h-10 md:h-12 lg:h-11 text-sm md:text-base lg:text-sm ${getButtonStyle()}`}
           onClick={handleConnection}
           disabled={vpnState === 'STOPPING'}
           title={`Estado atual: ${vpnState}`}
@@ -328,15 +326,15 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
 
         {/* Exibição de erro */}
         {formError && (
-          <p className="text-red-400 text-xs text-center">{formError}</p>
+          <p className="text-red-400 text-xs md:text-sm lg:text-xs text-center">{formError}</p>
         )}
 
         {/* Botão de logs */}
         <button
-          className="btn-outline w-full h-10 flex items-center justify-center gap-1.5 text-sm"
+          className="btn-outline w-full h-10 md:h-12 lg:h-11 flex items-center justify-center gap-1.5 text-sm md:text-base lg:text-sm"
           onClick={openDialogLogs}
         >
-          <Scroll className="w-4 h-4" />
+          <Scroll className="w-4 h-4 md:w-5 md:h-5 lg:w-4 lg:h-4" />
           <span className="font-medium">Registros</span>
         </button>
       </div>

@@ -149,7 +149,7 @@ function App() {
 
   return (
     <ActiveConfigProvider>
-      <main className="w-full h-screen flex flex-col bg-gradient-to-br from-[#1A0628] via-[#2A0A3E] to-[#1A0628] relative">
+      <main className="w-full h-screen flex flex-col md:flex-row bg-gradient-to-br from-[#1A0628] via-[#2A0A3E] to-[#1A0628] relative">
         <Sidebar 
           isOpen={showMenu}
           onClose={() => setShowMenu(false)}
@@ -160,32 +160,38 @@ function App() {
         />
 
         <section 
-          className="w-full h-full flex flex-col overflow-hidden" 
+          className="flex-1 w-full h-full flex flex-col overflow-hidden md:max-w-5xl md:mx-auto md:px-6 md:py-4 lg:max-w-none lg:mx-0 lg:px-4 lg:py-3 lg:flex-row lg:gap-6 lg:items-start" 
           id="container-home"
           style={containerStyle}
         >
-          {/* Header recebe props conforme padrão documentado */}
-          <Header 
-            onMenuClick={() => setShowMenu(true)}
-            version={version}
-            localIP={localIP}
-            vpnState={vpnState}
-          />
-
-          <section className="flex justify-center mt-3">
-            <img 
-              className="w-30 h-30 sm:w-28 sm:h-28 object-contain" 
-              id="app-logo" 
-              src={appLogo}
-              alt="SSH T PROJECT"
+          {/* Layout principal - flexível para tablet portrait/landscape */}
+          <div className="flex-1 flex flex-col lg:max-w-3xl lg:min-w-0">
+            <Header 
+              onMenuClick={() => setShowMenu(true)}
+              version={version}
+              localIP={localIP}
+              vpnState={vpnState}
             />
-          </section>
 
-          <div className="flex-1 flex flex-col gap-1.5 mt-2">
-            <ServerSelector />
-            <ConnectionForm vpnState={vpnState} />
+            <section className="flex justify-center mt-3 md:mt-6 lg:mt-4">
+              <img 
+                className="w-30 h-30 sm:w-28 sm:h-28 md:w-40 md:h-40 lg:w-28 lg:h-28 object-contain" 
+                id="app-logo" 
+                src={appLogo}
+                alt="SSH T PROJECT"
+              />
+            </section>
+
+            <div className="flex-1 flex flex-col gap-1.5 mt-2 md:max-w-2xl md:mx-auto md:gap-4 md:mt-6 lg:max-w-none lg:mx-0 lg:gap-3 lg:mt-4">
+              <ServerSelector />
+              <ConnectionForm vpnState={vpnState} />
+            </div>
           </div>
-          <NetworkStats />
+
+          {/* NetworkStats - posicionamento adaptativo */}
+          <div className="md:max-w-2xl md:mx-auto md:mb-4 lg:max-w-none lg:w-72 lg:mx-0 lg:flex-shrink-0 lg:mb-0">
+            <NetworkStats />
+          </div>
         </section>
 
         {getModal(currentModal, setCurrentModal)}

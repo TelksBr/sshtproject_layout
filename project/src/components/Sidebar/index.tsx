@@ -80,7 +80,8 @@ export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
         ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={onClose} />
 
       <aside className={`
-        fixed inset-y-0 left-0 w-[300px] max-w-[85vw] bg-[#26074d]/95 backdrop-blur-lg
+        fixed inset-y-0 left-0 w-[300px] max-w-[85vw]
+        sidebar-mobile-landscape bg-[#26074d]/95 backdrop-blur-lg
         transform transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
         border-r border-[#6205D5]/20 shadow-2xl shadow-black/20 z-50
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}

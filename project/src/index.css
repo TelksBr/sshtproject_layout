@@ -184,3 +184,200 @@ input[type="range"]::-moz-range-thumb:hover {
 .glass-effect:hover {
   @apply bg-white/10 border-white/20;
 }
+
+/* Suporte para Tablet - Portrait e Landscape */
+/* Tablet Portrait: melhorias de UX para telas médias */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .card {
+    padding: 2rem 1.75rem;
+    border-radius: 1.25rem;
+  }
+  
+  .btn-primary, .btn-outline {
+    font-size: 1.05rem;
+    padding: 0.85rem 1.5rem;
+    border-radius: 0.75rem;
+  }
+  
+  input {
+    font-size: 1.05rem;
+    padding: 0.85rem 1rem;
+    border-radius: 0.75rem;
+  }
+  
+  h1, h2, h3 {
+    font-size: 1.3rem;
+    line-height: 1.4;
+  }
+  
+  /* Touch targets maiores */
+  button, input, [role="button"] {
+    min-height: 48px;
+  }
+}
+
+/* Tablet Landscape: layout otimizado para orientação paisagem */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .card {
+    padding: 1.5rem;
+    border-radius: 1rem;
+  }
+  
+  .btn-primary, .btn-outline {
+    font-size: 0.95rem;
+    padding: 0.75rem 1.25rem;
+  }
+  
+  input {
+    font-size: 0.95rem;
+    padding: 0.75rem;
+  }
+  
+  h1, h2, h3 {
+    font-size: 1.15rem;
+  }
+}
+
+/* Orientação landscape específica: aproveita melhor o espaço horizontal */
+@media (orientation: landscape) and (min-width: 768px) and (max-width: 1280px) {
+  #container-home {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    gap: 1.5rem;
+  }
+  
+  .card {
+    padding: 1rem 1.25rem;
+  }
+  
+  /* Logo menor em landscape para economizar espaço vertical */
+  #app-logo {
+    width: 5rem !important;
+    height: 5rem !important;
+  }
+  
+  /* NetworkStats mais compacto em landscape */
+  .network-stats-landscape {
+    max-width: 240px;
+    padding: 0.75rem;
+  }
+}
+
+/* Tablets pequenos: otimizações específicas para 768px-900px */
+@media (min-width: 768px) and (max-width: 900px) {
+  #container-home {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+  
+  .card {
+    padding: 1.5rem 1.25rem;
+  }
+  
+  /* Logo menor em tablets pequenos */
+  #app-logo {
+    width: 8rem !important;
+    height: 8rem !important;
+  }
+  
+  /* Inputs e botões um pouco menores */
+  input, button {
+    height: 2.5rem;
+    font-size: 0.95rem;
+  }
+}
+
+/* Touch targets maiores em dispositivos touch */
+@media (pointer: coarse) {
+  button, input, [role="button"], [role="tab"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Aumenta área de toque dos ícones */
+  .icon-button {
+    padding: 0.75rem;
+  }
+}
+
+/* Otimizações para tablets em modo retrato */
+@media (min-width: 768px) and (max-width: 1023px) and (orientation: portrait) {
+  #container-home {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+  }
+}
+
+/* Hover states desabilitados em touch devices */
+@media (hover: none) and (pointer: coarse) {
+  .hover\:scale-105:hover {
+    transform: none;
+  }
+  
+  button:hover, .card:hover {
+    background-color: inherit;
+    transform: none;
+  }
+}
+
+/* Melhorias para modais e componentes modernos */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #6205D5 #1a0533;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #1a0533;
+  border-radius: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #6205D5, #7c4dff);
+  border-radius: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #7c4dff, #9575ff);
+}
+
+.custom-scrollbar::-webkit-scrollbar-corner {
+  background: #1a0533;
+}
+
+/* Animações suaves para modais */
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modal-content {
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+/* Efeitos de shimmer para elementos loading */
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+.shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  background-size: 200px 100%;
+  animation: shimmer 2s infinite;
+}

@@ -327,36 +327,64 @@ export function AutoConnectModal({
     <div className="space-y-6">
 
       {/* Resumo das Configurações Ativas */}
-      <div className="bg-gradient-to-r from-[#22094a] to-[#1a0533] border border-[#6205D5]/30 rounded-xl p-6 shadow-lg">
-        <h3 className="text-base font-bold text-[#b0a8ff] mb-4 flex items-center gap-2">
-          <Settings className="w-5 h-5 text-[#6205D5]" />
-          Configurações Ativas
-        </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm">
-          <div className="space-y-2">
-            <div className="text-[#b0a8ff]/70 text-xs uppercase tracking-wide">Tipo:</div>
-            <div className="text-[#b0a8ff] font-semibold text-base">
-              {autoConnectConfig.configType === 'all' && '🌐 Todas'}
-              {autoConnectConfig.configType === 'ssh' && '🔐 SSH/Proxy'}
-              {autoConnectConfig.configType === 'v2ray' && '🚀 V2Ray'}
+      <div className="card md:p-6 lg:p-4 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#6205D5]/10 via-transparent to-[#4B0082]/5 pointer-events-none"></div>
+        <div className="relative">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg md:text-xl font-bold text-gradient flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-[#6205D5]/20 backdrop-blur-sm">
+                <Settings className="w-5 h-5 text-[#6205D5]" />
+              </div>
+              Configurações Ativas
+            </h3>
+            <div className="px-3 py-1 bg-[#6205D5]/20 text-[#6205D5] text-xs font-semibold rounded-full uppercase tracking-wide">
+              Ativo
             </div>
           </div>
-          <div className="space-y-2">
-            <div className="text-[#b0a8ff]/70 text-xs uppercase tracking-wide">Categorias:</div>
-            <div className="text-[#b0a8ff] font-semibold text-base">
-              {autoConnectConfig.selectedCategories.length === 0 
-                ? '📂 Todas' 
-                : `📂 ${autoConnectConfig.selectedCategories.length} selecionada(s)`
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[
+              {
+                icon: '🌐',
+                label: 'Tipo de Config',
+                value: autoConnectConfig.configType === 'all' ? 'Todas as configurações' 
+                      : autoConnectConfig.configType === 'ssh' ? 'SSH/Proxy' 
+                      : 'V2Ray'
+              },
+              {
+                icon: '📂',
+                label: 'Categorias',
+                value: autoConnectConfig.selectedCategories.length === 0 
+                      ? 'Todas as categorias' 
+                      : `${autoConnectConfig.selectedCategories.length} selecionada(s)`
+              },
+              {
+                icon: '⏱️',
+                label: 'Timeout Conexão',
+                value: `${(autoConnectConfig.connectionTimeout / 1000).toFixed(1)}s`
+              },
+              {
+                icon: '🌐',
+                label: 'Timeout Internet',
+                value: `${(autoConnectConfig.fetchTimeout / 1000).toFixed(1)}s`
               }
-            </div>
-          </div>
-          <div className="space-y-2">
-            <div className="text-[#b0a8ff]/70 text-xs uppercase tracking-wide">Timeout Conexão:</div>
-            <div className="text-[#b0a8ff] font-semibold text-base">⏰ {(autoConnectConfig.connectionTimeout / 1000).toFixed(1)}s</div>
-          </div>
-          <div className="space-y-2">
-            <div className="text-[#b0a8ff]/70 text-xs uppercase tracking-wide">Timeout Internet:</div>
-            <div className="text-[#b0a8ff] font-semibold text-base">🌐 {(autoConnectConfig.fetchTimeout / 1000).toFixed(1)}s</div>
+            ].map((item, index) => (
+              <div key={index} className="bg-[#26074d]/40 backdrop-blur-sm border border-[#6205D5]/20 rounded-xl p-4 hover:border-[#6205D5]/40 transition-all duration-300 group">
+                <div className="flex items-center gap-3">
+                  <div className="text-2xl group-hover:scale-110 transition-transform duration-300">
+                    {item.icon}
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-[#b0a8ff]/70 text-xs font-medium uppercase tracking-wider mb-1">
+                      {item.label}
+                    </div>
+                    <div className="text-[#b0a8ff] font-semibold text-sm md:text-base">
+                      {item.value}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -370,52 +398,116 @@ export function AutoConnectModal({
       )}
 
       {/* Progress Section */}
-      <div className="bg-[#1a0533]/50 border border-[#6205D5]/20 rounded-xl p-6 space-y-4">
+      <div className="card md:p-6 lg:p-4 space-y-6">
+        {/* Progress Header */}
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg md:text-xl font-bold text-gradient flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-[#6205D5]/20 backdrop-blur-sm">
+              <RefreshCw className={`w-5 h-5 text-[#6205D5] ${running ? 'animate-spin' : ''}`} />
+            </div>
+            Status do Teste
+          </h3>
+          <div className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full ${running ? 'bg-green-400 animate-pulse' : 'bg-gray-400'}`}></div>
+            <span className="text-sm font-medium text-[#b0a8ff]">
+              {running ? 'Em execução' : isCompleted ? 'Concluído' : 'Aguardando'}
+            </span>
+          </div>
+        </div>
+
+        {/* Progress Stats */}
+        <div className="grid grid-cols-3 gap-4">
+          <div className="text-center p-4 bg-[#26074d]/40 rounded-xl border border-[#6205D5]/20">
+            <div className="text-2xl md:text-3xl font-bold text-[#6205D5] mb-1">{testedConfigs}</div>
+            <div className="text-xs text-[#b0a8ff]/70 uppercase tracking-wide">Testados</div>
+          </div>
+          <div className="text-center p-4 bg-[#26074d]/40 rounded-xl border border-[#6205D5]/20">
+            <div className="text-2xl md:text-3xl font-bold text-[#b0a8ff] mb-1">{totalConfigs}</div>
+            <div className="text-xs text-[#b0a8ff]/70 uppercase tracking-wide">Total</div>
+          </div>
+          <div className="text-center p-4 bg-[#26074d]/40 rounded-xl border border-[#6205D5]/20">
+            <div className="text-2xl md:text-3xl font-bold text-green-400 mb-1">{progressPercentage.toFixed(0)}%</div>
+            <div className="text-xs text-[#b0a8ff]/70 uppercase tracking-wide">Progresso</div>
+          </div>
+        </div>
+
         {/* Progress Bar */}
         <div className="space-y-3">
-          <div className="flex justify-between text-base font-medium">
-            <span className="text-[#b0a8ff]">Progresso do Teste</span>
-            <span className="text-[#6205D5] font-bold">{testedConfigs}/{totalConfigs}</span>
+          <div className="flex justify-between text-sm font-medium text-[#b0a8ff]">
+            <span>Progresso Geral</span>
+            <span>{testedConfigs}/{totalConfigs} configs</span>
           </div>
-          <div className="w-full bg-[#26074d] rounded-full h-3 shadow-inner">
-            <div 
-              className="bg-gradient-to-r from-[#6205D5] to-[#7c4dff] h-3 rounded-full transition-all duration-500 shadow-sm"
-              style={{ width: `${progressPercentage}%` }}
-            />
-          </div>
-          <div className="text-sm text-[#b0a8ff]/80 text-center font-medium">
-            {progressPercentage.toFixed(1)}% concluído
+          <div className="relative">
+            <div className="w-full bg-[#26074d] rounded-full h-4 shadow-inner overflow-hidden">
+              <div 
+                className="bg-gradient-to-r from-[#6205D5] via-[#7c4dff] to-[#9575ff] h-full rounded-full transition-all duration-700 ease-out relative overflow-hidden"
+                style={{ width: `${progressPercentage}%` }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 animate-pulse"></div>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Current Test Info */}
         {running && currentConfigName && (
-          <div className="bg-gradient-to-r from-[#26074d]/80 to-[#1a0533]/80 border border-[#6205D5]/40 rounded-xl p-4 backdrop-blur-sm">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="animate-pulse">
-                <Clock className="w-5 h-5 text-[#6205D5]" />
+          <div className="bg-gradient-to-r from-[#6205D5]/20 via-[#7c4dff]/10 to-[#6205D5]/20 border border-[#6205D5]/40 rounded-xl p-5 backdrop-blur-sm relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-[#6205D5]/5 via-transparent to-[#7c4dff]/5 animate-pulse"></div>
+            <div className="relative">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="relative">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#6205D5] to-[#7c4dff] flex items-center justify-center shadow-lg">
+                    <RefreshCw className="w-6 h-6 text-white animate-spin" />
+                  </div>
+                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full animate-ping"></div>
+                </div>
+                <div>
+                  <div className="text-[#b0a8ff] font-semibold text-lg">Testando Agora</div>
+                  <div className="text-[#6205D5] text-sm font-medium">Verificando conectividade...</div>
+                </div>
               </div>
-              <span className="text-[#b0a8ff] font-semibold text-base">Testando agora:</span>
-            </div>
-            <div className="text-white font-mono text-base bg-[#0f0221] rounded-lg p-3 border border-[#6205D5]/30">
-              {currentConfigName}
-            </div>
-            {currentTestDuration > 0 && (
-              <div className="text-sm text-[#6205D5] mt-3 font-medium">
-                Tempo decorrido: {formatDuration(currentTestDuration)}
+              
+              <div className="bg-[#0f0221]/80 border border-[#6205D5]/30 rounded-lg p-4 backdrop-blur-sm">
+                <div className="text-[#b0a8ff]/70 text-xs font-medium uppercase tracking-wider mb-2">Configuração Atual:</div>
+                <div className="text-white font-mono text-base md:text-lg break-all">
+                  {currentConfigName}
+                </div>
               </div>
-            )}
+              
+              {currentTestDuration > 0 && (
+                <div className="mt-4 flex items-center justify-between">
+                  <div className="text-sm text-[#b0a8ff]/70">Tempo decorrido:</div>
+                  <div className="px-3 py-1 bg-[#6205D5]/20 text-[#6205D5] text-sm font-mono rounded-full">
+                    {formatDuration(currentTestDuration)}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
         {/* Success Message */}
         {successConfigName && (
-          <div className="bg-gradient-to-r from-green-500/30 to-emerald-500/30 border border-green-400/50 rounded-xl p-4 backdrop-blur-sm">
-            <div className="flex items-center gap-3">
-              <CheckCircle className="w-6 h-6 text-green-400" />
-              <div>
-                <div className="text-green-400 text-base font-bold">Conectado com sucesso!</div>
-                <div className="text-green-300 font-mono text-sm mt-1">{successConfigName}</div>
+          <div className="bg-gradient-to-r from-green-500/20 via-emerald-500/15 to-green-500/20 border border-green-400/40 rounded-xl p-5 backdrop-blur-sm relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-green-400/5 via-transparent to-emerald-400/5 animate-pulse"></div>
+            <div className="relative">
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center shadow-lg">
+                    <CheckCircle className="w-7 h-7 text-white" />
+                  </div>
+                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <div className="text-green-400 text-xl font-bold mb-1">🎉 Conectado com Sucesso!</div>
+                  <div className="text-green-300 text-sm mb-3">Conexão estabelecida e testada</div>
+                  <div className="bg-green-950/50 border border-green-400/30 rounded-lg p-3">
+                    <div className="text-green-300/70 text-xs font-medium uppercase tracking-wider mb-1">Configuração Ativa:</div>
+                    <div className="text-green-200 font-mono text-sm break-all">{successConfigName}</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -430,78 +522,111 @@ export function AutoConnectModal({
       </div>
 
       {/* Logs Section */}
-      <div className="bg-[#1a0533]/50 border border-[#6205D5]/20 rounded-xl p-6 space-y-4">
+      <div className="card md:p-6 lg:p-4 space-y-6">
         <div className="flex items-center justify-between">
-          <h3 className="text-base font-bold text-[#b0a8ff] flex items-center gap-2">
-            <AlertCircle className="w-5 h-5 text-[#6205D5]" />
+          <h3 className="text-lg md:text-xl font-bold text-gradient flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-[#6205D5]/20 backdrop-blur-sm">
+              <AlertCircle className="w-5 h-5 text-[#6205D5]" />
+            </div>
             Histórico de Testes
           </h3>
-          <span className="text-xs text-[#b0a8ff]/60 bg-[#26074d] px-3 py-1 rounded-full font-medium">
-            {logs.length} eventos
-          </span>
+          <div className="flex items-center gap-2">
+            <div className="px-3 py-1 bg-[#26074d]/60 text-[#b0a8ff] text-xs font-semibold rounded-full border border-[#6205D5]/20">
+              {logs.length} eventos
+            </div>
+          </div>
         </div>
-        <div className="bg-[#0f0221] border border-[#6205D5]/30 rounded-lg max-h-60 overflow-y-auto custom-scrollbar">
-          {logs.length > 0 ? (
-            <div className="p-4 space-y-3">
-              {logs.slice(-10).map((log) => (
-                <div key={log.id} className="flex items-start gap-4 p-3 rounded-lg bg-[#1a0533]/50 hover:bg-[#26074d]/30 transition-all duration-200 border border-transparent hover:border-[#6205D5]/20">
-                  <div className="flex-shrink-0 mt-1">
-                    {getStatusIcon(log.status)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <span className="text-[#b0a8ff] font-medium text-base truncate">
-                        {log.configName}
-                      </span>
-                      <span className="text-[#b0a8ff]/50 text-xs flex-shrink-0 font-mono">
-                        {log.timestamp.toLocaleTimeString()}
-                      </span>
-                    </div>
-                    {log.message && (
-                      <div className="text-[#b0a8ff]/70 text-sm mt-1">{log.message}</div>
-                    )}
-                    {log.duration && (
-                      <div className="text-[#6205D5] text-sm mt-2 font-mono bg-[#26074d]/30 rounded px-2 py-1 inline-block">
-                        {formatDuration(log.duration)}
+        
+        <div className="bg-[#0f0221]/80 border border-[#6205D5]/30 rounded-xl overflow-hidden">
+          <div className="max-h-80 overflow-y-auto custom-scrollbar">
+            {logs.length > 0 ? (
+              <div className="p-4 space-y-3">
+                {logs.slice(-10).reverse().map((log, index) => (
+                  <div key={log.id} className={`flex items-start gap-4 p-4 rounded-xl transition-all duration-300 hover:bg-[#26074d]/30 border border-transparent hover:border-[#6205D5]/20 ${
+                    index === 0 ? 'bg-[#6205D5]/10 border-[#6205D5]/20' : 'bg-[#1a0533]/50'
+                  }`}>
+                    <div className="flex-shrink-0 mt-1">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                        log.status === 'success' ? 'bg-green-500/20 text-green-400' :
+                        log.status === 'failed' || log.status === 'timeout' ? 'bg-red-500/20 text-red-400' :
+                        log.status === 'connecting' ? 'bg-blue-500/20 text-blue-400' :
+                        log.status === 'testing' ? 'bg-yellow-500/20 text-yellow-400' :
+                        'bg-gray-500/20 text-gray-400'
+                      }`}>
+                        {getStatusIcon(log.status)}
                       </div>
-                    )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <span className="text-[#b0a8ff] font-semibold text-base truncate">
+                          {log.configName}
+                        </span>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {log.duration && (
+                            <div className="px-2 py-1 bg-[#6205D5]/20 text-[#6205D5] text-xs font-mono rounded-full">
+                              {formatDuration(log.duration)}
+                            </div>
+                          )}
+                          <span className="text-[#b0a8ff]/50 text-xs font-mono">
+                            {log.timestamp.toLocaleTimeString()}
+                          </span>
+                        </div>
+                      </div>
+                      {log.message && (
+                        <div className="text-[#b0a8ff]/70 text-sm bg-[#26074d]/30 rounded-lg p-2 border border-[#6205D5]/10">
+                          {log.message}
+                        </div>
+                      )}
+                    </div>
                   </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-12 text-center">
+                <div className="w-16 h-16 rounded-full bg-[#26074d]/40 flex items-center justify-center mx-auto mb-4">
+                  <AlertCircle className="w-8 h-8 text-[#b0a8ff]/40" />
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="p-8 text-center text-[#b0a8ff]/60">
-              <AlertCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <div className="text-base font-medium mb-2">Nenhum log disponível</div>
-              <div className="text-sm">Os logs aparecerão quando o teste iniciar</div>
-            </div>
-          )}
+                <div className="text-lg font-semibold text-[#b0a8ff]/60 mb-2">Nenhum log disponível</div>
+                <div className="text-sm text-[#b0a8ff]/40">Os logs aparecerão quando o teste iniciar</div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Action Buttons */}
-      <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-[#6205D5]/20">
+      <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-[#6205D5]/20">
         {!running ? (
           <button
             onClick={onStart}
-            className="flex-1 py-4 px-6 bg-gradient-to-r from-[#6205D5] to-[#7c4dff] hover:from-[#7c4dff] hover:to-[#9575ff] text-white rounded-xl font-semibold text-base transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
+            className="flex-1 group relative overflow-hidden py-4 px-6 bg-gradient-to-r from-[#6205D5] to-[#7c4dff] hover:from-[#7c4dff] hover:to-[#9575ff] text-white rounded-xl font-semibold text-base transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-2xl hover:shadow-[#6205D5]/25 transform hover:scale-[1.02] active:scale-[0.98]"
           >
-            <Wifi className="w-6 h-6" />
-            {isCompleted ? '🔄 Testar Novamente' : '🚀 Iniciar Teste Automático'}
+            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+            <div className="relative flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                <Wifi className="w-5 h-5" />
+              </div>
+              <span>{isCompleted ? '🔄 Testar Novamente' : '🚀 Iniciar Teste Automático'}</span>
+            </div>
           </button>
         ) : (
           <button
             onClick={onCancel}
-            className="flex-1 py-4 px-6 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-xl font-semibold text-base transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
+            className="flex-1 group relative overflow-hidden py-4 px-6 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-xl font-semibold text-base transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-2xl hover:shadow-red-500/25 transform hover:scale-[1.02] active:scale-[0.98]"
           >
-            <XCircle className="w-6 h-6" />
-            🛑 Parar Teste
+            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+            <div className="relative flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                <XCircle className="w-5 h-5" />
+              </div>
+              <span>🛑 Parar Teste</span>
+            </div>
           </button>
         )}
         <button
           onClick={onClose}
           disabled={running}
-          className="py-4 px-6 bg-[#26074d] hover:bg-[#3a0a7a] disabled:bg-gray-700 disabled:cursor-not-allowed text-[#b0a8ff] hover:text-white disabled:text-gray-400 rounded-xl border border-[#6205D5]/30 hover:border-[#6205D5]/60 font-semibold text-base transition-all duration-200"
+          className="py-4 px-6 bg-[#26074d]/80 hover:bg-[#6205D5]/20 disabled:bg-gray-700/50 disabled:cursor-not-allowed text-[#b0a8ff] hover:text-white disabled:text-gray-400 rounded-xl border border-[#6205D5]/30 hover:border-[#6205D5]/60 disabled:border-gray-600/30 font-semibold text-base transition-all duration-300 backdrop-blur-sm hover:shadow-lg transform hover:scale-[1.02] active:scale-[0.98] disabled:transform-none"
         >
           {running ? '⏳ Aguarde...' : 'Fechar'}
         </button>
@@ -511,17 +636,39 @@ export function AutoConnectModal({
 
   return (
     <Modal onClose={onClose} title="Teste Automático" icon={RefreshCw}>
-      <div className="p-4 sm:p-6 w-full flex flex-col gap-6">
-        {/* Botão de configurações no canto superior direito */}
-        <div className="flex justify-end">
+      <div className="p-4 md:p-6 lg:p-4 w-full flex flex-col gap-6 max-h-[90vh] overflow-y-auto custom-scrollbar">
+        {/* Header com botão de configurações */}
+        <div className="flex items-center justify-between sticky top-0 bg-[#1a0533]/95 backdrop-blur-md z-10 -mx-4 md:-mx-6 lg:-mx-4 px-4 md:px-6 lg:px-4 py-2 border-b border-[#6205D5]/20">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#6205D5] to-[#7c4dff] flex items-center justify-center shadow-lg">
+              <RefreshCw className={`w-5 h-5 text-white ${running ? 'animate-spin' : ''}`} />
+            </div>
+            <div>
+              <h2 className="text-lg md:text-xl font-bold text-gradient">Teste Automático</h2>
+              <p className="text-sm text-[#b0a8ff]/70">Encontre a melhor conexão automaticamente</p>
+            </div>
+          </div>
           <button
             onClick={() => setShowSettings(!showSettings)}
-            className="p-2 rounded-lg bg-[#26074d] hover:bg-[#6205D5] transition-colors group"
+            className="group p-3 rounded-xl bg-[#26074d]/60 hover:bg-[#6205D5]/20 transition-all duration-300 border border-[#6205D5]/20 hover:border-[#6205D5]/40 backdrop-blur-sm"
             title="Configurações"
           >
-            <Settings className="w-5 h-5 text-[#b0a8ff] group-hover:text-white" />
+            <Settings className={`w-5 h-5 text-[#b0a8ff] group-hover:text-[#6205D5] transition-all duration-300 ${showSettings ? 'rotate-45' : ''}`} />
           </button>
         </div>
+        
+        {/* Error Message */}
+        {error && (
+          <div className="bg-gradient-to-r from-red-500/20 via-red-400/15 to-red-500/20 border border-red-400/40 rounded-xl p-4 flex items-center gap-3 backdrop-blur-sm">
+            <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
+              <AlertCircle className="w-5 h-5 text-red-400" />
+            </div>
+            <div>
+              <div className="text-red-400 font-semibold text-base mb-1">Erro no Teste</div>
+              <div className="text-red-300 text-sm">{error}</div>
+            </div>
+          </div>
+        )}
         
         {/* Conteúdo principal */}
         <div className="flex flex-col gap-6">
