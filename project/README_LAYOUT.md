@@ -13,12 +13,19 @@ O projeto está organizado para garantir escalabilidade, clareza e facilidade de
 ```text
 project/
   src/
-    components/         # Componentes React reutilizáveis e de domínio
+    components/         # Componentes React principais e reutilizáveis
+      modals/           # Componentes de modais (Terms, Privacy, etc.)
+      Sidebar/          # Componente de sidebar/menu lateral
+      Header.tsx        # Cabeçalho com status VPN, IP e versão
+      ConnectionForm.tsx # Formulário de autenticação
+      NetworkStats.tsx  # Estatísticas de rede em tempo real
+      ServerSelector.tsx # Seletor de configurações/servidores
+      ...
     context/            # Contextos globais (React Context API)
     hooks/              # Hooks customizados
     types/              # Tipos globais e interfaces (TypeScript)
     utils/              # Funções utilitárias e integração nativa
-      ...
+    constants/          # Constantes da aplicação (logos, etc.)
 ```
 
 ---
@@ -46,7 +53,9 @@ project/
 ## Componentes (components/)
 
 - Componentes React são organizados por domínio e reutilização.
-- Exemplo: `Header`, `ServerSelector`, `ConnectionForm`, modais em subpastas.
+- **Principais**: `Header`, `ServerSelector`, `ConnectionForm`, `NetworkStats`, `Sidebar`.
+- **Modais**: Organizados na subpasta `modals/` (Terms, Privacy, Support, etc.).
+- **Layout**: Todos os componentes são responsivos com suporte a tablet portrait/landscape.
 
 ---
 
@@ -135,13 +144,205 @@ Componente responsável por exibir e gerenciar os campos de autenticação de ac
 
 ---
 
-> **Observação:**
-> O padrão de comunicação entre componentes é sempre via eventos globais e tipos centralizados, garantindo desacoplamento e previsibilidade.
+### NetworkStats
+
+Componente responsável por exibir estatísticas de rede em tempo real, incluindo velocidades de download/upload e totais transferidos.
+
+**Funcionalidades:**
+
+- Polling automático a cada 2 segundos para atualizar estatísticas.
+- Exibe velocidade de download e upload em tempo real.
+- Mostra totais de dados baixados e enviados.
+- Layout adaptativo: horizontal em mobile/tablet portrait, vertical em tablet landscape.
+
+**Padrão:**
+
+- Utiliza o hook `useNetworkStats` para obter dados de rede.
+- Não depende de props externas, funciona de forma autônoma.
+- Formatação automática de bytes (B, KB, MB, GB).
+- Visual compacto e responsivo para todos os tamanhos de tela.
+
+**Exemplo de exibição:**
+
+- **Download**: 1.2 MB/s (Total: 45.6 MB)
+- **Upload**: 256 KB/s (Total: 8.9 MB)
 
 ---
 
-> **Observação:**
-> Todos os tipos utilizados devem ser importados de `types/` e funções utilitárias de `utils/`, conforme padrão documentado.
+### ServerSelector
+
+Componente responsável por exibir e permitir a seleção de configurações/servidores disponíveis.
+
+**Funcionalidades:**
+
+- Lista todas as configurações disponíveis organizadas por categorias.
+- Destaque visual da configuração ativa atual.
+- Integração com AutoConnect para teste automático de configurações.
+- Controle de modo avião e verificação de status do usuário.
+
+**Padrão:**
+
+- Emite evento `DtConfigSelectedEvent` quando uma configuração é selecionada.
+- Não gerencia estado da configuração ativa, apenas reage a mudanças via contexto.
+- Interface visual adaptativa com ícones e descrições.
+
+**Props:**
+
+- Não recebe props diretamente, utiliza contexto global e hooks próprios.
+
+---
+
+### Sidebar
+
+Componente de menu lateral com navegação e configurações do app.
+
+**Funcionalidades:**
+
+- Menu organizado por categorias (Principais, Ferramentas, Configurações).
+- Navegação para modais e funcionalidades específicas.
+- Ajustes de sistema (APN, Rede, Bateria).
+- Visual moderno com overlay e animações.
+
+**Props:**
+
+- `isOpen: boolean` — Controla visibilidade do menu.
+- `onClose: () => void` — Função para fechar o menu.
+- `onNavigate: (modal: ModalType) => void` — Função de navegação para modais.
+
+**Padrão:**
+
+- Sidebar fixa em tablet landscape, overlay em mobile e tablet portrait.
+- Compactação automática em telas menores.
+- Integração com funções nativas do sistema.
+
+---
+
+## Hooks Customizados
+
+### useNetworkStats
+
+Hook responsável por coletar e formatar estatísticas de rede em tempo real.
+
+**Funcionalidades:**
+
+- Polling automático a cada 2 segundos.
+- Cálculo de velocidades baseado na diferença de bytes transferidos.
+- Formatação automática de valores (B/s, KB/s, MB/s, etc.).
+- Prevenção de loops infinitos usando `useRef`.
+
+**Retorno:**
+
+```typescript
+{
+  downloadSpeed: string;    // "1.2 MB/s"
+  uploadSpeed: string;      // "256 KB/s"
+  totalDownloaded: number;  // bytes totais
+  totalUploaded: number;    // bytes totais
+  formattedTotalDownloaded: string; // "45.6 MB"
+  formattedTotalUploaded: string;   // "8.9 MB"
+}
+```
+
+---
+
+## Layout Responsivo
+
+O projeto implementa um sistema de layout responsivo otimizado para:
+
+### **Mobile Portrait** (até 768px)
+
+- Layout vertical com componentes empilhados
+- Sidebar como overlay deslizante
+- Fontes e espaçamentos compactos
+- Touch targets otimizados (mínimo 44px)
+
+### **Tablet Portrait** (768px - 1024px)
+
+- Layout centralizado com largura máxima
+- Componentes com mais espaçamento
+- Fontes e ícones maiores
+- Sidebar ainda como overlay
+
+### **Tablet Landscape** (1024px+)
+
+- Layout horizontal de duas colunas
+- Sidebar fixa na lateral esquerda
+- NetworkStats fixa na lateral direita
+- Componentes principais centralizados
+
+### **Mobile Landscape** (orientação paisagem)
+
+- Layout compacto otimizado
+- Header, logo e componentes reduzidos
+- Sidebar compacta
+- Aproveitamento máximo da largura
+
+---
+
+## Build e Compilação
+
+### Build Padrão
+
+O projeto utiliza Vite como bundler e pode ser compilado com o comando padrão:
+
+```bash
+bun run build
+```
+
+Isso gera os arquivos na pasta `dist/` com CSS e JS separados.
+
+---
+
+## Build Inline
+
+O projeto inclui um script customizado `build-inline.ts` que permite gerar um arquivo `index.html` único com CSS e JavaScript embutidos (inline), eliminando a necessidade de arquivos separados.
+
+### Como usar
+
+Execute o script de build inline:
+
+```bash
+bun run build-inline.ts
+```
+
+### O que acontece
+
+1. **Build padrão**: Executa `bun run build` para gerar os arquivos otimizados na pasta `dist/`.
+2. **Localização de assets**: Identifica automaticamente os arquivos CSS e JS gerados na pasta `dist/assets/`.
+3. **Incorporação inline**: Lê o conteúdo dos arquivos CSS e JS e os incorpora diretamente no HTML.
+4. **Geração do arquivo único**: Cria um novo `index.html` na pasta `dist/` com todo o código embutido.
+
+### Vantagens do Build Inline
+
+- **Arquivo único**: Todo o app fica em um só arquivo HTML, facilitando distribuição e deploy.
+- **Sem dependências externas**: CSS e JS ficam embutidos, eliminando requisições HTTP adicionais.
+- **Otimização**: Mantém todas as otimizações do build padrão (minificação, tree-shaking, etc.).
+- **Compatibilidade**: Funciona em qualquer servidor web ou pode ser aberto diretamente no navegador.
+
+### Estrutura do arquivo final
+
+```html
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SSH T PROJECT LAYOUT</title>
+    <style>/* CSS minificado embutido */</style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>/* JavaScript minificado embutido */</script>
+  </body>
+</html>
+```
+
+### Quando usar
+
+- **Distribuição simplificada**: Quando você precisa de apenas um arquivo para distribuir.
+- **Ambientes restritos**: Onde não é possível servir arquivos estáticos separados.
+- **Demos e protótipos**: Para facilitar compartilhamento e visualização.
+- **Aplicações offline**: Quando o app precisa funcionar sem conexão com a internet.
 
 ---
 

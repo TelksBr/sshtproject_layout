@@ -185,6 +185,47 @@ input[type="range"]::-moz-range-thumb:hover {
   @apply bg-white/10 border-white/20;
 }
 
+/* Animações para notificações toast */
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutToRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.notification-enter {
+  animation: slideInFromRight 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.notification-exit {
+  animation: slideOutToRight 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Responsividade para notificações em mobile */
+@media (max-width: 640px) {
+  .notification-container {
+    top: 1rem !important;
+    right: 1rem !important;
+    left: 1rem !important;
+    max-width: none !important;
+  }
+}
+
 /* Suporte para Tablet - Portrait e Landscape */
 /* Tablet Portrait: melhorias de UX para telas médias */
 @media (min-width: 768px) and (max-width: 1023px) {

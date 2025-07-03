@@ -10,8 +10,7 @@ import { appLogo } from './constants/appLogo';
 import { ActiveConfigProvider } from './context/ActiveConfigContext';
 import { useAppLayout } from './hooks/useAppLayout';
 import { useModalRenderer } from './hooks/useModalRenderer';
-import { EventNotificationPopup } from './components/EventNotificationPopup';
-import { onDtunnelEvent, DtunnelEvent } from './utils/dtEvents';
+import { onDtunnelEvent } from './utils/dtEvents';
 import { VpnState } from './types/vpn';
 
 export type ModalType = 'buy' | 'tutorials' | 'support' | 'speedtest' | 'terms' | 'privacy' | 'checkuser' | 'cleandata' | 'hotspot' | 'services' | 'ipfinder' | 'faq' | null;
@@ -19,7 +18,6 @@ export type ModalType = 'buy' | 'tutorials' | 'support' | 'speedtest' | 'terms' 
 function App() {
   const [showMenu, setShowMenu] = useState(false);
   const [currentModal, setCurrentModal] = useState<ModalType>(null);
-  const [notification, setNotification] = useState<{ event: string; visible: boolean }>({ event: '', visible: false });
   
   // Estados gerenciados pelo App conforme padrão documentado
   const [vpnState, setVpnState] = useState<VpnState>('DISCONNECTED');
@@ -81,22 +79,16 @@ function App() {
     // Handler para mudanças de estado da VPN
     const handleVpnStateEvent = (state: VpnState) => {
       setVpnState(state);
-      // Também dispara a notificação
-      setNotification({ event: 'DtVpnStateEvent', visible: true });
     };
 
     const handleVpnStarted = () => {
       setVpnState('CONNECTED');
-      setNotification({ event: 'DtVpnStartedSuccessEvent', visible: true });
     };
 
     const handleVpnStopped = () => {
       setVpnState('DISCONNECTED');
-      setNotification({ event: 'DtVpnStoppedSuccessEvent', visible: true });
     };
 
-    // Handler para mudanças de estado do hotspot removido - não há evento nativo
-    
     // Registra eventos VPN conforme padrão documentado
     onDtunnelEvent('DtVpnStateEvent', handleVpnStateEvent);
     onDtunnelEvent('DtVpnStartedSuccessEvent', handleVpnStarted);
@@ -119,32 +111,6 @@ function App() {
     } else if (!privacyAccepted) {
       setCurrentModal('privacy');
     }
-  }, []);
-
-  useEffect(() => {
-    // Listener genérico apenas para eventos NÃO-VPN (VPN já é tratado acima)
-    const relevantEvents: DtunnelEvent[] = [
-      'DtCheckUserStartedEvent',
-      'DtCheckUserModelEvent', 
-      'DtMessageErrorEvent',
-      'DtNewLogEvent',
-      'DtErrorToastEvent',
-      'DtSuccessToastEvent',
-      'DtConfigSelectedEvent',
-      // Removido DtNewDefaultConfigEvent - será tratado pelo ConnectionForm
-      // Removidos os eventos VPN que já são tratados no useEffect anterior
-    ];
-    const handlers: Array<() => void> = [];
-    relevantEvents.forEach(eventName => {
-      const handler = () => {
-        setNotification({ event: eventName, visible: true });
-      };
-      onDtunnelEvent(eventName, handler as any);
-      handlers.push(() => onDtunnelEvent(eventName, () => {}));
-    });
-    return () => {
-      handlers.forEach(unregister => unregister());
-    };
   }, []);
 
   return (
@@ -195,12 +161,6 @@ function App() {
         </section>
 
         {getModal(currentModal, setCurrentModal)}
-
-        <EventNotificationPopup
-          eventName={notification.event}
-          visible={notification.visible}
-          onClose={() => setNotification(n => ({ ...n, visible: false }))}
-        />
       </main>
     </ActiveConfigProvider>
   );
