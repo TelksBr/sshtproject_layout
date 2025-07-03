@@ -32,11 +32,35 @@ function App() {
   // Inicialização dos estados conforme padrão documentado
   useEffect(() => {
     // Busca estados iniciais das funções nativas
-    const initialVpnState = getConnectionState() || 'DISCONNECTED';
+    const initialVpnState = getConnectionState();
     const initialLocalIP = getLocalIP() || '127.0.0.1';
     
-    setVpnState(initialVpnState);
+    if (initialVpnState) {
+      setVpnState(initialVpnState);
+    }
     setLocalIP(initialLocalIP);
+    
+    // Polling adicional para garantir sincronização inicial do estado VPN
+    let attempts = 0;
+    const maxAttempts = 5;
+    const syncInterval = setInterval(() => {
+      const currentState = getConnectionState();
+      if (currentState) {
+        setVpnState(prevState => {
+          if (currentState !== prevState) {
+            clearInterval(syncInterval);
+            return currentState;
+          }
+          return prevState;
+        });
+      }
+      attempts++;
+      if (attempts >= maxAttempts) {
+        clearInterval(syncInterval);
+      }
+    }, 1000);
+    
+    return () => clearInterval(syncInterval);
   }, []);
 
   // Polling para IP local conforme padrão documentado
@@ -57,16 +81,22 @@ function App() {
     // Handler para mudanças de estado da VPN
     const handleVpnStateEvent = (state: VpnState) => {
       setVpnState(state);
+      // Também dispara a notificação
+      setNotification({ event: 'DtVpnStateEvent', visible: true });
     };
 
     const handleVpnStarted = () => {
       setVpnState('CONNECTED');
+      setNotification({ event: 'DtVpnStartedSuccessEvent', visible: true });
     };
 
     const handleVpnStopped = () => {
       setVpnState('DISCONNECTED');
+      setNotification({ event: 'DtVpnStoppedSuccessEvent', visible: true });
     };
 
+    // Handler para mudanças de estado do hotspot removido - não há evento nativo
+    
     // Registra eventos VPN conforme padrão documentado
     onDtunnelEvent('DtVpnStateEvent', handleVpnStateEvent);
     onDtunnelEvent('DtVpnStartedSuccessEvent', handleVpnStarted);
@@ -92,19 +122,17 @@ function App() {
   }, []);
 
   useEffect(() => {
-    // Listener genérico para eventos globais (NÃO-VPN e VPN)
+    // Listener genérico apenas para eventos NÃO-VPN (VPN já é tratado acima)
     const relevantEvents: DtunnelEvent[] = [
       'DtCheckUserStartedEvent',
       'DtCheckUserModelEvent', 
-      'DtNewDefaultConfigEvent',
       'DtMessageErrorEvent',
       'DtNewLogEvent',
       'DtErrorToastEvent',
       'DtSuccessToastEvent',
       'DtConfigSelectedEvent',
-      'DtVpnStateEvent',
-      'DtVpnStartedSuccessEvent',
-      'DtVpnStoppedSuccessEvent',
+      // Removido DtNewDefaultConfigEvent - será tratado pelo ConnectionForm
+      // Removidos os eventos VPN que já são tratados no useEffect anterior
     ];
     const handlers: Array<() => void> = [];
     relevantEvents.forEach(eventName => {
@@ -155,7 +183,7 @@ function App() {
 
           <div className="flex-1 flex flex-col gap-1.5 mt-2">
             <ServerSelector />
-            <ConnectionForm />
+            <ConnectionForm vpnState={vpnState} />
           </div>
           <NetworkStats />
         </section>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getDownloadBytes, getUploadBytes } from '../utils/appFunctions';
 
 /**
@@ -13,7 +13,7 @@ export function useNetworkStats() {
     totalUploaded: 0,
   });
 
-  const [previousStats, setPreviousStats] = useState({
+  const previousStatsRef = useRef({
     downloadBytes: 0,
     uploadBytes: 0,
     timestamp: Date.now(),
@@ -24,11 +24,11 @@ export function useNetworkStats() {
       const currentDownload = getDownloadBytes();
       const currentUpload = getUploadBytes();
       const now = Date.now();
-      const timeDiff = now - previousStats.timestamp;
+      const timeDiff = now - previousStatsRef.current.timestamp;
 
       if (timeDiff > 0) {
-        const downloadSpeed = ((currentDownload - previousStats.downloadBytes) / timeDiff) * 1000;
-        const uploadSpeed = ((currentUpload - previousStats.uploadBytes) / timeDiff) * 1000;
+        const downloadSpeed = ((currentDownload - previousStatsRef.current.downloadBytes) / timeDiff) * 1000;
+        const uploadSpeed = ((currentUpload - previousStatsRef.current.uploadBytes) / timeDiff) * 1000;
 
         setStats({
           downloadSpeed: formatBytes(downloadSpeed),
@@ -37,11 +37,11 @@ export function useNetworkStats() {
           totalUploaded: currentUpload,
         });
 
-        setPreviousStats({
+        previousStatsRef.current = {
           downloadBytes: currentDownload,
           uploadBytes: currentUpload,
           timestamp: now,
-        });
+        };
       }
     };
 
@@ -52,7 +52,7 @@ export function useNetworkStats() {
     updateStats();
 
     return () => clearInterval(interval);
-  }, [previousStats]);
+  }, []); // Fix: dependências vazias para evitar loop infinito
 
   return {
     downloadSpeed: stats.downloadSpeed,

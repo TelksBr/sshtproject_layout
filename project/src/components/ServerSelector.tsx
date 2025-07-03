@@ -64,12 +64,11 @@ export function ServerSelector() {
   const [isPending, setIsPending] = useState(false);
 
   const handleConfigSelect = (config: ConfigItem) => {
-    console.log('Selecionando config:', config, 'id:', config.id, 'typeof:', typeof config.id);
-    setPendingConfigId(config.id); // number
+    setPendingConfigId(config.id);
     setIsPending(true);
-    setActiveConfigId(config.id); // number
-    const setResult = setActiveConfig(config.id); // number
-    console.log('Retorno de setActiveConfig:', setResult, 'Tipo enviado:', typeof config.id);
+    setActiveConfigId(config.id);
+    setActiveConfig(config.id);
+    
     // Polling: tenta atualizar o contexto até a config ativa mudar ou timeout
     let tentativas = 0;
     const maxTentativas = 8; // até 1.6s
@@ -77,9 +76,7 @@ export function ServerSelector() {
       refreshActiveConfig();
       setTimeout(() => {
         tentativas++;
-        console.log('Polling: activeConfig.id=', activeConfig?.id, 'esperado=', config.id);
         if (activeConfig?.id && activeConfig.id === config.id) {
-          console.log('Config ativa confirmada:', activeConfig);
           // O useEffect já vai fechar o modal
         } else if (tentativas < maxTentativas) {
           poll();
@@ -233,7 +230,6 @@ export function ServerSelector() {
           type="button"
           onClick={() => {
             autoConnect.openModal();
-            autoConnect.startAutoConnect();
           }}
           title="Teste Automático"
         >
@@ -398,7 +394,14 @@ export function ServerSelector() {
         successConfigName={autoConnect.success}
         running={autoConnect.running}
         onStart={autoConnect.startAutoConnect}
+        onCancel={autoConnect.cancelTest}
         error={autoConnect.error}
+        logs={autoConnect.logs}
+        currentTestDuration={autoConnect.currentTestDuration}
+        autoConnectConfig={autoConnect.autoConnectConfig}
+        setAutoConnectConfig={autoConnect.setAutoConnectConfig}
+        showSettings={autoConnect.showSettings}
+        setShowSettings={autoConnect.setShowSettings}
       />
     </>
   );

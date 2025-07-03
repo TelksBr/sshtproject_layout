@@ -7,116 +7,141 @@ import {
   getUsername,
   getPassword,
   getUUID,
+  getActiveConfig,
   openDialogLogs,
   startConnection,
-  stopConnection,
-  getConnectionState
+  stopConnection
 } from '../utils/appFunctions';
 import { onDtunnelEvent } from '../utils/dtEvents';
 import { ConfigAuth } from '../types/config';
 import { VpnState } from '../types/vpn';
 
-export function ConnectionForm() {
+interface ConnectionFormProps {
+  vpnState: VpnState;
+}
+
+export function ConnectionForm({ vpnState }: ConnectionFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [showUUID, setShowUUID] = useState(false);
   const [mode, setMode] = useState('');
   const [auth, setAuth] = useState<ConfigAuth>({});
-  const [inputUsername, setInputUsername] = useState('');
-  const [inputPassword, setInputPassword] = useState('');
-  const [inputUUID, setInputUUID] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
-  const [vpnState, setVpnState] = useState<VpnState>('DISCONNECTED');
 
-  // Inicializa estado da VPN
+  // Estados dos inputs como estado React local
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [uuid, setUuid] = useState('');
+
+  // Carrega configuração inicial
   useEffect(() => {
-    const initialState = getConnectionState() || 'DISCONNECTED';
-    setVpnState(initialState);
-  }, []);
-
-  // Escuta eventos de mudança de configuração conforme padrão documentado
-  useEffect(() => {
-    const handleConfigSelected = (config: any) => {
-      setMode(config.mode?.toLowerCase() || '');
-      const authObj = config.auth || {};
-      const newAuth: ConfigAuth = {
-        username: 'username' in authObj ? (authObj as any).username : undefined,
-        password: 'password' in authObj ? (authObj as any).password : undefined,
-        v2ray_uuid: 'v2ray_uuid' in authObj ? (authObj as any).v2ray_uuid : undefined,
-      };
-      setAuth(newAuth);
-      
-      // Atualiza campos com valores da config ou valores armazenados
-      setInputUsername(newAuth.username ?? getUsername() ?? '');
-      setInputPassword(newAuth.password ?? getPassword() ?? '');
-      setInputUUID(newAuth.v2ray_uuid ?? getUUID() ?? '');
-    };
-
-    // Registra evento conforme padrão documentado
-    onDtunnelEvent('DtConfigSelectedEvent', handleConfigSelected);
-
-    // Cleanup
-    return () => {
-      onDtunnelEvent('DtConfigSelectedEvent', () => {});
-    };
-  }, []);
-
-  // Escuta eventos de mudança de estado VPN conforme padrão documentado
-  useEffect(() => {
-    const handleVpnStateChange = (state: VpnState) => {
-      setVpnState(state);
-      
-      // Limpa erros quando conectar com sucesso
-      if (state === 'CONNECTED') {
-        setFormError(null);
-      } else if (state === 'AUTH_FAILED') {
-        setFormError('Falha na autenticação');
-      } else if (state === 'NO_NETWORK') {
-        setFormError('Sem conexão com a internet');
+    const loadInitialConfig = () => {
+      const config = getActiveConfig();
+      if (config) {
+        setMode(config.mode || '');
+        const authObj = config.auth || {};
+        // Sempre cria um novo objeto auth para garantir re-render
+        const newAuth: ConfigAuth = {
+          username: authObj.username || undefined,
+          password: authObj.password || undefined,
+          v2ray_uuid: authObj.v2ray_uuid || undefined,
+        };
+        setAuth(newAuth);
+        
+        // Carrega valores dos inputs das funções nativas
+        setUsername(getUsername() || '');
+        setPassword(getPassword() || '');
+        setUuid(getUUID() || '');
       }
     };
 
-    // Registra eventos conforme padrão documentado
-    onDtunnelEvent('DtVpnStateEvent', handleVpnStateChange);
-    onDtunnelEvent('DtVpnStartedSuccessEvent', () => setVpnState('CONNECTED'));
-    onDtunnelEvent('DtVpnStoppedSuccessEvent', () => setVpnState('DISCONNECTED'));
-
-    // Cleanup
-    return () => {
-      onDtunnelEvent('DtVpnStateEvent', () => {});
-      onDtunnelEvent('DtVpnStartedSuccessEvent', () => {});
-      onDtunnelEvent('DtVpnStoppedSuccessEvent', () => {});
-    };
+    loadInitialConfig();
   }, []);
 
-  // Handlers para inputs: salvam o valor global ao digitar e atualizam o estado local
+  // Escuta eventos de mudança de configuração
+  useEffect(() => {
+    const handleConfigChanged = () => {
+      // Busca a config ativa quando o evento disparar
+      const config = getActiveConfig();
+      if (config) {
+        setMode(config.mode || '');
+        const authObj = config.auth || {};
+        // Sempre cria um novo objeto auth para garantir re-render
+        const newAuth: ConfigAuth = {
+          username: authObj.username || undefined,
+          password: authObj.password || undefined,
+          v2ray_uuid: authObj.v2ray_uuid || undefined,
+        };
+        setAuth(newAuth);
+        setFormError(null); // Limpa erros quando trocar de config
+        
+        // Carrega valores dos inputs das funções nativas
+        setUsername(getUsername() || '');
+        setPassword(getPassword() || '');
+        setUuid(getUUID() || '');
+        
+        // Debug: log para verificar se o evento está sendo capturado
+        console.log('DtNewDefaultConfigEvent capturado no ConnectionForm:', config.name);
+      }
+    };
+
+    onDtunnelEvent('DtNewDefaultConfigEvent', handleConfigChanged);
+    return () => onDtunnelEvent('DtNewDefaultConfigEvent', () => {});
+  }, []);
+
+  // Escuta eventos para atualização de erros baseados no estado VPN
+  useEffect(() => {
+    setFormError(null); // Limpa erros quando o estado mudar
+    
+    if (vpnState === 'AUTH_FAILED') {
+      setFormError('Falha na autenticação');
+    } else if (vpnState === 'NO_NETWORK') {
+      setFormError('Sem conexão com a internet');
+    }
+  }, [vpnState]);
+
+  // Handlers para inputs: atualizam estado local e salvam usando as funções nativas
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setUsernameApp(e.target.value);
-    setInputUsername(e.target.value);
+    const value = e.target.value;
+    setUsername(value);
+    setUsernameApp(value);
   };
   
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPasswordApp(e.target.value);
-    setInputPassword(e.target.value);
+    const value = e.target.value;
+    setPassword(value);
+    setPasswordApp(value);
   };
   
   const handleUUIDChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setUUIDApp(e.target.value);
-    setInputUUID(e.target.value);
+    const value = e.target.value;
+    setUuid(value);
+    setUUIDApp(value);
   };
 
   // Lógica de exibição dos campos baseada no modo da config
-  const isV2Ray = mode.startsWith('v2ray');
+  const isV2Ray = mode.toLowerCase().startsWith('v2ray');
   const showUsernameInput = !isV2Ray && !auth.username;
   const showPasswordInput = !isV2Ray && !auth.password;
   const showUUIDInput = isV2Ray && !auth.v2ray_uuid;
 
+  // Valores dos inputs: só mostram quando o input está visível
+  const usernameValue = showUsernameInput ? username : '';
+  const passwordValue = showPasswordInput ? password : '';
+  const uuidValue = showUUIDInput ? uuid : '';
+
+  // Debug: Log para verificar mudanças na lógica de exibição
+  useEffect(() => {
+    // Este useEffect garante que o componente re-renderize quando auth ou mode mudam
+    // e força a re-avaliação das condições de exibição dos inputs
+  }, [auth, mode, auth.username, auth.password, auth.v2ray_uuid]);
+
   // Validação antes de conectar
   const validateForm = () => {
     if (isV2Ray) {
-      if (!auth.v2ray_uuid && !inputUUID) return 'UUID obrigatório para V2Ray';
+      if (!auth.v2ray_uuid && !uuid) return 'UUID obrigatório para V2Ray';
     } else {
-      if (!auth.username && !inputUsername) return 'Usuário obrigatório';
-      if (!auth.password && !inputPassword) return 'Senha obrigatória';
+      if (!auth.username && !username) return 'Usuário obrigatório';
+      if (!auth.password && !password) return 'Senha obrigatória';
     }
     return null;
   };
@@ -144,21 +169,37 @@ export function ConnectionForm() {
   const handleConnection = () => {
     setFormError(null);
     
-    if (vpnState !== 'DISCONNECTED') {
-      disconnect();
-    } else {
-      const validation = validateForm();
-      if (validation) {
-        setFormError(validation);
-        return;
-      }
-      
-      // Garante que os valores estão salvos antes de conectar
-      setUsernameApp(inputUsername);
-      setPasswordApp(inputPassword);
-      setUUIDApp(inputUUID);
-      
-      connect();
+    switch (vpnState) {
+      case 'DISCONNECTED':
+      case 'AUTH_FAILED':
+      case 'NO_NETWORK':
+        // Estados onde podemos iniciar conexão
+        const validation = validateForm();
+        if (validation) {
+          setFormError(validation);
+          return;
+        }
+        
+        connect();
+        break;
+        
+      case 'CONNECTING':
+      case 'AUTH':
+        // Estados onde podemos cancelar/parar
+        disconnect();
+        break;
+        
+      case 'CONNECTED':
+        // Estado conectado - desconectar
+        disconnect();
+        break;
+        
+      case 'STOPPING':
+        // Estado parando - não fazer nada (botão desabilitado)
+        break;
+        
+      default:
+        break;
     }
   };
 
@@ -166,22 +207,33 @@ export function ConnectionForm() {
   const getButtonText = () => {
     switch (vpnState) {
       case 'CONNECTING':
+        return 'Cancelar Conexão';
       case 'AUTH':
         return 'Cancelar';
       case 'STOPPING':
         return 'Parando...';
       case 'CONNECTED':
         return 'Desconectar';
+      case 'AUTH_FAILED':
+      case 'NO_NETWORK':
+      case 'DISCONNECTED':
       default:
         return 'Conectar';
     }
   };
 
   const getButtonStyle = () => {
-    if (vpnState === 'CONNECTED' || vpnState === 'CONNECTING' || vpnState === 'AUTH') {
-      return 'from-red-500 to-red-600 hover:from-red-600 hover:to-red-700';
+    switch (vpnState) {
+      case 'CONNECTED':
+        return 'from-red-500 to-red-600 hover:from-red-600 hover:to-red-700';
+      case 'CONNECTING':
+      case 'AUTH':
+        return 'from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700';
+      case 'STOPPING':
+        return 'from-orange-500 to-orange-600';
+      default:
+        return 'from-green-500 to-green-600 hover:from-green-600 hover:to-green-700';
     }
-    return '';
   };
 
   return (
@@ -198,7 +250,7 @@ export function ConnectionForm() {
               type="text"
               autoCapitalize="none"
               placeholder="Usuário"
-              value={inputUsername}
+              value={usernameValue}
               onChange={handleUsernameChange}
             />
           </div>
@@ -211,7 +263,7 @@ export function ConnectionForm() {
               className="w-full h-10 px-3 pr-10 rounded-lg glass-effect text-white placeholder-gray-400 outline-none focus:border-purple-500 text-sm"
               type={showPassword ? 'text' : 'password'}
               placeholder="Senha"
-              value={inputPassword}
+              value={passwordValue}
               onChange={handlePasswordChange}
             />
             <button
@@ -231,7 +283,7 @@ export function ConnectionForm() {
               className="w-full h-10 px-3 pr-20 rounded-lg glass-effect text-white placeholder-gray-400 outline-none focus:border-purple-500 text-sm"
               type={showUUID ? 'text' : 'password'}
               placeholder="UUID"
-              value={inputUUID}
+              value={uuidValue}
               onChange={handleUUIDChange}
             />
             <button
@@ -262,30 +314,14 @@ export function ConnectionForm() {
           </div>
         )}
 
-        {/* Campos preenchidos (read-only) */}
-        {!showUsernameInput && auth.username && (
-          <div className="w-full h-10 flex items-center px-3 rounded-lg glass-effect text-white text-sm bg-[#26074d]/40">
-            <span className="font-mono opacity-80">Usuário: {auth.username}</span>
-          </div>
-        )}
-        
-        {!showPasswordInput && auth.password && (
-          <div className="w-full h-10 flex items-center px-3 rounded-lg glass-effect text-white text-sm bg-[#26074d]/40">
-            <span className="font-mono opacity-80">Senha: ******</span>
-          </div>
-        )}
-        
-        {!showUUIDInput && auth.v2ray_uuid && (
-          <div className="w-full h-10 flex items-center px-3 rounded-lg glass-effect text-white text-sm bg-[#26074d]/40">
-            <span className="font-mono opacity-80">UUID: {auth.v2ray_uuid}</span>
-          </div>
-        )}
+
 
         {/* Botão de conexão */}
         <button
           className={`btn-primary w-full h-10 text-sm ${getButtonStyle()}`}
           onClick={handleConnection}
           disabled={vpnState === 'STOPPING'}
+          title={`Estado atual: ${vpnState}`}
         >
           {getButtonText()}
         </button>

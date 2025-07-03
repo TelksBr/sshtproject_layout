@@ -1,13 +1,19 @@
 import { Wifi, WifiOff, Settings, Bell } from 'lucide-react';
 import { Modal } from './Modal';
 import { useHotspot } from '../../hooks/useHotspot';
+import { useEffect } from 'react';
 
 interface HotspotProps {
   onClose: () => void;
 }
 
 export function Hotspot({ onClose }: HotspotProps) {
-  const { isEnabled, loading, toggleHotspot } = useHotspot();
+  const { isEnabled, loading, toggleHotspot, checkStatus } = useHotspot();
+
+  // Verifica o estado do hotspot sempre que o modal é aberto
+  useEffect(() => {
+    checkStatus();
+  }, [checkStatus]);
 
   return (
 
