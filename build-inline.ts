@@ -19,16 +19,20 @@ const files = readdirSync(assetsPath);
 const cssFile = files.find((f) => f.endsWith(".css"));
 const jsFile = files.find((f) => f.endsWith(".js"));
 
-if (!cssFile || !jsFile) {
-  console.error("❌ Arquivo CSS ou JS não encontrado.");
+if (!jsFile) {
+  console.error("❌ Arquivo JS não encontrado.");
   process.exit(1);
 }
 
-console.log(`🎯 CSS: ${cssFile}`);
 console.log(`🎯 JS: ${jsFile}`);
+if (cssFile) {
+  console.log(`🎯 CSS: ${cssFile}`);
+} else {
+  console.log("📦 CSS embutido no JS (bundle)");
+}
 
 // 3. Ler conteúdos dos arquivos
-const cssContent = readFileSync(join(assetsPath, cssFile), "utf8");
+const cssContent = cssFile ? readFileSync(join(assetsPath, cssFile), "utf8") : "";
 const jsContent = readFileSync(join(assetsPath, jsFile), "utf8");
 
 // 4. Gerar novo HTML
@@ -42,7 +46,7 @@ const finalHtml = `<!DOCTYPE html>
     <meta name="mobile-web-app-capable" content="yes" />
     <link rel="icon" href="data:,">
     <title>@SSH_T_PROJECT @Telks13 - SSH T PROJECT LAYOUT</title>
-    <style>${cssContent}</style>
+    ${cssContent ? `<style>${cssContent}</style>` : ''}
   </head>
   <body>
     <div id="root"></div>

@@ -280,21 +280,21 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
         {showUUIDInput && (
           <div className="relative">
             <input
-              className="w-full h-10 md:h-12 lg:h-11 px-3 md:px-4 lg:px-3 pr-20 rounded-lg glass-effect text-white placeholder-gray-400 outline-none focus:border-purple-500 text-sm md:text-base lg:text-sm"
+              className="w-full h-10 md:h-12 lg:h-11 px-3 md:px-4 lg:px-3 pr-16 md:pr-20 lg:pr-18 rounded-lg glass-effect text-white placeholder-gray-400 outline-none focus:border-purple-500 text-sm md:text-base lg:text-sm"
               type={showUUID ? 'text' : 'password'}
               placeholder="UUID"
               value={uuidValue}
               onChange={handleUUIDChange}
             />
             <button
-              className="absolute right-12 top-1/2 -translate-y-1/2 text-purple-400 hover:text-purple-300 transition-colors"
+              className="absolute right-8 md:right-10 lg:right-9 top-1/2 -translate-y-1/2 text-purple-400 hover:text-purple-300 transition-colors"
               onClick={() => setShowUUID(!showUUID)}
               type="button"
             >
               {showUUID ? <EyeOff className="w-4 h-4 md:w-5 md:h-5 lg:w-4 lg:h-4" /> : <Eye className="w-4 h-4 md:w-5 md:h-5 lg:w-4 lg:h-4" />}
             </button>
-            <div className="absolute right-2 top-1/2 -translate-y-1/2 group">
-              <button className="text-[#b0a8ff] cursor-pointer flex items-center" type="button" tabIndex={-1}>
+            <div className="absolute right-1 md:right-2 lg:right-1.5 top-1/2 -translate-y-1/2 group">
+              <button className="text-[#b0a8ff] cursor-pointer flex items-center p-1" type="button" tabIndex={-1}>
                 <HelpCircle className="w-4 h-4 md:w-5 md:h-5 lg:w-4 lg:h-4" />
               </button>
               <div className="absolute bottom-full right-0 mb-2 w-64 md:w-80 lg:w-72 text-sm md:text-base lg:text-sm bg-[#26074d] text-[#b0a8ff] p-3 rounded-lg shadow-lg z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none border border-[#6205D5]/30">
