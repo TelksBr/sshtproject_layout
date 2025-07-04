@@ -44,16 +44,25 @@ const finalHtml = `<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="theme-color" content="#2A0A3E" />
     <meta name="mobile-web-app-capable" content="yes" />
+    
+    <!-- Meta tags específicas para WebView Android -->
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="format-detection" content="address=no" />
+    <meta name="format-detection" content="email=no" />
+    <meta name="msapplication-tap-highlight" content="no" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-touch-fullscreen" content="yes" />
+    
     <link rel="icon" href="data:,">
     <title>@SSH_T_PROJECT @Telks13 - SSH T PROJECT LAYOUT</title>
-    ${cssContent ? `<style>${cssContent}</style>` : ''}
+     ${cssContent ? `<style>${cssContent}</style>` : ''}
   </head>
   <body>
     <div id="root"></div>
     <script>${jsContent}</script>
   </body>
 </html>
-
 `;
 
 writeFileSync(join(distPath, "index.html"), finalHtml);

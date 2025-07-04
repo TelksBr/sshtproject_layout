@@ -156,7 +156,7 @@ export function IpFinder({ onClose }: IpFinderProps) {
             type="text"
             value={ipRange}
             onChange={(e) => setIpRange(e.target.value)}
-            className="w-full p-3 rounded-lg bg-[#2A0A3E] border border-[#6205D5]/20 text-white"
+            className="w-full p-3 rounded-lg bg-[#2A0A3E] border border-[#6205D5]/20 text-white allow-select"
             placeholder="Digite os intervalos de IP, ex: 192.168.0, 10.0.0"
           />
           <div className="flex gap-2 mt-4">

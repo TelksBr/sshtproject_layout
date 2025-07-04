@@ -243,7 +243,7 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
         {showUsernameInput && (
           <div className="relative">
             <input
-              className="w-full h-10 md:h-12 lg:h-11 px-3 md:px-4 lg:px-3 rounded-lg glass-effect text-white placeholder-gray-400 outline-none focus:border-purple-500 text-sm md:text-base lg:text-sm"
+              className="w-full h-10 md:h-12 lg:h-11 px-3 md:px-4 lg:px-3 rounded-lg glass-effect text-white placeholder-gray-400 outline-none focus:border-purple-500 text-sm md:text-base lg:text-sm allow-select"
               type="text"
               autoCapitalize="none"
               placeholder="Usuário"
@@ -257,7 +257,7 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
         {showPasswordInput && (
           <div className="relative">
             <input
-              className="w-full h-10 md:h-12 lg:h-11 px-3 md:px-4 lg:px-3 pr-10 rounded-lg glass-effect text-white placeholder-gray-400 outline-none focus:border-purple-500 text-sm md:text-base lg:text-sm"
+              className="w-full h-10 md:h-12 lg:h-11 px-3 md:px-4 lg:px-3 pr-10 rounded-lg glass-effect text-white placeholder-gray-400 outline-none focus:border-purple-500 text-sm md:text-base lg:text-sm allow-select"
               type={showPassword ? 'text' : 'password'}
               placeholder="Senha"
               value={passwordValue}
@@ -277,7 +277,7 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
         {showUUIDInput && (
           <div className="relative">
             <input
-              className="w-full h-10 md:h-12 lg:h-11 px-3 md:px-4 lg:px-3 pr-16 md:pr-20 lg:pr-18 rounded-lg glass-effect text-white placeholder-gray-400 outline-none focus:border-purple-500 text-sm md:text-base lg:text-sm"
+              className="w-full h-10 md:h-12 lg:h-11 px-3 md:px-4 lg:px-3 pr-16 md:pr-20 lg:pr-18 rounded-lg glass-effect text-white placeholder-gray-400 outline-none focus:border-purple-500 text-sm md:text-base lg:text-sm allow-select"
               type={showUUID ? 'text' : 'password'}
               placeholder="UUID"
               value={uuidValue}
