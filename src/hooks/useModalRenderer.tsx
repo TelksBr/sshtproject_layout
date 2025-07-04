@@ -4,7 +4,7 @@ import type { ModalType } from '../App';
 
 export function useModalRenderer() {
   const getModal = useCallback(
-    (currentModal: ModalType, setCurrentModal: (m: ModalType) => void): JSX.Element | null => {
+    (currentModal: ModalType, setCurrentModal: (m: ModalType) => void): React.JSX.Element | null => {
       if (!currentModal) return null;
       const ModalComponent = modalComponents[currentModal] as React.ComponentType<ModalComponentProps>;
       if (!ModalComponent) return null;
