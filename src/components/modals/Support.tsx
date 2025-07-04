@@ -1,6 +1,6 @@
 import { Modal } from './Modal';
 import { Phone, Users } from 'lucide-react';
-import { openExternalUrl } from '../../utils/externalUtils';
+import { openExternalUrl } from '../../utils/appFunctions';
 
 interface SupportProps {
   onClose: () => void;

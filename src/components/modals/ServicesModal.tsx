@@ -7,7 +7,7 @@ import {
   ArrowRight,
   CheckCircle,
 } from 'lucide-react';
-import { openExternalUrl } from '../../utils/externalUtils';
+import { openExternalUrl } from '../../utils/appFunctions';
 
 const services = [
   {

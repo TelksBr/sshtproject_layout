@@ -1,6 +1,6 @@
 import { Shield, Zap, Clock, Users, Check, Phone, Send, ArrowRight, ShoppingCart } from 'lucide-react';
 import { Modal } from './Modal';
-import { openExternalUrl } from '../../utils/externalUtils';
+import { openExternalUrl } from '../../utils/appFunctions';
 
 interface BuyLoginProps {
   onClose: () => void;

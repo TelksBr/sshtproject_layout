@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Book, Smartphone, Wifi, Settings, ShoppingCart, PlaneLanding, HelpCircle } from 'lucide-react';
 import { Modal } from './Modal';
-import { openExternalUrl } from '../../utils/externalUtils';
+import { openExternalUrl } from '../../utils/appFunctions';
 
 interface Tutorial {
   id: number;
