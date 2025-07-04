@@ -16,7 +16,6 @@ export async function fetchUserInfo(username: string): Promise<UserInfo> {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error('Erro ao buscar informações do usuário:', error);
     throw error;
   }
 }

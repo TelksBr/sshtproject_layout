@@ -78,9 +78,6 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
         setUsername(getUsername() || '');
         setPassword(getPassword() || '');
         setUuid(getUUID() || '');
-        
-        // Debug: log para verificar se o evento está sendo capturado
-        console.log('DtNewDefaultConfigEvent capturado no ConnectionForm:', config.name);
       }
     };
 

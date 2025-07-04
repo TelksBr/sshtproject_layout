@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Settings, Download, FileText, HelpCircle,
-  Wifi, Battery, Network, Trash2, Book,
-  RefreshCw, DollarSign, Share2, Shield, CalendarClock, BriefcaseBusiness, Search
+  Settings, Download,
+  Wifi, Battery, Network, Book,
+  RefreshCw, DollarSign, Share2, CalendarClock, BriefcaseBusiness, Search
 } from 'lucide-react';
 import {
   checkForUpdates,

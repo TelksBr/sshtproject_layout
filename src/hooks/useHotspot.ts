@@ -74,7 +74,6 @@ export function useHotspot() {
       
       checkChange();
     } catch (error) {
-      console.error('Erro ao alterar hotspot:', error);
       setLoading(false);
     }
   }, [isEnabled, hotspotState, checkHotspotStatus]);

@@ -52,7 +52,6 @@ export function SpeedTest({ onClose }: SpeedTestProps) {
       setSelectedServer(availableServers[0]);
     } catch (err) {
       setError('Falha ao carregar servidores de teste');
-      console.error('Error loading servers:', err);
     } finally {
       setLoading(false);
     }
@@ -83,7 +82,6 @@ export function SpeedTest({ onClose }: SpeedTestProps) {
       });
     } catch (err) {
       setError('Falha ao realizar o teste de velocidade. Por favor, tente novamente.');
-      console.error('Speed test error:', err);
     } finally {
       setTesting(false);
       setCurrentPhase(null);

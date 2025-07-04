@@ -84,7 +84,6 @@ export async function getIpFromUrl(url: string): Promise<string | null> {
 }
 
 export async function getSpeedTestServers(initial = false): Promise<TestServer[]> {
-  console.time('getSpeedTestServers');
   try {
     const response = await fetch(FAST_API_URL);
     if (!response.ok) throw new Error('Failed to fetch speed test servers');
@@ -115,16 +114,13 @@ export async function getSpeedTestServers(initial = false): Promise<TestServer[]
         }))
       );
       const goodServers = serversWithPing.filter(s => s.ping !== undefined && s.ping < MAX_ACCEPTABLE_PING);
-      console.timeEnd('getSpeedTestServers');
       return goodServers.length > 0 ? 
         goodServers.sort((a, b) => (a.ping || Infinity) - (b.ping || Infinity)) :
         serversWithPing.sort((a, b) => (a.ping || Infinity) - (b.ping || Infinity));
     }
     // Inicial: retorna sem ping
-    console.timeEnd('getSpeedTestServers');
     return servers;
   } catch (error) {
-    console.error('Error fetching speed test servers:', error);
     throw error;
   }
 }
@@ -136,7 +132,6 @@ interface LatencyMeasurement {
 }
 
 export async function measureLatency(url: string, singleSample = false): Promise<number> {
-  console.time(`measureLatency:${url}`);
   const measurements: LatencyMeasurement[] = [];
   const startTime = performance.now();
   let lastMeasurementTime = 0;
@@ -214,7 +209,6 @@ export async function measureLatency(url: string, singleSample = false): Promise
         measurements.push(measurement);
         lastMeasurementTime = now;
         if (singleSample && measurements.length === 1) {
-          console.timeEnd(`measureLatency:${url}`);
           return Math.round(measurement.value);
         }
       }
@@ -223,7 +217,6 @@ export async function measureLatency(url: string, singleSample = false): Promise
   }
 
   // Se não conseguiu estabilizar, retorna média das medições válidas
-  console.timeEnd(`measureLatency:${url}`);
   return measurements.length > 0 ? 
     Math.round(measurements.reduce((a, b) => a + b.value, 0) / measurements.length) : 
     Infinity;
@@ -308,7 +301,6 @@ async function measureDownloadSpeed(
     
     return finalSpeed;
   } catch (error) {
-    console.error('Erro ao medir a velocidade do download:', error);
     return 0;
   }
 }
@@ -386,7 +378,6 @@ async function measureUploadSpeed(
     const duration = (performance.now() - startTime) / 1000;
     return (totalBytesSent * 8) / (duration * 1000000);
   } catch (error) {
-    console.error('Erro ao medir a velocidade de upload:', error);
     return 0;
   }
 }
@@ -427,7 +418,6 @@ export async function runSpeedTest(
       ping: Math.round(ping)
     };
   } catch (error) {
-    console.error('Speed test failed:', error);
     throw error;
   }
 }

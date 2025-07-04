@@ -81,7 +81,6 @@ export function ServerSelector() {
         } else if (tentativas < maxTentativas) {
           poll();
         } else {
-          console.warn('Timeout ao aguardar atualização da config ativa!');
           setIsPending(false);
         }
       }, 200);
@@ -136,7 +135,7 @@ export function ServerSelector() {
           setAirplaneMode(state);
         }
       } catch (error) {
-        console.error('Erro ao verificar modo avião:', error);
+        // Handle error silently
       }
     };
 

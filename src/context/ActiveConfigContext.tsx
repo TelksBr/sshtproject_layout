@@ -41,7 +41,6 @@ export const ActiveConfigProvider = ({ children }: { children: ReactNode }) => {
 export function useActiveConfig() {
   const ctx = useContext(ActiveConfigContext);
   if (!ctx) {
-    console.error('useActiveConfig: contexto não encontrado! O ActiveConfigProvider está englobando o app?');
     throw new Error('useActiveConfig must be used within ActiveConfigProvider');
   }
   return ctx;
