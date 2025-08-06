@@ -68,7 +68,7 @@ export function CheckUser({ onClose }: CheckUserProps) {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Nome do usuário"
-                className="flex-1 h-12 px-4 rounded-lg glass-effect text-white placeholder-gray-400 outline-none focus:border-purple-500 allow-select"
+                className="flex-1 h-12 px-4 rounded-lg glass-effect text-white placeholder-gray-400 outline-hidden focus:border-purple-500 allow-select"
               />
               <button
                 onClick={handleCheck}

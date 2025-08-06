@@ -60,9 +60,6 @@ export function AutoConnectModal({
     return acc;
   }, []);
 
-  // Debug: Log do número de categorias encontradas
-  console.log(`📊 AutoConnect Modal - Categorias encontradas: ${categories.length}`, categories);
-
   const getStatusIcon = (status: TestLog['status']) => {
     switch (status) {
       case 'success':
@@ -351,38 +348,27 @@ export function AutoConnectModal({
                   </button>
                   
                   {/* Individual Categories */}
-                  <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto custom-scrollbar">
-                    {categories.map((category) => (
+                  <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto">
+                    {categories.slice(0, 8).map((category) => (
                       <button
                         key={category.id}
                         onClick={() => toggleCategory(category.id)}
-                        className={`w-full p-3 rounded-lg text-left transition-all duration-200 flex items-center gap-3 ${
+                        className={`w-full p-2 rounded-lg text-left transition-all duration-200 flex items-center gap-3 ${
                           autoConnectConfig.selectedCategories.includes(category.id) 
-                            ? 'bg-[#6205D5] text-white shadow-md transform scale-[1.01]' 
-                            : 'bg-[#26074d]/40 text-[#b0a8ff] hover:bg-[#6205D5]/20 hover:scale-[1.01]'
+                            ? 'bg-[#6205D5] text-white shadow-md' 
+                            : 'bg-[#26074d]/40 text-[#b0a8ff] hover:bg-[#6205D5]/20'
                         }`}
                       >
                         <div 
-                          className="w-4 h-4 rounded-full flex-shrink-0 ring-2 ring-white/20"
+                          className="w-4 h-4 rounded-full flex-shrink-0"
                           style={{ backgroundColor: category.color }}
                         />
-                        <span className="text-sm font-medium flex-1 min-w-0 truncate">{category.name}</span>
+                        <span className="text-sm font-medium">{category.name}</span>
                         {autoConnectConfig.selectedCategories.includes(category.id) && (
-                          <CheckCircle className="w-4 h-4 flex-shrink-0 text-white" />
+                          <CheckCircle className="w-4 h-4 ml-auto" />
                         )}
                       </button>
                     ))}
-                  </div>
-                  
-                  {/* Categories Count Info */}
-                  <div className="mt-3 flex justify-between items-center text-xs text-[#b0a8ff]/60">
-                    <span>
-                      {autoConnectConfig.selectedCategories.length > 0 
-                        ? `${autoConnectConfig.selectedCategories.length} categoria(s) selecionada(s)` 
-                        : 'Todas as categorias serão testadas'
-                      }
-                    </span>
-                    <span>{categories.length} total</span>
                   </div>
                 </div>
               </div>

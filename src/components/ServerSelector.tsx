@@ -116,11 +116,6 @@ export function ServerSelector() {
     setSelectedCategory(null); // Reset selected category on search
   };
 
-  const handleTagFilter = (tag: string) => {
-    setSearchTerm(`[${tag}]`);
-    setSelectedCategory(null); // Reset selected category on tag filter
-  };
-
   const toggleAirplaneModeHandler = async () => {
     const newState = !airplaneMode;
     const updatedState = await toggleAirplaneMode(newState);
@@ -158,26 +153,32 @@ export function ServerSelector() {
     category.items.some(item => item.id === activeConfig?.id)
   );
 
-  const uniqueTags = Array.from(new Set(configs.flatMap(category => 
-    category.name.match(/\[([^\]]+)\]/g)?.map(tag => tag.replace(/[\[\]]/g, '')) || []
-  )));
-
   // Substitui o botão de AutoConnect para abrir o modal externo
   return (
     <>
       <section className="flex gap-1.5">
         <button
-          className="flex-1 min-w-0 max-w-full h-10 flex items-center justify-between px-3 rounded-lg glass-effect overflow-hidden"
+          className="flex-1 min-w-0 max-w-full h-10 flex items-center justify-between px-3 rounded-lg glass-effect overflow-hidden group hover:bg-[#6205D5]/5 transition-all duration-200"
           type="button"
           onClick={() => setShowConfigModal(true)}
         >
-          <Settings className="w-4 h-4 text-[#6205D5] flex-shrink-0" />
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Settings className="w-4 h-4 text-[#6205D5] flex-shrink-0 group-hover:text-[#7c4dff] transition-colors" />
+            {/* Indicador de configuração ativa */}
+            {activeConfig && (
+              <div className="w-2 h-2 rounded-full bg-[#6205D5] animate-pulse shadow-lg shadow-[#6205D5]/60" />
+            )}
+          </div>
+          
           <div className="flex-1 min-w-0 text-center px-1">
             {activeConfig ? (
               <div className="space-y-0.5">
-                <span className="text-[#b0a8ff] text-xs font-medium block truncate max-w-full">
-                  {activeConfig.name}
-                </span>
+                <div className="flex items-center justify-center gap-1">
+                  <span className="text-[#b0a8ff] text-xs font-medium block truncate max-w-full">
+                    {activeConfig.name}
+                  </span>
+                  <div className="w-1 h-1 rounded-full bg-[#6205D5] animate-pulse flex-shrink-0" />
+                </div>
                 <span className="text-[#b0a8ff]/50 text-[10px] block truncate max-w-full">
                   {activeCategory?.name || 'Sem categoria'}
                 </span>
@@ -187,6 +188,11 @@ export function ServerSelector() {
                 ESCOLHA UMA CONFIGURAÇÃO
               </span>
             )}
+          </div>
+          
+          {/* Seta indicativa */}
+          <div className="flex-shrink-0 text-[#6205D5]/40 group-hover:text-[#6205D5] transition-colors">
+            <ChevronLeft className="w-3 h-3 rotate-180" />
           </div>
         </button>
 
@@ -241,40 +247,60 @@ export function ServerSelector() {
       )}
 
       {showConfigModal && (
-        <Modal onClose={() => {
-          setShowConfigModal(false);
-          setSelectedCategory(null);
-          setIsPending(false);
-        }}>
+        <Modal 
+          onClose={() => {
+            setShowConfigModal(false);
+            setSelectedCategory(null);
+            setIsPending(false);
+          }}
+          title={selectedCategory ? selectedCategory.name : activeConfig ? activeConfig.name : 'Configurações'}
+          icon={Settings}
+        >
           <div className="flex-1 p-3 relative">
             {isPending && (
               <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-50">
                 <RefreshCw className="w-8 h-8 text-[#6205D5] animate-spin" />
               </div>
             )}
-            <header className="flex items-center gap-2 mb-4">
+            
+            {/* Header customizado para navegação e status */}
+            <div className="flex items-center gap-2 mb-4">
               {selectedCategory && (
                 <button
                   onClick={handleBack}
-                  className="p-1.5 -ml-1.5 rounded-full transition-colors"
+                  className="p-1.5 -ml-1.5 rounded-full transition-colors hover:bg-[#6205D5]/20"
                 >
                   <ChevronLeft className="w-5 h-5 text-[#b0a8ff]" />
                 </button>
               )}
-              <div className="w-10 h-10 rounded-full bg-[#26074d] flex items-center justify-center">
-                <Settings className="w-5 h-5 text-[#b0a8ff]" />
-              </div>
-              <div>
-                <h1 className="text-lg font-medium text-[#b0a8ff]">
-                  {selectedCategory ? selectedCategory.name : 'Configurações'}
-                </h1>
-                {selectedCategory && (
+              
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  {/* Indicador de status quando há config ativa */}
+                  {activeConfig && !selectedCategory && (
+                    <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-[#6205D5]/20 border border-[#6205D5]/40">
+                      <div className="w-2 h-2 rounded-full bg-[#6205D5] animate-pulse" />
+                      <span className="text-[10px] text-[#6205D5] font-bold">ATIVA</span>
+                    </div>
+                  )}
+                </div>
+                
+                {selectedCategory ? (
                   <p className="text-xs text-[#b0a8ff]/70">
                     {selectedCategory.items.length} configurações disponíveis
                   </p>
+                ) : activeConfig ? (
+                  <p className="text-xs text-[#b0a8ff]/70">
+                    Config atual: <span className="text-[#6205D5] font-medium">{activeConfig.name}</span> 
+                    {activeCategory && ` • ${activeCategory.name}`}
+                  </p>
+                ) : (
+                  <p className="text-xs text-[#b0a8ff]/70">
+                    Selecione uma configuração para conectar
+                  </p>
                 )}
               </div>
-            </header>
+            </div>
 
             <div className="flex items-center gap-2 mb-4">
               <input
@@ -287,18 +313,6 @@ export function ServerSelector() {
               <Search className="w-5 h-5 text-[#b0a8ff]" />
             </div>
 
-            <div className="flex gap-2 mb-4">
-              {uniqueTags.map(tag => (
-                <button
-                  key={tag}
-                  onClick={() => handleTagFilter(tag)}
-                  className="px-3 py-1 rounded-full bg-[#6205D5]/20 text-[#b0a8ff] text-xs"
-                >
-                  {tag}
-                </button>
-              ))}
-            </div>
-
             {loading ? (
               <div className="flex items-center justify-center p-8">
                 <RefreshCw className="w-6 h-6 text-[#6205D5] animate-spin" />
@@ -307,59 +321,140 @@ export function ServerSelector() {
               <div className="space-y-2 transition-all duration-300">
                 {!selectedCategory ? (
                   filteredConfigs
-                    .map((category) => (
-                      <button
-                        key={category.id}
-                        onClick={() => handleCategorySelect(category)}
-                        className="w-full p-3 rounded-lg glass-effect transition-all duration-200"
-                      >
-                        <div className="flex items-center justify-center">
-                          <div className="flex-1">
-                            <div className="flex items-center justify-center">
-                              <h3 className="font-medium text-sm text-[#b0a8ff] text-center">
-                                {category.name}
-                              </h3>
+                    .map((category) => {
+                      const isActiveCategory = category.items.some(item => item.id === activeConfig?.id);
+                      return (
+                        <button
+                          key={category.id}
+                          onClick={() => handleCategorySelect(category)}
+                          className={`w-full p-3 rounded-lg transition-all duration-200 relative ${
+                            isActiveCategory 
+                              ? 'glass-effect border-2 border-[#6205D5]/60 bg-[#6205D5]/10' 
+                              : 'glass-effect hover:bg-[#6205D5]/5'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3 flex-1">
+                              {/* Indicador visual da categoria ativa */}
+                              <div className={`w-3 h-3 rounded-full flex-shrink-0 transition-all duration-200 ${
+                                isActiveCategory 
+                                  ? 'bg-[#6205D5] shadow-lg shadow-[#6205D5]/40 animate-pulse' 
+                                  : 'bg-[#6205D5]/20'
+                              }`} />
+                              
+                              <div className="flex-1 text-left">
+                                <div className="flex items-center gap-2">
+                                  <h3 className={`font-medium text-sm transition-colors ${
+                                    isActiveCategory ? 'text-white' : 'text-[#b0a8ff]'
+                                  }`}>
+                                    {category.name}
+                                  </h3>
+                                  {isActiveCategory && (
+                                    <div className="px-2 py-0.5 rounded-full bg-[#6205D5] text-white text-[10px] font-bold animate-pulse">
+                                      ATIVA
+                                    </div>
+                                  )}
+                                </div>
+                                <p className={`text-xs mt-0.5 transition-colors ${
+                                  isActiveCategory ? 'text-[#b0a8ff]' : 'text-[#b0a8ff]/70'
+                                }`}>
+                                  {category.items.length} configurações disponíveis
+                                </p>
+                              </div>
                             </div>
-                            <p className="text-xs text-[#b0a8ff]/70 mt-0.5 text-center">
-                              {category.items.length} configurações disponíveis
-                            </p>
+                            
+                            {/* Seta indicativa */}
+                            <div className={`ml-2 transition-all duration-200 ${
+                              isActiveCategory ? 'text-[#6205D5]' : 'text-[#b0a8ff]/40'
+                            }`}>
+                              <ChevronLeft className="w-4 h-4 rotate-180" />
+                            </div>
                           </div>
-                        </div>
-                      </button>
-                    ))
+                          
+                          {/* Linha de destaque para categoria ativa */}
+                          {isActiveCategory && (
+                            <div className="absolute left-0 top-0 w-1 h-full bg-gradient-to-b from-[#6205D5] to-[#7c4dff] rounded-l-lg" />
+                          )}
+                        </button>
+                      );
+                    })
                 ) : (
                   <div className="grid gap-1.5 transition-all duration-300">
-                    {selectedCategory.items.map((config) => (
-                      <button
-                        key={config.id}
-                        onClick={() => handleConfigSelect(config)}
-                        className={`
-                          w-full p-2.5 rounded-lg glass-effect transition-all duration-200
-                          ${String(activeConfig?.id) === String(config.id) ? 'border-2 border-[#6205D5] bg-[#26074d]/40' : ''}
-                        `}
-                      >
-                        <div className="flex items-center gap-2">
-                          {config.icon && (
-                            <img 
-                              src={config.icon} 
-                              alt="" 
-                              className="w-6 h-6 rounded-lg object-cover bg-[#26074d]"
-                            />
+                    {selectedCategory.items.map((config) => {
+                      const isActiveConfig = String(activeConfig?.id) === String(config.id);
+                      return (
+                        <button
+                          key={config.id}
+                          onClick={() => handleConfigSelect(config)}
+                          className={`
+                            w-full p-3 rounded-lg transition-all duration-200 relative overflow-hidden
+                            ${isActiveConfig 
+                              ? 'border-2 border-[#6205D5] bg-gradient-to-r from-[#6205D5]/20 to-[#26074d]/40 shadow-lg shadow-[#6205D5]/20' 
+                              : 'glass-effect hover:bg-[#6205D5]/5 hover:border-[#6205D5]/30 border border-transparent'
+                            }
+                          `}
+                        >
+                          <div className="flex items-center gap-3 relative z-10">
+                            {/* Indicador visual da config ativa */}
+                            <div className={`w-3 h-3 rounded-full flex-shrink-0 transition-all duration-200 ${
+                              isActiveConfig 
+                                ? 'bg-[#6205D5] shadow-lg shadow-[#6205D5]/60 animate-pulse ring-2 ring-white/30' 
+                                : 'bg-[#6205D5]/20 hover:bg-[#6205D5]/40'
+                            }`} />
+
+                            {/* Ícone da configuração */}
+                            {config.icon && (
+                              <img 
+                                src={config.icon} 
+                                alt="" 
+                                className={`w-6 h-6 rounded-lg object-cover transition-all duration-200 ${
+                                  isActiveConfig 
+                                    ? 'ring-2 ring-[#6205D5]/60 shadow-md' 
+                                    : 'bg-[#26074d]'
+                                }`}
+                              />
+                            )}
+                            
+                            <div className="flex-1 text-left min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h3 className={`text-sm font-medium truncate transition-colors ${
+                                  isActiveConfig ? 'text-white' : 'text-[#b0a8ff]'
+                                }`}>
+                                  {config.name}
+                                </h3>
+                                {isActiveConfig && (
+                                  <div className="px-2 py-0.5 rounded-full bg-[#6205D5] text-white text-[9px] font-bold animate-pulse flex-shrink-0">
+                                    EM USO
+                                  </div>
+                                )}
+                              </div>
+                              <p className={`text-[11px] truncate transition-colors ${
+                                isActiveConfig ? 'text-[#b0a8ff]' : 'text-[#b0a8ff]/70'
+                              }`}>
+                                {config.description}
+                              </p>
+                            </div>
+                            
+                            {/* Badge do modo */}
+                            <div className={`text-[10px] px-2 py-1 rounded-full border transition-all flex-shrink-0 ${
+                              isActiveConfig 
+                                ? 'bg-[#6205D5] text-white border-[#6205D5]/60 shadow-md' 
+                                : 'text-[#b0a8ff]/50 bg-[#100322]/30 border-[#6205D5]/10'
+                            }`}>
+                              {config.mode?.toUpperCase()}
+                            </div>
+                          </div>
+                          
+                          {/* Linha de destaque e efeito de brilho para config ativa */}
+                          {isActiveConfig && (
+                            <>
+                              <div className="absolute left-0 top-0 w-1 h-full bg-gradient-to-b from-[#6205D5] to-[#7c4dff] rounded-l-lg" />
+                              <div className="absolute inset-0 bg-gradient-to-r from-[#6205D5]/5 via-transparent to-[#6205D5]/5 animate-pulse" />
+                            </>
                           )}
-                          <div className="flex-1 text-center">
-                            <h3 className="text-sm font-medium text-[#b0a8ff] text-center">
-                              {config.name}
-                            </h3>
-                            <p className="text-[11px] text-[#b0a8ff]/70 text-center">
-                              {config.description}
-                            </p>
-                          </div>
-                          <div className="text-[10px] text-[#b0a8ff]/50 px-1.5 py-0.5 rounded-full bg-[#100322]/30 border border-[#6205D5]/10">
-                            {config.mode}
-                          </div>
-                        </div>
-                      </button>
-                    ))}
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>

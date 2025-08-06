@@ -1,6 +1,6 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
 
 @layer base {
   html {
@@ -11,7 +11,9 @@
   }
 
   body {
-    @apply bg-gradient-to-br from-[#2A0A3E] via-[#4B0082] to-[#2A0A3E] min-h-screen text-gray-100;
+    background: linear-gradient(135deg, #2A0A3E 0%, #4B0082 50%, #2A0A3E 100%);
+    min-height: 100vh;
+    color: #f3f4f6;
   }
 
   input {
@@ -65,38 +67,88 @@
   }
 
   ::-webkit-scrollbar {
-    @apply w-2;
+    width: 0.5rem;
   }
 
   ::-webkit-scrollbar-track {
-    @apply bg-[#2A0A3E];
+    background: #2A0A3E;
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-[#4B0082] rounded-full;
+    background: #4B0082;
+    border-radius: 9999px;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply px-6 py-3 text-white rounded-lg font-medium active:scale-95;
-    @apply bg-gradient-to-r from-[#5A0CA3] to-[#4B0082];
+    padding: 1.5rem 1.5rem;
+    color: white;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    background: linear-gradient(to right, #5A0CA3, #4B0082);
+    transition: transform 0.1s ease-in-out;
+  }
+  
+  .btn-primary:active {
+    transform: scale(0.95);
   }
   
   .btn-outline {
-    @apply px-6 py-3 border-2 border-[#4B0082] text-[#E0E0E0] rounded-lg font-medium active:scale-95 hover:text-white backdrop-blur-sm;
+    padding: 1.5rem 1.5rem;
+    border: 2px solid #4B0082;
+    color: #E0E0E0;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    backdrop-filter: blur(4px);
+    transition: transform 0.1s ease-in-out, color 0.2s ease-in-out;
+  }
+  
+  .btn-outline:active {
+    transform: scale(0.95);
+  }
+  
+  .btn-outline:hover {
+    color: white;
   }
 
   .card {
-    @apply bg-[#2A0A3E]/30 backdrop-blur-sm rounded-xl p-6 border border-[#3A0A7A]/30 bg-gradient-to-br from-[#4B0082]/50 to-[#2A0A3E]/50;
+    background: linear-gradient(135deg, rgba(75, 0, 130, 0.5), rgba(42, 10, 62, 0.5));
+    backdrop-filter: blur(4px);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    border: 1px solid rgba(58, 10, 122, 0.3);
   }
 
   .nav-link {
-    @apply text-[#E0E0E0] hover:text-white duration-200 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-[#4B0082] hover:after:w-full;
+    color: #E0E0E0;
+    transition: color 0.2s ease-in-out;
+    position: relative;
+  }
+  
+  .nav-link:hover {
+    color: white;
+  }
+  
+  .nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: #4B0082;
+    transition: width 0.2s ease-in-out;
+  }
+  
+  .nav-link:hover::after {
+    width: 100%;
   }
 
   .glass-effect {
-    @apply bg-purple-950/30 backdrop-blur-md border border-purple-800/30;
+    background: rgba(88, 28, 135, 0.3);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(147, 51, 234, 0.3);
   }
 
   /* Classes utilitárias para controle de seleção */
@@ -121,20 +173,25 @@
     -khtml-user-drag: none;
     -moz-user-drag: none;
     -o-user-drag: none;
-    user-drag: none;
+    /* user-drag: none; */
   }
 
   .mobile-menu-enter {
-    @apply transform translate-x-0 duration-300 ease-out;
+    transform: translateX(0);
+    transition: transform 300ms ease-out;
   }
 
   .mobile-menu-exit {
-    @apply transform -translate-x-full duration-300 ease-in;
+    transform: translateX(-100%);
+    transition: transform 300ms ease-in;
   }
 }
 
 .text-gradient {
-  @apply bg-gradient-to-r from-purple-400 to-purple-200 text-transparent bg-clip-text;
+  background: linear-gradient(to right, #c084fc, #e879f9);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
   letter-spacing: -0.02em;
 }
 
@@ -249,11 +306,14 @@ input[type="range"]::-moz-range-thumb:hover {
 
 /* Glass effect enhanced */
 .glass-effect {
-  @apply backdrop-blur-md bg-white/5 border border-white/10;
+  backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .glass-effect:hover {
-  @apply bg-white/10 border-white/20;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 /* Animações para notificações toast */
