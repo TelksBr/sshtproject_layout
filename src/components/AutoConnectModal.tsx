@@ -44,10 +44,7 @@ export function AutoConnectModal({
   
   if (!open) return null;
 
-  const progressPercentage = totalConfigs > 0 ? (testedConfigs / totalConfigs) * 100 : 0;
-  const isCompleted = !running && testedConfigs > 0;
-
-  // Obter todas as categorias disponíveis
+  // Obter todas as categorias e configurações disponíveis
   const allConfigs = getAllConfigs();
   const categories = allConfigs.reduce((acc: any[], category) => {
     if (!acc.find(c => c.id === category.id)) {
@@ -59,6 +56,45 @@ export function AutoConnectModal({
     }
     return acc;
   }, []);
+
+  // Calcular total de configurações baseado nos filtros atuais
+  const allConfigsFlat = allConfigs.flatMap(category => 
+    category.items.map(item => ({
+      ...item,
+      category_id: category.id
+    }))
+  );
+
+  // Aplicar filtros do autoConnectConfig para obter o total correto
+  let filteredConfigsForTotal = allConfigsFlat;
+  
+  // Filtro por categoria
+  if (autoConnectConfig.selectedCategories.length > 0) {
+    filteredConfigsForTotal = filteredConfigsForTotal.filter(config => 
+      autoConnectConfig.selectedCategories.includes(config.category_id)
+    );
+  }
+  
+  // Filtro por tipo de configuração
+  if (autoConnectConfig.configType !== 'all') {
+    filteredConfigsForTotal = filteredConfigsForTotal.filter(config => {
+      const mode = config.mode?.toLowerCase() || '';
+      if (autoConnectConfig.configType === 'ssh') {
+        return mode.includes('ssh') || mode.includes('proxy') || mode.includes('socks');
+      } else if (autoConnectConfig.configType === 'v2ray') {
+        return mode.includes('v2ray') || mode.includes('vmess') || mode.includes('vless');
+      }
+      return true;
+    });
+  }
+
+  // Usar o total calculado localmente se for maior que o recebido via props
+  const actualTotalConfigs = Math.max(totalConfigs, filteredConfigsForTotal.length);
+  const progressPercentage = actualTotalConfigs > 0 ? (testedConfigs / actualTotalConfigs) * 100 : 0;
+  const isCompleted = !running && testedConfigs > 0;
+
+  // Debug: Log do número de categorias e configurações encontradas
+  console.log(`📊 AutoConnect Modal - Categorias: ${categories.length}, Configs totais: ${allConfigsFlat.length}, Configs filtradas: ${filteredConfigsForTotal.length}`);
 
   const getStatusIcon = (status: TestLog['status']) => {
     switch (status) {
@@ -102,7 +138,7 @@ export function AutoConnectModal({
   return (
     <Modal 
       onClose={onClose} 
-      title={running ? `Testando (${testedConfigs}/${totalConfigs})` : successConfigName ? 'Conectado!' : 'Teste Automático'} 
+      title={running ? `Testando (${testedConfigs}/${actualTotalConfigs})` : successConfigName ? 'Conectado!' : 'Teste Automático'} 
       icon={running ? RefreshCw : successConfigName ? CheckCircle : Zap}
     >
       <div className="w-full max-w-2xl mx-auto">
@@ -170,7 +206,7 @@ export function AutoConnectModal({
                       ? `Usando: ${successConfigName}` 
                       : error
                         ? 'Verifique as configurações e tente novamente'
-                        : `${totalConfigs} configurações encontradas`
+                        : `${actualTotalConfigs} configurações encontradas`
                   }
                 </p>
                 
@@ -297,7 +333,7 @@ export function AutoConnectModal({
                     </div>
                     <div>
                       <p className="text-[#b0a8ff]/70 text-xs">Configurações</p>
-                      <p className="text-white font-bold text-lg">{totalConfigs}</p>
+                      <p className="text-white font-bold text-lg">{actualTotalConfigs}</p>
                     </div>
                   </div>
                 </div>
