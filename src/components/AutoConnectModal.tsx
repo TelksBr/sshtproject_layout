@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Modal } from './modals/Modal';
-import { RefreshCw, CheckCircle, XCircle, Wifi, AlertCircle, Settings } from 'lucide-react';
+import { RefreshCw, CheckCircle, XCircle, Wifi, AlertCircle, Settings, Zap } from 'lucide-react';
 import { TestLog } from '../hooks/useAutoConnect';
 import { AutoConnectConfig } from '../utils/autoConnectUtils';
 import { getAllConfigs } from '../utils/appFunctions';
@@ -60,9 +60,6 @@ export function AutoConnectModal({
     return acc;
   }, []);
 
-  // Debug: Log do número de categorias encontradas
-  console.log(`📊 AutoConnect Modal - Categorias encontradas: ${categories.length}`, categories);
-
   const getStatusIcon = (status: TestLog['status']) => {
     switch (status) {
       case 'success':
@@ -103,23 +100,118 @@ export function AutoConnectModal({
   ];
 
   return (
-    <Modal onClose={onClose} title="Teste Automático" icon={RefreshCw}>
+    <Modal 
+      onClose={onClose} 
+      title={running ? `Testando (${testedConfigs}/${totalConfigs})` : successConfigName ? 'Conectado!' : 'Teste Automático'} 
+      icon={running ? RefreshCw : successConfigName ? CheckCircle : Zap}
+    >
       <div className="w-full max-w-2xl mx-auto">
         
-        {/* Tab Navigation - Mobile Friendly */}
-        <div className="flex bg-[#26074d]/40 rounded-lg p-1 mb-6">
+        {/* Status Header - Sempre visível */}
+        <div className="mb-6">
+          <div className={`relative rounded-xl p-4 border-2 transition-all duration-500 ${
+            running 
+              ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-blue-400/40 shadow-lg shadow-blue-500/20' 
+              : successConfigName 
+                ? 'bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-green-400/40 shadow-lg shadow-green-500/20'
+                : error
+                  ? 'bg-gradient-to-r from-red-500/10 to-orange-500/10 border-red-400/40 shadow-lg shadow-red-500/20'
+                  : 'bg-gradient-to-r from-[#6205D5]/10 to-[#26074d]/20 border-[#6205D5]/30'
+          }`}>
+            
+            {/* Progress Ring */}
+            <div className="flex items-center gap-4">
+              <div className="relative w-16 h-16 flex-shrink-0">
+                <svg className="w-16 h-16 transform -rotate-90" viewBox="0 0 64 64">
+                  <circle
+                    cx="32" cy="32" r="28"
+                    fill="none" stroke="currentColor" strokeWidth="4"
+                    className="text-[#26074d] opacity-20"
+                  />
+                  <circle
+                    cx="32" cy="32" r="28"
+                    fill="none" stroke="currentColor" strokeWidth="4"
+                    strokeDasharray={`${2 * Math.PI * 28}`}
+                    strokeDashoffset={`${2 * Math.PI * 28 * (1 - progressPercentage / 100)}`}
+                    className={`transition-all duration-700 ease-out ${
+                      running ? 'text-blue-400' : successConfigName ? 'text-green-400' : 'text-[#6205D5]'
+                    }`}
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  {running ? (
+                    <RefreshCw className="w-6 h-6 text-blue-400 animate-spin" />
+                  ) : successConfigName ? (
+                    <CheckCircle className="w-6 h-6 text-green-400" />
+                  ) : error ? (
+                    <AlertCircle className="w-6 h-6 text-red-400" />
+                  ) : (
+                    <Zap className="w-6 h-6 text-[#6205D5]" />
+                  )}
+                </div>
+              </div>
+              
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-2">
+                  <h3 className="text-lg font-bold text-white truncate">
+                    {running ? 'Testando Conexões...' : successConfigName ? '🎉 Conectado!' : error ? '❌ Erro no Teste' : 'Pronto para Testar'}
+                  </h3>
+                  {running && (
+                    <div className="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded-full font-mono animate-pulse">
+                      {formatDuration(currentTestDuration)}
+                    </div>
+                  )}
+                </div>
+                
+                <p className="text-sm text-[#b0a8ff]/70 mb-2 truncate">
+                  {running && currentConfigName 
+                    ? `Testando: ${currentConfigName}` 
+                    : successConfigName 
+                      ? `Usando: ${successConfigName}` 
+                      : error
+                        ? 'Verifique as configurações e tente novamente'
+                        : `${totalConfigs} configurações encontradas`
+                  }
+                </p>
+                
+                {/* Mini Progress Bar */}
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 bg-[#26074d]/60 rounded-full h-2 overflow-hidden">
+                    <div 
+                      className={`h-full rounded-full transition-all duration-700 ease-out ${
+                        running ? 'bg-gradient-to-r from-blue-400 to-purple-400' : 
+                        successConfigName ? 'bg-gradient-to-r from-green-400 to-emerald-400' : 
+                        'bg-gradient-to-r from-[#6205D5] to-[#7c4dff]'
+                      }`}
+                      style={{ width: `${progressPercentage}%` }}
+                    />
+                  </div>
+                  <span className="text-sm font-bold text-white min-w-[3rem] text-right">
+                    {progressPercentage.toFixed(0)}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Tab Navigation - Melhorado */}
+        <div className="flex bg-[#26074d]/40 rounded-xl p-1 mb-6 backdrop-blur-sm">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md font-medium transition-all duration-200 text-sm ${
+              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-all duration-300 text-sm relative ${
                 activeTab === tab.id 
-                  ? 'bg-[#6205D5] text-white shadow-lg' 
-                  : 'text-[#b0a8ff]/70 hover:bg-[#6205D5]/20 hover:text-[#b0a8ff]'
+                  ? 'bg-[#6205D5] text-white shadow-lg transform scale-105' 
+                  : 'text-[#b0a8ff]/70 hover:bg-[#6205D5]/20 hover:text-[#b0a8ff] hover:scale-102'
               }`}
             >
-              <tab.icon className="w-4 h-4" />
-              <span className="hidden sm:inline">{tab.label}</span>
+              <tab.icon className={`w-4 h-4 transition-transform ${activeTab === tab.id ? 'scale-110' : ''}`} />
+              <span className="hidden sm:inline font-semibold">{tab.label}</span>
+              {activeTab === tab.id && (
+                <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-8 h-1 bg-white rounded-full" />
+              )}
             </button>
           ))}
         </div>
@@ -129,73 +221,22 @@ export function AutoConnectModal({
           
           {/* STATUS TAB */}
           {activeTab === 'status' && (
-            <div className="space-y-4">
+            <div className="space-y-6">
               
-              {/* Current Status Card */}
-              <div className="card p-4">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                    running ? 'bg-blue-500/20' : successConfigName ? 'bg-green-500/20' : 'bg-gray-500/20'
-                  }`}>
-                    {running ? (
-                      <RefreshCw className="w-6 h-6 text-blue-400 animate-spin" />
-                    ) : successConfigName ? (
-                      <CheckCircle className="w-6 h-6 text-green-400" />
-                    ) : (
-                      <Wifi className="w-6 h-6 text-gray-400" />
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-bold text-lg text-[#b0a8ff]">
-                      {running ? 'Testando Conexões...' : successConfigName ? 'Conectado!' : 'Pronto para Testar'}
-                    </h3>
-                    <p className="text-sm text-[#b0a8ff]/70">
-                      {running && currentConfigName ? `Testando: ${currentConfigName.substring(0, 30)}...` : 
-                       successConfigName ? `Usando: ${successConfigName.substring(0, 30)}...` : 
-                       `${totalConfigs} configurações encontradas`}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Progress Bar */}
-                <div className="space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-[#b0a8ff]/70">Progresso do Teste</span>
-                    <span className="text-[#b0a8ff] font-medium">{testedConfigs}/{totalConfigs}</span>
-                  </div>
-                  
-                  <div className="w-full bg-[#26074d] rounded-full h-3 overflow-hidden">
-                    <div 
-                      className="bg-gradient-to-r from-[#6205D5] to-[#7c4dff] h-full rounded-full transition-all duration-700 ease-out relative"
-                      style={{ width: `${progressPercentage}%` }}
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 animate-pulse"></div>
-                    </div>
-                  </div>
-                  
-                  <div className="text-center">
-                    <span className="text-2xl font-bold text-[#6205D5]">{progressPercentage.toFixed(0)}%</span>
-                  </div>
-                </div>
-
-                {/* Current Test Duration */}
-                {running && currentTestDuration > 0 && (
-                  <div className="mt-4 flex justify-center">
-                    <div className="px-4 py-2 bg-[#6205D5]/20 text-[#6205D5] font-mono rounded-full border border-[#6205D5]/30">
-                      ⏱️ {formatDuration(currentTestDuration)}
-                    </div>
-                  </div>
-                )}
-              </div>
-
               {/* Success Message */}
               {successConfigName && (
-                <div className="bg-green-500/20 border border-green-400/40 rounded-lg p-4">
+                <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-400/40 rounded-xl p-4 shadow-lg shadow-green-500/20 animate-in slide-in-from-top-4 duration-500">
                   <div className="flex items-center gap-3">
-                    <CheckCircle className="w-8 h-8 text-green-400 flex-shrink-0" />
-                    <div>
-                      <h4 className="font-bold text-green-400 text-lg">🎉 Conectado com Sucesso!</h4>
-                      <p className="text-green-300 font-mono text-sm break-all">{successConfigName}</p>
+                    <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center">
+                      <CheckCircle className="w-8 h-8 text-green-400 animate-pulse" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-green-400 text-lg mb-1">🎉 Conectado com Sucesso!</h4>
+                      <p className="text-green-300 font-mono text-sm truncate">{successConfigName}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <div className="w-2 h-2 bg-green-400 rounded-full animate-ping" />
+                        <span className="text-green-300 text-xs">Conexão ativa e estável</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -203,31 +244,92 @@ export function AutoConnectModal({
 
               {/* Error Message */}
               {error && (
-                <div className="bg-red-500/20 border border-red-400/40 rounded-lg p-4">
+                <div className="bg-gradient-to-r from-red-500/20 to-orange-500/20 border border-red-400/40 rounded-xl p-4 shadow-lg shadow-red-500/20 animate-in slide-in-from-top-4 duration-500">
                   <div className="flex items-center gap-3">
-                    <AlertCircle className="w-8 h-8 text-red-400 flex-shrink-0" />
-                    <div>
-                      <h4 className="font-bold text-red-400 text-lg">Erro no Teste</h4>
+                    <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center">
+                      <AlertCircle className="w-8 h-8 text-red-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-red-400 text-lg mb-1">Erro no Teste</h4>
                       <p className="text-red-300 text-sm">{error}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <div className="w-2 h-2 bg-red-400 rounded-full" />
+                        <span className="text-red-300 text-xs">Verifique sua conexão</span>
+                      </div>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Action Buttons */}
-              <div className="flex gap-3 pt-4">
+              {/* Running Status */}
+              {running && (
+                <div className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-400/40 rounded-xl p-4 shadow-lg shadow-blue-500/20 animate-in slide-in-from-top-4 duration-500">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center">
+                      <RefreshCw className="w-8 h-8 text-blue-400 animate-spin" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-blue-400 text-lg mb-1">Testando em Progresso...</h4>
+                      {currentConfigName && (
+                        <p className="text-blue-300 font-mono text-sm truncate mb-2">
+                          Config atual: {currentConfigName}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-2">
+                        <div className="flex gap-1">
+                          <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                          <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                          <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                        </div>
+                        <span className="text-blue-300 text-xs">Procurando melhor conexão</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Stats Cards */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-[#26074d]/40 rounded-xl p-4 border border-[#6205D5]/20 backdrop-blur-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-[#6205D5]/20 rounded-lg flex items-center justify-center">
+                      <Wifi className="w-5 h-5 text-[#6205D5]" />
+                    </div>
+                    <div>
+                      <p className="text-[#b0a8ff]/70 text-xs">Configurações</p>
+                      <p className="text-white font-bold text-lg">{totalConfigs}</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-[#26074d]/40 rounded-xl p-4 border border-[#6205D5]/20 backdrop-blur-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
+                      <CheckCircle className="w-5 h-5 text-green-400" />
+                    </div>
+                    <div>
+                      <p className="text-[#b0a8ff]/70 text-xs">Testadas</p>
+                      <p className="text-white font-bold text-lg">{testedConfigs}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons - Melhorados */}
+              <div className="flex gap-3 pt-2">
                 {!running ? (
                   <button
                     onClick={onStart}
-                    className="flex-1 bg-gradient-to-r from-[#6205D5] to-[#7c4dff] hover:from-[#7c4dff] hover:to-[#9575ff] text-white py-4 px-6 rounded-xl font-bold text-lg transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl"
+                    className="flex-1 bg-gradient-to-r from-[#6205D5] to-[#7c4dff] hover:from-[#7c4dff] hover:to-[#9575ff] text-white py-4 px-6 rounded-xl font-bold text-lg transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
                   >
-                    <Wifi className="w-5 h-5" />
+                    <Zap className="w-5 h-5" />
                     {isCompleted ? 'Testar Novamente' : 'Iniciar Teste'}
+                    <div className="absolute inset-0 bg-white/10 rounded-xl opacity-0 hover:opacity-100 transition-opacity" />
                   </button>
                 ) : (
                   <button
                     onClick={onCancel}
-                    className="flex-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white py-4 px-6 rounded-xl font-bold text-lg transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl"
+                    className="flex-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white py-4 px-6 rounded-xl font-bold text-lg transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
                   >
                     <XCircle className="w-5 h-5" />
                     Parar Teste
@@ -237,7 +339,7 @@ export function AutoConnectModal({
                 <button
                   onClick={onClose}
                   disabled={running}
-                  className="px-6 py-4 bg-[#26074d]/80 hover:bg-[#6205D5]/20 disabled:bg-gray-700/50 text-[#b0a8ff] hover:text-white disabled:text-gray-400 rounded-xl border border-[#6205D5]/30 hover:border-[#6205D5]/60 disabled:border-gray-600/30 font-bold transition-all duration-300"
+                  className="px-6 py-4 bg-[#26074d]/80 hover:bg-[#6205D5]/20 disabled:bg-gray-700/50 text-[#b0a8ff] hover:text-white disabled:text-gray-400 rounded-xl border border-[#6205D5]/30 hover:border-[#6205D5]/60 disabled:border-gray-600/30 font-bold transition-all duration-300 transform hover:scale-105 active:scale-95 disabled:scale-100"
                 >
                   {running ? 'Aguarde...' : 'Fechar'}
                 </button>
@@ -428,6 +530,61 @@ export function AutoConnectModal({
           )}
         </div>
       </div>
+
+      <style>{`
+        .slider::-webkit-slider-thumb {
+          appearance: none;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #6205D5, #7c4dff);
+          cursor: pointer;
+          border: 2px solid white;
+          box-shadow: 0 4px 8px rgba(98, 5, 213, 0.3);
+          transition: all 0.2s ease;
+        }
+        
+        .slider::-webkit-slider-thumb:hover {
+          transform: scale(1.2);
+          box-shadow: 0 6px 12px rgba(98, 5, 213, 0.5);
+        }
+        
+        .slider::-webkit-slider-track {
+          background: linear-gradient(90deg, #6205D5, #7c4dff);
+          height: 4px;
+          border-radius: 2px;
+        }
+        
+        @keyframes animate-in {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        .animate-in {
+          animation: animate-in 0.3s ease-out;
+        }
+        
+        .slide-in-from-top-4 {
+          animation: slide-in-from-top-4 0.5s ease-out;
+        }
+        
+        @keyframes slide-in-from-top-4 {
+          from {
+            opacity: 0;
+            transform: translateY(-16px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
     </Modal>
   );
 }

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   Settings, Download,
   Wifi, Battery, Network, Book,
-  RefreshCw, DollarSign, Share2, CalendarClock, BriefcaseBusiness, Search
+  RefreshCw, DollarSign, Share2, CalendarClock, BriefcaseBusiness, Search, Zap
 } from 'lucide-react';
 import {
   checkForUpdates,
@@ -14,6 +14,8 @@ import {
 } from '../../utils/appFunctions';
 import { ModalType } from '../../App';
 import { ServersModal } from '../modals/ServersModal';
+import { useAutoConnect } from '../../hooks/useAutoConnect';
+import { AutoConnectModal } from '../AutoConnectModal';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -34,6 +36,9 @@ interface MenuCategory {
 export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
   const [menuStyle, setMenuStyle] = useState({});
   const [showServersModal, setShowServersModal] = useState(false);
+  
+  // Hook para AutoConnect
+  const autoConnect = useAutoConnect();
 
   useEffect(() => {
     const statusBarHeight = getStatusbarHeight();
@@ -57,6 +62,7 @@ export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
     {
       title: "Ferramentas",
       items: [
+        { icon: <Zap className="w-5 h-5" />, label: "Teste Automático", onClick: () => autoConnect.openModal(), highlight: true },
         { icon: <Download className="w-5 h-5" />, label: "Speed Test", onClick: () => onNavigate('speedtest') },
         { icon: <Share2 className="w-5 h-5" />, label: "Hotspot", onClick: () => onNavigate('hotspot') },
         { icon: <Search className="w-5 h-5" />, label: "Buscador de IP", onClick: () => onNavigate('ipfinder') },
@@ -167,6 +173,25 @@ export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
       {showServersModal && (
         <ServersModal onClose={() => setShowServersModal(false)} />
       )}
+
+      <AutoConnectModal
+        open={autoConnect.open}
+        onClose={autoConnect.closeModal}
+        currentConfigName={autoConnect.currentName}
+        totalConfigs={autoConnect.total}
+        testedConfigs={autoConnect.tested}
+        successConfigName={autoConnect.success}
+        running={autoConnect.running}
+        onStart={autoConnect.startAutoConnect}
+        onCancel={autoConnect.cancelTest}
+        error={autoConnect.error}
+        logs={autoConnect.logs}
+        currentTestDuration={autoConnect.currentTestDuration}
+        autoConnectConfig={autoConnect.autoConnectConfig}
+        setAutoConnectConfig={autoConnect.setAutoConnectConfig}
+        showSettings={autoConnect.showSettings}
+        setShowSettings={autoConnect.setShowSettings}
+      />
     </>
   );
 }
