@@ -313,7 +313,7 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
 
         {/* Botão de conexão */}
         <button
-          className={`btn-primary w-full h-10 md:h-12 lg:h-11 text-sm md:text-base lg:text-sm ${getButtonStyle()}`}
+          className={`w-full h-10 md:h-12 lg:h-11 text-sm md:text-base lg:text-sm font-bold rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center bg-gradient-to-r ${getButtonStyle()}`}
           onClick={handleConnection}
           disabled={vpnState === 'STOPPING'}
           title={`Estado atual: ${vpnState}`}
@@ -328,7 +328,7 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
 
         {/* Botão de logs */}
         <button
-          className="btn-outline w-full h-10 md:h-12 lg:h-11 flex items-center justify-center gap-1.5 text-sm md:text-base lg:text-sm"
+          className="w-full h-10 md:h-12 lg:h-11 flex items-center justify-center gap-1.5 text-sm md:text-base lg:text-sm font-medium rounded-lg border border-[#6205D5]/30 bg-[#26074d]/40 text-[#b0a8ff] hover:bg-[#6205D5]/20 hover:border-[#6205D5]/60 hover:text-white transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
           onClick={openDialogLogs}
         >
           <Scroll className="w-4 h-4 md:w-5 md:h-5 lg:w-4 lg:h-4" />
