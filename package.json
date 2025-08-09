@@ -9,8 +9,10 @@
     "preview": "vite preview --host --port 80"
   },
   "dependencies": {
+    "@types/qrcode": "^1.5.5",
     "caniuse-lite": "^1.0.30001724",
     "lucide-react": "0.525.0",
+    "qrcode": "^1.5.4",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-helmet": "^6.1.0",

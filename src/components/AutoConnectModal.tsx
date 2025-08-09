@@ -93,9 +93,6 @@ export function AutoConnectModal({
   const progressPercentage = actualTotalConfigs > 0 ? (testedConfigs / actualTotalConfigs) * 100 : 0;
   const isCompleted = !running && testedConfigs > 0;
 
-  // Debug: Log do número de categorias e configurações encontradas
-  console.log(`📊 AutoConnect Modal - Categorias: ${categories.length}, Configs totais: ${allConfigsFlat.length}, Configs filtradas: ${filteredConfigsForTotal.length}`);
-
   const getStatusIcon = (status: TestLog['status']) => {
     switch (status) {
       case 'success':

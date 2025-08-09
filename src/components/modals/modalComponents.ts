@@ -1,4 +1,4 @@
-import { BuyLogin } from '../modals/BuyLogin';
+import { PurchaseModal } from '../modals/PurchaseModal';
 import { Tutorials } from '../modals/Tutorials';
 import { Support } from '../modals/Support';
 import { SpeedTest } from '../modals/SpeedTest';
@@ -18,7 +18,7 @@ export interface ModalComponentProps {
 }
 
 export const modalComponents: Record<Exclude<ModalType, null>, React.ComponentType<ModalComponentProps>> = {
-  buy: BuyLogin,
+  buy: PurchaseModal,
   tutorials: Tutorials,
   support: Support,
   speedtest: SpeedTest,
