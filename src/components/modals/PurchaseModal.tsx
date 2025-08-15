@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { Modal } from './Modal';
 import { Plan, PaymentStep, PurchaseRequest, PurchaseResponse, CredentialsResponse } from '../../types/sales';
 import { getPlans, createPurchase, formatPrice, formatDate } from '../../utils/salesUtils';
@@ -917,7 +917,7 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
         <div className="flex items-center justify-center mb-6">
           <div className="flex items-center">
             {['plans', 'email', 'confirm', 'payment', 'success'].map((step, index) => (
-              <React.Fragment key={step}>
+              <Fragment key={step}>
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                   currentStep === step 
                     ? 'bg-blue-600 text-white' 
@@ -934,7 +934,7 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
                       : 'bg-gray-600'
                   }`} />
                 )}
-              </React.Fragment>
+              </Fragment>
             ))}
           </div>
         </div>

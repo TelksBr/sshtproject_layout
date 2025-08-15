@@ -13,7 +13,7 @@ import { useModalRenderer } from './hooks/useModalRenderer';
 import { onDtunnelEvent } from './utils/dtEvents';
 import { VpnState } from './types/vpn';
 
-export type ModalType = 'buy' | 'tutorials' | 'support' | 'speedtest' | 'terms' | 'privacy' | 'checkuser' | 'cleandata' | 'hotspot' | 'services' | 'ipfinder' | 'faq' | null;
+export type ModalType = 'buy' | 'recovery' | 'tutorials' | 'support' | 'speedtest' | 'terms' | 'privacy' | 'checkuser' | 'cleandata' | 'hotspot' | 'services' | 'ipfinder' | 'faq' | 'testgenerate' | null;
 
 function App() {
   const [showMenu, setShowMenu] = useState(false);

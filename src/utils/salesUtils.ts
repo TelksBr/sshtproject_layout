@@ -1,3 +1,31 @@
+// Gerar credenciais de teste via email
+
+// Tipagem para resposta flexível
+export interface TestGenerateResponse {
+  success: boolean;
+  message: string;
+  code?: string;
+  data?: any;
+}
+
+
+export async function generateTestCredentials(email: string): Promise<TestGenerateResponse> {
+  const response = await apiRequest<any>(
+    '/api/test/generate',
+    {
+      method: 'POST',
+      body: JSON.stringify({ customer_email: email }),
+    }
+  );
+
+  // Retorna todos os campos relevantes para o modal tratar
+  return {
+    success: response.success,
+    message: response.message || (response.data?.message) || '',
+    code: response.data?.code,
+    data: response.data,
+  };
+}
 import { 
   Plan, 
   PurchaseRequest, 
@@ -7,7 +35,7 @@ import {
   ApiResponse 
 } from '../types/sales';
 
-const API_BASE_URL = 'http://bot.sshtproject.com';
+const API_BASE_URL = 'https://bot.sshtproject.com';
 
 // Função auxiliar para fazer requisições
 async function apiRequest<T>(endpoint: string, options?: RequestInit): Promise<ApiResponse<T>> {
@@ -133,4 +161,41 @@ export function getTimeUntilExpiration(expiresAt: string): {
   const seconds = Math.floor((diff % (1000 * 60)) / 1000);
   
   return { minutes, seconds, isExpired: false };
+}
+
+// ============================================
+// FUNÇÕES DE RECUPERAÇÃO DE CREDENCIAIS
+// ============================================
+
+// Solicitar recuperação de credenciais por email
+export async function requestCredentialRecovery(email: string): Promise<{ success: boolean; message: string }> {
+  const response = await apiRequest<{ message: string }>('/api/sales/recovery/request', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      customer_email: email
+    }),
+  });
+
+  if (!response.success) {
+    throw new Error(response.message || 'Erro ao solicitar recuperação de credenciais');
+  }
+
+  return {
+    success: true,
+    message: response.data?.message || 'Solicitação enviada com sucesso! Verifique seu email.'
+  };
+}
+
+// Recuperar credenciais via token (URL do email)
+export async function recoverCredentialsByToken(token: string): Promise<CredentialsResponse> {
+  const response = await apiRequest<CredentialsResponse>(`/api/sales/recovery/${token}`);
+
+  if (!response.success || !response.data) {
+    throw new Error(response.message || 'Token inválido ou expirado');
+  }
+
+  return response.data;
 }
