@@ -1,3 +1,53 @@
+// Renovar usuário (compra de renovação)
+export interface RenewalPurchaseResponse {
+  success: boolean;
+  message: string;
+  data?: any;
+}
+
+export async function purchaseRenewal(username: string, plan_id: string): Promise<RenewalPurchaseResponse> {
+  const response = await apiRequest<any>(
+    '/api/renewals/purchase',
+    {
+      method: 'POST',
+      body: JSON.stringify({ username, plan_id }),
+    }
+  );
+  return {
+    success: response.success,
+    message: response.message || (response.data?.message) || '',
+    data: response.data,
+  };
+}
+// =============================
+// RENOVAÇÃO DE LOGIN
+// =============================
+
+export interface RenewalCheckResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    username: string;
+    can_renew: boolean;
+    expires_at?: string;
+    [key: string]: any;
+  };
+}
+
+export async function checkRenewalUser(username: string): Promise<RenewalCheckResponse> {
+  const response = await apiRequest<any>(
+    '/api/renewals/check',
+    {
+      method: 'POST',
+      body: JSON.stringify({ username }),
+    }
+  );
+  return {
+    success: response.success,
+    message: response.message || (response.data?.message) || '',
+    data: response.data,
+  };
+}
 // Gerar credenciais de teste via email
 
 // Tipagem para resposta flexível

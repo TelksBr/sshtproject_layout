@@ -51,20 +51,26 @@ export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
 
   const menuCategories: MenuCategory[] = [
     {
+      title: "Ações Rápidas",
+      items: [
+        { icon: <DollarSign className="w-5 h-5" />, label: "Comprar Login", onClick: () => onNavigate('buy'), highlight: true },
+        { icon: <BriefcaseBusiness className="w-5 h-5" />, label: "Gerar Teste (Email)", onClick: () => onNavigate('testgenerate') },
+        { icon: <RefreshCw className="w-5 h-5" />, label: "Renovar Login", onClick: () => onNavigate('renewal') },
+        { icon: <Search className="w-5 h-5" />, label: "Recuperar Login", onClick: () => onNavigate('recovery') },
+      ]
+    },
+    {
       title: "Principais",
       items: [
         { icon: <Book className="w-5 h-5" />, label: "Tutoriais", onClick: () => onNavigate('tutorials') },
         { icon: <Network className="w-5 h-5" />, label: "Servidores", onClick: () => setShowServersModal(true) },
-        { icon: <DollarSign className="w-5 h-5" />, label: "Comprar Login", onClick: () => onNavigate('buy'), highlight: true },
-        { icon: <Search className="w-5 h-5" />, label: "Recuperar Login", onClick: () => onNavigate('recovery') },
         { icon: <CalendarClock className="w-5 h-5" />, label: "Check User", onClick: () => onNavigate('checkuser') }
       ]
     },
     {
       title: "Ferramentas",
       items: [
-  { icon: <Zap className="w-5 h-5" />, label: "Teste Automático", onClick: () => autoConnect.openModal(), highlight: true },
-  { icon: <BriefcaseBusiness className="w-5 h-5" />, label: "Gerar Teste (Email)", onClick: () => onNavigate('testgenerate') },
+        { icon: <Zap className="w-5 h-5" />, label: "Teste Automático", onClick: () => autoConnect.openModal(), highlight: true },
         { icon: <Download className="w-5 h-5" />, label: "Speed Test", onClick: () => onNavigate('speedtest') },
         { icon: <Share2 className="w-5 h-5" />, label: "Hotspot", onClick: () => onNavigate('hotspot') },
         { icon: <Search className="w-5 h-5" />, label: "Buscador de IP", onClick: () => onNavigate('ipfinder') },

@@ -1,3 +1,4 @@
+import RenewalModal from './RenewalModal';
 import { PurchaseModal } from '../modals/PurchaseModal';
 import { RecoveryModal } from '../modals/RecoveryModal';
 import { Tutorials } from '../modals/Tutorials';
@@ -34,4 +35,5 @@ export const modalComponents: Record<Exclude<ModalType, null>, React.ComponentTy
   ipfinder: IpFinder,
   faq: Faq,
   testgenerate: TestGenerateModal,
+  renewal: RenewalModal,
 };

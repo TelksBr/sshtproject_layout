@@ -47,12 +47,25 @@ const usePaymentPolling = (paymentId: string | null): PaymentPollingResult => {
 
       const credentialsResponse = await getCredentials(paymentId);
 
-      if (credentialsResponse?.status === 'completed' && 
-          (credentialsResponse.ssh_credentials || credentialsResponse.v2ray_credentials)) {
+      // Suporte para resposta de renovação (credentials dentro de 'credentials')
+      let isCompleted = false;
+      let hasCredenciais = false;
+      if (credentialsResponse?.status === 'completed') {
+        // Fluxo padrão (compra)
+        if (credentialsResponse.ssh_credentials || credentialsResponse.v2ray_credentials) {
+          isCompleted = true;
+          hasCredenciais = true;
+        }
+        // Fluxo renovação (credentials dentro de credentials)
+        if (credentialsResponse.credentials && (credentialsResponse.credentials.ssh || credentialsResponse.credentials.v2ray)) {
+          isCompleted = true;
+          hasCredenciais = true;
+        }
+      }
+      if (isCompleted && hasCredenciais) {
         setCredentials(credentialsResponse);
         setIsPolling(false);
         setError(null);
-        
         if (intervalRef.current) {
           clearInterval(intervalRef.current);
           intervalRef.current = null;

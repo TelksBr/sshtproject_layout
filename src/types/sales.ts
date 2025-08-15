@@ -87,6 +87,22 @@ export interface CredentialsResponse {
     uuid: string;
     expires_at: string;
   };
+  // Suporte para resposta de renovação (credentials dentro de credentials)
+  credentials?: {
+    ssh?: {
+      username: string;
+      password: string;
+      limit: number;
+      expiration_date: string;
+      is_active: boolean;
+    };
+    v2ray?: {
+      uuid: string;
+      limit: number;
+      expiration_date: string;
+      is_active: boolean;
+    };
+  };
 }
 
 export interface ApiResponse<T = any> {
