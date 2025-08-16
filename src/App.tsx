@@ -4,14 +4,12 @@ import { ServerSelector } from './components/ServerSelector';
 import { ConnectionForm } from './components/ConnectionForm';
 import { NetworkStats } from './components/NetworkStats';
 import { Sidebar } from './components/Sidebar';
-import { getConfigVersion, getLocalIP, getConnectionState } from './utils/appFunctions';
-import { getStorageItem } from './utils/storageUtils';
-import { appLogo } from './constants/appLogo';
+import { getConfigVersion, getLocalIP, getConnectionState, getStorageItem } from './utils';
+import { appLogo, APP_CONFIG } from './constants';
 import { ActiveConfigProvider } from './context/ActiveConfigContext';
-import { useAppLayout } from './hooks/useAppLayout';
-import { useModalRenderer } from './hooks/useModalRenderer';
-import { onDtunnelEvent } from './utils/dtEvents';
-import { VpnState } from './types/vpn';
+import { useAppLayout, useModalRenderer } from './hooks';
+import { onDtunnelEvent } from './utils';
+import { VpnState } from './types';
 
 export type ModalType = 'buy' | 'recovery' | 'tutorials' | 'support' | 'speedtest' | 'terms' | 'privacy' | 'checkuser' | 'cleandata' | 'hotspot' | 'services' | 'ipfinder' | 'faq' | 'testgenerate' | 'renewal' | null;
 
@@ -69,7 +67,7 @@ function App() {
     };
 
     // Atualiza IP a cada 5 segundos conforme padrão documentado
-    const ipInterval = setInterval(updateLocalIP, 5000);
+    const ipInterval = setInterval(updateLocalIP, APP_CONFIG.POLLING_INTERVALS.IP_UPDATE);
     
     return () => clearInterval(ipInterval);
   }, []);
@@ -103,8 +101,8 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const termsAccepted = getStorageItem<boolean>('terms-accepted-23-03-2025');
-    const privacyAccepted = getStorageItem<boolean>('privacy-accepted-23-03-2025');
+    const termsAccepted = getStorageItem<boolean>(APP_CONFIG.STORAGE_KEYS.TERMS_ACCEPTED);
+    const privacyAccepted = getStorageItem<boolean>(APP_CONFIG.STORAGE_KEYS.PRIVACY_ACCEPTED);
     
     if (!termsAccepted) {
       setCurrentModal('terms');

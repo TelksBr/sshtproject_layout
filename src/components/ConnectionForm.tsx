@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Eye, EyeOff, Scroll, HelpCircle } from 'lucide-react';
-import {
+import { 
   setUsername as setUsernameApp,
   setPassword as setPasswordApp,
   setUUID as setUUIDApp,
@@ -11,10 +11,10 @@ import {
   openDialogLogs,
   startConnection,
   stopConnection
-} from '../utils/appFunctions';
-import { onDtunnelEvent } from '../utils/dtEvents';
-import { ConfigAuth } from '../types/config';
-import { VpnState } from '../types/vpn';
+} from '../utils';
+import { onDtunnelEvent } from '../utils';
+import { ConfigAuth, VpnState } from '../types';
+import { validateConnectionForm } from '../utils/connectionValidator';
 
 interface ConnectionFormProps {
   vpnState: VpnState;
@@ -134,13 +134,9 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
 
   // Validação antes de conectar
   const validateForm = () => {
-    if (isV2Ray) {
-      if (!auth.v2ray_uuid && !uuid) return 'UUID obrigatório para V2Ray';
-    } else {
-      if (!auth.username && !username) return 'Usuário obrigatório';
-      if (!auth.password && !password) return 'Senha obrigatória';
-    }
-    return null;
+    const activeConfig = getActiveConfig();
+    const validation = validateConnectionForm(activeConfig, username, password, uuid);
+    return validation.isValid ? null : validation.error || 'Dados inválidos';
   };
 
   // Funções de conexão

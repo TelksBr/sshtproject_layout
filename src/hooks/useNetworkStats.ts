@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { getDownloadBytes, getUploadBytes } from '../utils/appFunctions';
+import { getDownloadBytes, getUploadBytes } from '../utils';
+import { APP_CONFIG } from '../constants';
 
 /**
  * Hook para estatísticas de rede com polling próprio.
@@ -46,7 +47,7 @@ export function useNetworkStats() {
     };
 
     // Atualiza a cada 2 segundos
-    const interval = setInterval(updateStats, 2000);
+    const interval = setInterval(updateStats, APP_CONFIG.POLLING_INTERVALS.NETWORK_STATS);
     
     // Primeira atualização imediata
     updateStats();

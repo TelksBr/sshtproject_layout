@@ -1,5 +1,6 @@
-import type { ConfigCategory, ConfigItem } from '../types/config';
-import type { VpnState, } from '../types/vpn';
+import type { ConfigCategory, ConfigItem, VpnState } from '../types';
+import { cacheManager } from './cacheManager';
+import { performanceMonitor } from './performanceMonitor';
 
 // App Status Functions
 export function getStatusbarHeight(): number {
@@ -255,6 +256,8 @@ export async function toggleAirplaneMode(enable: boolean): Promise<boolean> {
 // Remover tipos duplicados, usar apenas importados
 // Funções de configuração centralizadas
 export function getAllConfigs(): ConfigCategory[] {
+  return performanceMonitor.measure('getAllConfigs', () => {
+    return cacheManager.withCache('configs', () => {
   if (window?.DtGetConfigs?.execute && typeof window.DtGetConfigs.execute === "function") {
     try {
       const configsRaw = window.DtGetConfigs.execute();
@@ -266,6 +269,8 @@ export function getAllConfigs(): ConfigCategory[] {
       return configs;
     } catch (e) {
       return [];
+    }, 30000); // Cache por 30 segundos
+  });
     }
   }
   return [];

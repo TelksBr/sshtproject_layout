@@ -1,14 +1,15 @@
 import { useState } from 'react';
-import { getStorageItem, setStorageItem } from '../utils/storageUtils';
+import { getStorageItem, setStorageItem } from '../utils';
+import { APP_CONFIG } from '../constants';
 
 export function useTermsAcceptance() {
   const [accepted, setAccepted] = useState(() => {
-    return !!getStorageItem<string>('terms-accepted-23-03-2025');
+    return !!getStorageItem<string>(APP_CONFIG.STORAGE_KEYS.TERMS_ACCEPTED);
   });
 
   const acceptTerms = () => {
     setAccepted(true);
-    setStorageItem('terms-accepted-23-03-2025', true);
+    setStorageItem(APP_CONFIG.STORAGE_KEYS.TERMS_ACCEPTED, true);
   };
 
   return {

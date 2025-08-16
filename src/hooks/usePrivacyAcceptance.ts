@@ -1,16 +1,17 @@
 import { useState, useEffect } from 'react';
-import { getStorageItem, setStorageItem } from '../utils/storageUtils';
+import { getStorageItem, setStorageItem } from '../utils';
+import { APP_CONFIG } from '../constants';
 
 export function usePrivacyAcceptance() {
   const [accepted, setAccepted] = useState(false);
 
   useEffect(() => {
-    const storedValue = getStorageItem<string>('privacy-accepted-23-03-2025');
+    const storedValue = getStorageItem<string>(APP_CONFIG.STORAGE_KEYS.PRIVACY_ACCEPTED);
     setAccepted(!!storedValue);
   }, []);
 
   const acceptPrivacy = () => {
-    setStorageItem('privacy-accepted-23-03-2025', true);
+    setStorageItem(APP_CONFIG.STORAGE_KEYS.PRIVACY_ACCEPTED, true);
     setAccepted(true);
   };
 

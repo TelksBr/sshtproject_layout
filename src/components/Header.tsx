@@ -1,5 +1,5 @@
 import { Logs, EthernetPort, GitFork } from 'lucide-react';
-import { VpnState } from '../types/vpn';
+import { VpnState } from '../types';
 
 interface HeaderProps {
   onMenuClick: () => void;
