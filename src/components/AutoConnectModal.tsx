@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { Modal } from './modals/Modal';
 import { RefreshCw, CheckCircle, XCircle, Wifi, AlertCircle, Settings, Zap } from 'lucide-react';
-import { TestLog } from '../hooks/useAutoConnect';
-import { AutoConnectConfig } from '../utils/autoConnectUtils';
-import { getAllConfigs } from '../utils/appFunctions';
+import { TestLog } from '../hooks';
+import { AutoConnectConfig, getAllConfigs } from '../utils';
 
 interface AutoConnectModalProps {
   open: boolean;
