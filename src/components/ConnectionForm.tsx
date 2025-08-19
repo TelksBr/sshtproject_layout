@@ -10,7 +10,9 @@ import {
   getActiveConfig,
   openDialogLogs,
   startConnection,
-  stopConnection
+  stopConnection,
+  buildHysteriaPassword,
+  parseHysteriaPassword
 } from '../utils/appFunctions';
 import { onDtunnelEvent } from '../utils/dtEvents';
 import { ConfigAuth } from '../types/config';
@@ -117,8 +119,11 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
 
   // Lógica de exibição dos campos baseada no modo da config
   const isV2Ray = mode.toLowerCase().startsWith('v2ray');
-  const showUsernameInput = !isV2Ray && !auth.username;
-  const showPasswordInput = !isV2Ray && !auth.password;
+  const isHysteria = mode.toLowerCase().startsWith('hysteria');
+  const isSSH = mode.toLowerCase().startsWith('ssh');
+  // Para hysteria, mostrar os mesmos campos que SSH
+  const showUsernameInput = (!isV2Ray && !auth.username) || isHysteria;
+  const showPasswordInput = (!isV2Ray && !auth.password) || isHysteria;
   const showUUIDInput = isV2Ray && !auth.v2ray_uuid;
 
   // Valores dos inputs: só mostram quando o input está visível
@@ -147,7 +152,24 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
   const connect = () => {
     try {
       setFormError(null);
+      let originalPassword = password;
+      let originalUsername = username;
+      // Se for hysteria, concatena user:pass no campo senha
+      if (isHysteria) {
+        setPasswordApp(buildHysteriaPassword(username, password));
+      }
+      // Se for SSH e senha está no formato user:pass, faz o reverso
+      if (isSSH && password.includes(':')) {
+        const parsed = parseHysteriaPassword(password);
+        setUsernameApp(parsed.username);
+        setPasswordApp(parsed.password);
+      }
       startConnection();
+      // Restaura valores originais após conectar
+      setTimeout(() => {
+        setPasswordApp(originalPassword);
+        setUsernameApp(originalUsername);
+      }, 1000);
     } catch (e) {
       setFormError(e instanceof Error ? e.message : 'Falha ao conectar');
     }
@@ -288,7 +310,7 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
               onClick={() => setShowUUID(!showUUID)}
               type="button"
             >
-              {showUUID ? <EyeOff className="w-4 h-4 md:w-5 md:h-5 lg:w-4 lg:h-4" /> : <Eye className="w-4 h-4 md:w-5 md:h-5 lg:w-4 lg:h-4" />}
+              {showUUID ? <EyeOff className="w-4 h-4 md:w-5 md:h-5 lg:w-4 lg:h-4" /> : <Eye className="w-4  h-4 md:w-5 md:h-5 lg:w-4 lg:h-4" />}
             </button>
             <div className="absolute right-1 md:right-2 lg:right-1.5 top-1/2 -translate-y-1/2 group">
               <button className="text-[#b0a8ff] cursor-pointer flex items-center p-1" type="button" tabIndex={-1}>

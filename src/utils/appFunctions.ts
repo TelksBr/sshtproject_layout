@@ -1,6 +1,16 @@
 import type { ConfigCategory, ConfigItem } from '../types/config';
 import type { VpnState, } from '../types/vpn';
 
+// Utilitários para modo Hysteria
+export function buildHysteriaPassword(username: string, password: string): string {
+  return `${username}:${password}`;
+}
+
+export function parseHysteriaPassword(hysteriaPassword: string): { username: string, password: string } {
+  const [username, ...rest] = hysteriaPassword.split(':');
+  return { username, password: rest.join(':') };
+}
+
 // App Status Functions
 export function getStatusbarHeight(): number {
   if (window?.DtGetStatusBarHeight?.execute && typeof window.DtGetStatusBarHeight.execute === "function") {
