@@ -55,7 +55,7 @@ const finalHtml = `<!DOCTYPE html>
     <meta name="apple-touch-fullscreen" content="yes" />
     
     <link rel="icon" href="data:,">
-    <title>@SSH_T_PROJECT @Telks13 - SSH T PROJECT LAYOUT</title>
+    <title>@SSH_T_PROJECT @Telks13 - SSH SSH T Project LAYOUT</title>
      ${cssContent ? `<style>${cssContent}</style>` : ''}
   </head>
   <body>

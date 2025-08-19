@@ -8,7 +8,7 @@ interface BuyLoginProps {
 
 export function BuyLogin({ onClose }: BuyLoginProps) {
   return (
-    <Modal onClose={onClose} title="Planos Premium SSH T Project" icon={ShoppingCart}>
+    <Modal onClose={onClose} title="Planos Premium SSH SSH T Project" icon={ShoppingCart}>
       <div className="max-w-md mx-auto p-4">
         <div className="text-center mb-8">
           <p className="text-lg text-gray-300">

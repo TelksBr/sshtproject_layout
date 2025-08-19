@@ -108,7 +108,7 @@ export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
                 <Settings className="w-6 h-6 text-white" />
               </div>
               <div>
-                <span className="text-white font-medium">SSH T PROJECT</span>
+                <span className="text-white font-medium">SSH SSH T Project</span>
                 <span className="text-[#b0a8ff]/70 text-sm block">Configurações</span>
               </div>
             </div>

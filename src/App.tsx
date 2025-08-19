@@ -143,7 +143,7 @@ function App() {
                 className="w-30 h-30 sm:w-28 sm:h-28 md:w-40 md:h-40 lg:w-28 lg:h-28 object-contain" 
                 id="app-logo" 
                 src={appLogo}
-                alt="SSH T PROJECT"
+                alt="SSH SSH T Project"
               />
             </section>
 

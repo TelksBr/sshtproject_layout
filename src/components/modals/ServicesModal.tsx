@@ -45,7 +45,7 @@ export function ServicesModal({ onClose }: { onClose: () => void }) {
     <Modal onClose={onClose} title="Serviços" icon={BriefcaseBusiness}>
       <div className="max-w-md mx-auto p-4">
         <Helmet>
-          <title>Serviços - SSH T Project</title>
+          <title>Serviços - SSH SSH T Project</title>
           <meta name="description" content="Conheça nossa linha completa de serviços de hospedagem, VPS, servidores dedicados e mais." />
         </Helmet>
 

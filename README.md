@@ -327,7 +327,7 @@ bun run build-inline.ts
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SSH T PROJECT LAYOUT</title>
+    <title>SSH SSH T Project LAYOUT</title>
     <style>/* CSS minificado embutido */</style>
   </head>
   <body>
