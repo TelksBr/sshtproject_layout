@@ -6,7 +6,13 @@ export interface RenewalPurchaseResponse {
 }
 
 export async function purchaseRenewal(username: string, plan_id: string): Promise<RenewalPurchaseResponse> {
-  const response = await apiService.post<any>('/api/renewals/purchase', { username, plan_id });
+  const response = await apiRequest<any>(
+    '/api/renewals/purchase',
+    {
+      method: 'POST',
+      body: JSON.stringify({ username, plan_id }),
+    }
+  );
   return {
     success: response.success,
     message: response.message || (response.data?.message) || '',
@@ -29,7 +35,13 @@ export interface RenewalCheckResponse {
 }
 
 export async function checkRenewalUser(username: string): Promise<RenewalCheckResponse> {
-  const response = await apiService.post<any>('/api/renewals/check', { username });
+  const response = await apiRequest<any>(
+    '/api/renewals/check',
+    {
+      method: 'POST',
+      body: JSON.stringify({ username }),
+    }
+  );
   return {
     success: response.success,
     message: response.message || (response.data?.message) || '',
@@ -48,7 +60,13 @@ export interface TestGenerateResponse {
 
 
 export async function generateTestCredentials(email: string): Promise<TestGenerateResponse> {
-  const response = await apiService.post<any>('/api/test/generate', { customer_email: email });
+  const response = await apiRequest<any>(
+    '/api/test/generate',
+    {
+      method: 'POST',
+      body: JSON.stringify({ customer_email: email }),
+    }
+  );
 
   // Retorna todos os campos relevantes para o modal tratar
   return {
@@ -58,34 +76,77 @@ export async function generateTestCredentials(email: string): Promise<TestGenera
     data: response.data,
   };
 }
-import { Plan, PurchaseRequest, PurchaseResponse, PaymentStatus, CredentialsResponse, ApiResponse } from '../types/sales';
-import { apiService } from '../services/apiService';
-import { AppError } from './errorHandler';
+import { 
+  Plan, 
+  PurchaseRequest, 
+  PurchaseResponse, 
+  PaymentStatus, 
+  CredentialsResponse, 
+  ApiResponse 
+} from '../types/sales';
+
+const API_BASE_URL = 'https://bot.sshtproject.com';
+
+// Função auxiliar para fazer requisições
+async function apiRequest<T>(endpoint: string, options?: RequestInit): Promise<ApiResponse<T>> {
+  try {
+    // Detectar WebView e adicionar cache-busting
+    const isWebView = navigator.userAgent.includes('wv') || navigator.userAgent.includes('WebView');
+    let url = `${API_BASE_URL}${endpoint}`;
+    
+    if (isWebView) {
+      // Adicionar timestamp para evitar cache no WebView
+      const separator = endpoint.includes('?') ? '&' : '?';
+      url += `${separator}_t=${Date.now()}`;
+    }
+    
+    const response = await fetch(url, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        ...options?.headers,
+      },
+      ...options,
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || data.error || `HTTP ${response.status}: ${response.statusText}`);
+    }
+    return data;
+  } catch (error) {
+    throw error;
+  }
+}
 
 // Listar planos disponíveis
 export async function getPlans(): Promise<Plan[]> {
-  const response = await apiService.get<ApiResponse<Plan[]>>('/api/sales/plans');
+  const response = await apiRequest<Plan[]>('/api/sales/plans');
   return response.data || [];
 }
 
 // Criar nova compra
 export async function createPurchase(purchase: PurchaseRequest): Promise<PurchaseResponse> {
-  const response = await apiService.post<ApiResponse<PurchaseResponse>>('/api/sales/purchase', purchase);
+  const response = await apiRequest<PurchaseResponse>('/api/sales/purchase', {
+    method: 'POST',
+    body: JSON.stringify(purchase),
+  });
   if (!response.data) {
-    throw new AppError('Resposta inválida do servidor - dados não encontrados', 'INVALID_RESPONSE');
+    throw new Error('Resposta inválida do servidor - dados não encontrados');
   }
   // Validar campos críticos
   if (!response.data.invoice_id || !response.data.payment_id) {
-    throw new AppError('Dados de pagamento incompletos recebidos da API', 'INCOMPLETE_DATA');
+    throw new Error('Dados de pagamento incompletos recebidos da API');
   }
   return response.data;
 }
 
 // Verificar status da compra por invoice ID
 export async function getPaymentStatus(invoiceId: string): Promise<PaymentStatus> {
-  const response = await apiService.get<ApiResponse<PaymentStatus>>(`/api/sales/status/${invoiceId}`);
+  const response = await apiRequest<PaymentStatus>(`/api/sales/status/${invoiceId}`);
   if (!response.data) {
-    throw new AppError('Status não encontrado', 'STATUS_NOT_FOUND');
+    throw new Error('Status não encontrado');
   }
   return response.data;
 }
@@ -96,9 +157,9 @@ export async function getCredentials(paymentId: string | number): Promise<Creden
   const url = `/api/sales/credentials/${paymentIdStr}`;
   
   try {
-    const response = await apiService.get<ApiResponse<CredentialsResponse>>(url);
+    const response = await apiRequest<CredentialsResponse>(url);
     if (!response.data) {
-      throw new AppError('Credenciais não encontradas', 'CREDENTIALS_NOT_FOUND');
+      throw new Error('Credenciais não encontradas');
     }
     return response.data;
   } catch (error) {
@@ -158,12 +219,18 @@ export function getTimeUntilExpiration(expiresAt: string): {
 
 // Solicitar recuperação de credenciais por email
 export async function requestCredentialRecovery(email: string): Promise<{ success: boolean; message: string }> {
-  const response = await apiService.post<ApiResponse<{ message: string }>>('/api/sales/recovery/request', {
-    customer_email: email
+  const response = await apiRequest<{ message: string }>('/api/sales/recovery/request', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      customer_email: email
+    }),
   });
 
   if (!response.success) {
-    throw new AppError(response.message || 'Erro ao solicitar recuperação de credenciais', 'RECOVERY_REQUEST_FAILED');
+    throw new Error(response.message || 'Erro ao solicitar recuperação de credenciais');
   }
 
   return {
@@ -174,10 +241,10 @@ export async function requestCredentialRecovery(email: string): Promise<{ succes
 
 // Recuperar credenciais via token (URL do email)
 export async function recoverCredentialsByToken(token: string): Promise<CredentialsResponse> {
-  const response = await apiService.get<ApiResponse<CredentialsResponse>>(`/api/sales/recovery/${token}`);
+  const response = await apiRequest<CredentialsResponse>(`/api/sales/recovery/${token}`);
 
   if (!response.success || !response.data) {
-    throw new AppError(response.message || 'Token inválido ou expirado', 'INVALID_TOKEN');
+    throw new Error(response.message || 'Token inválido ou expirado');
   }
 
   return response.data;

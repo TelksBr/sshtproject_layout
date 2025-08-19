@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Eye, EyeOff, Scroll, HelpCircle } from 'lucide-react';
-import { 
-  setUsername,
-  setPassword,
-  setUUID,
+import {
+  setUsername as setUsernameApp,
+  setPassword as setPasswordApp,
+  setUUID as setUUIDApp,
   getUsername,
   getPassword,
   getUUID,
@@ -13,8 +13,8 @@ import {
   stopConnection
 } from '../utils/appFunctions';
 import { onDtunnelEvent } from '../utils/dtEvents';
-import { ConfigAuth, VpnState } from '../types';
-import { validateConnectionForm } from '../utils/connectionValidator';
+import { ConfigAuth } from '../types/config';
+import { VpnState } from '../types/vpn';
 
 interface ConnectionFormProps {
   vpnState: VpnState;
@@ -100,19 +100,19 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setUsername(value);
-    setUsername(value);
+    setUsernameApp(value);
   };
   
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setPassword(value);
-    setPassword(value);
+    setPasswordApp(value);
   };
   
   const handleUUIDChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setUuid(value);
-    setUUID(value);
+    setUUIDApp(value);
   };
 
   // Lógica de exibição dos campos baseada no modo da config
@@ -134,9 +134,13 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
 
   // Validação antes de conectar
   const validateForm = () => {
-    const activeConfig = getActiveConfig();
-    const validation = validateConnectionForm(activeConfig, username, password, uuid);
-    return validation.isValid ? null : validation.error || 'Dados inválidos';
+    if (isV2Ray) {
+      if (!auth.v2ray_uuid && !uuid) return 'UUID obrigatório para V2Ray';
+    } else {
+      if (!auth.username && !username) return 'Usuário obrigatório';
+      if (!auth.password && !password) return 'Senha obrigatória';
+    }
+    return null;
   };
 
   // Funções de conexão

@@ -1,6 +1,6 @@
 
 import { Download, Upload } from 'lucide-react';
-import { useNetworkStats } from '../hooks';
+import { useNetworkStats } from '../hooks/useNetworkStats';
 
 export function NetworkStats() {
   const {

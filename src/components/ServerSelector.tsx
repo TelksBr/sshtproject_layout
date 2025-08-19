@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Settings, RefreshCw, CalendarClock, Wifi, AlertCircle, ChevronLeft, Search, Plane, Zap } from 'lucide-react';
 import { getAllConfigs, checkUserStatus, getAirplaneState, toggleAirplaneMode, checkForUpdates, setActiveConfig } from '../utils/appFunctions';
 import { Modal } from './modals/Modal';
-import { useAutoConnect } from '../hooks';
+import { useAutoConnect } from '../hooks/useAutoConnect';
 import { AutoConnectModal } from './AutoConnectModal';
-import { ConfigCategory, ConfigItem } from '../types';
+import { ConfigCategory, ConfigItem } from '../types/config';
 import { useActiveConfig } from '../context/ActiveConfigContext';
 
 export function ServerSelector() {
