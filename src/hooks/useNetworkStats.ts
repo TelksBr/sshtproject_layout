@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { getDownloadBytes, getUploadBytes } from '../utils';
+import { getDownloadBytes, getUploadBytes } from '../utils/appFunctions';
 import { APP_CONFIG } from '../constants';
 
 /**

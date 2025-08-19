@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getStorageItem, setStorageItem } from '../utils';
+import { getStorageItem, setStorageItem } from '../utils/storageUtils';
 import { APP_CONFIG } from '../constants';
 
 export function usePrivacyAcceptance() {

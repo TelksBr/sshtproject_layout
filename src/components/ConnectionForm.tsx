@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Eye, EyeOff, Scroll, HelpCircle } from 'lucide-react';
 import { 
-  setUsername as setUsernameApp,
-  setPassword as setPasswordApp,
-  setUUID as setUUIDApp,
+  setUsername,
+  setPassword,
+  setUUID,
   getUsername,
   getPassword,
   getUUID,
@@ -11,8 +11,8 @@ import {
   openDialogLogs,
   startConnection,
   stopConnection
-} from '../utils';
-import { onDtunnelEvent } from '../utils';
+} from '../utils/appFunctions';
+import { onDtunnelEvent } from '../utils/dtEvents';
 import { ConfigAuth, VpnState } from '../types';
 import { validateConnectionForm } from '../utils/connectionValidator';
 
@@ -100,19 +100,19 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setUsername(value);
-    setUsernameApp(value);
+    setUsername(value);
   };
   
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setPassword(value);
-    setPasswordApp(value);
+    setPassword(value);
   };
   
   const handleUUIDChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setUuid(value);
-    setUUIDApp(value);
+    setUUID(value);
   };
 
   // Lógica de exibição dos campos baseada no modo da config
