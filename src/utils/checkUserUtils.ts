@@ -8,7 +8,7 @@ export interface UserInfo {
 
 export async function fetchUserInfo(username: string): Promise<UserInfo> {
   try {
-    const response = await fetch(`http://bot.sshtproject.com/check/${username}`);
+    const response = await fetch(`https://bot.sshtproject.com/check/${username}`);
     if (!response.ok) {
       throw new Error('Falha ao buscar informações do usuário');
     }
