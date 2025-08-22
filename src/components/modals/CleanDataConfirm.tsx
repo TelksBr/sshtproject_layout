@@ -15,12 +15,6 @@ export function CleanDataConfirm({ onClose }: CleanDataConfirmProps) {
   return (
     <Modal onClose={onClose} title="Limpar Dados" icon={Trash2}>
       <div className="flex-1 p-4">
-        <header className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 rounded-full bg-[#26074d] flex items-center justify-center">
-            <Trash2 className="w-6 h-6 text-[#b0a8ff]" />
-          </div>
-        </header>
-
         <div className="p-6 rounded-lg glass-effect text-center">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-500/20 flex items-center justify-center">
             <AlertTriangle className="w-8 h-8 text-red-400" />

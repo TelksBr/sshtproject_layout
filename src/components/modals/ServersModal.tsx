@@ -29,7 +29,7 @@ export function ServersModal({ onClose }: ServersModalProps) {
 
   const premiumV2rayServers = 3;
   const premiumServers = 4;
-  const freeServers = 0;
+  const freeServers = 2;
   const token = 'KZQ4h03hLSzhefDAwRvjWVl9dp';
 
   // Função para atualizar totais baseada na lista de servidores
@@ -194,76 +194,82 @@ export function ServersModal({ onClose }: ServersModalProps) {
 
   return (
     <Modal onClose={onClose} title="Status dos Servidores" icon={Server}>
-      <div className="p-4 md:p-6">
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between mb-2">
-            <button
-              onClick={handleRefresh}
-              disabled={refreshing}
+      <div className="flex flex-col h-[80vh] max-h-[90dvh] w-full p-2 md:p-6">
+        {/* Cabeçalho fixo com refresh */}
+        <div className="flex items-center justify-between mb-2 sticky top-0 z-10 bg-[#18122B] rounded-t-lg p-2 md:p-0">
+          <span className="font-semibold text-base md:text-lg text-white">Status dos Servidores</span>
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className={`
+              p-2 rounded-lg transition-all duration-200
+              ${refreshing 
+                ? 'bg-[#6205D5]/10 cursor-not-allowed' 
+                : 'hover:bg-[#6205D5]/20 active:scale-95'
+              }
+            `}
+            aria-label="Atualizar lista de servidores"
+          >
+            <RefreshCw 
               className={`
-                p-2 rounded-lg transition-all duration-200
-                ${refreshing 
-                  ? 'bg-[#6205D5]/10 cursor-not-allowed' 
-                  : 'hover:bg-[#6205D5]/20 active:scale-95'
-                }
+                w-5 h-5 md:w-6 md:h-6 text-[#b0a8ff]
+                ${refreshing ? 'animate-spin' : 'hover:text-white transition-colors'}
               `}
-            >
-              <RefreshCw 
-                className={`
-                  w-5 h-5 text-[#b0a8ff]
-                  ${refreshing ? 'animate-spin' : 'hover:text-white transition-colors'}
-                `}
-              />
-            </button>
-          </div>
+            />
+          </button>
+        </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="bg-[#6205D5]/20 p-3 rounded-lg">
-              <span className="text-xs text-[#b0a8ff]/70">Total V2Ray</span>
-              <p className="text-lg font-bold text-white">{totals.v2ray}</p>
-            </div>
-            <div className="bg-[#6205D5]/15 p-3 rounded-lg">
-              <span className="text-xs text-[#b0a8ff]/70">Total SSH</span>
-              <p className="text-lg font-bold text-white">{totals.premium}</p>
-            </div>
-            <div className="bg-[#6205D5]/10 p-3 rounded-lg">
-              <span className="text-xs text-[#b0a8ff]/70">Total Free</span>
-              <p className="text-lg font-bold text-white">{totals.free}</p>
-            </div>
-            <div className="bg-[#6205D5]/25 p-3 rounded-lg">
-              <span className="text-xs text-[#b0a8ff]/70">Total Geral</span>
-              <p className="text-lg font-bold text-white">{totals.total}</p>
-            </div>
+        {/* Totais responsivos */}
+        <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 mb-2">
+          <div className="bg-[#6205D5]/20 p-2 md:p-3 rounded-lg flex flex-col items-center">
+            <span className="text-[11px] md:text-xs text-[#b0a8ff]/70">Total V2Ray</span>
+            <p className="text-base md:text-lg font-bold text-white">{totals.v2ray}</p>
           </div>
+          <div className="bg-[#6205D5]/15 p-2 md:p-3 rounded-lg flex flex-col items-center">
+            <span className="text-[11px] md:text-xs text-[#b0a8ff]/70">Total SSH</span>
+            <p className="text-base md:text-lg font-bold text-white">{totals.premium}</p>
+          </div>
+          <div className="bg-[#6205D5]/10 p-2 md:p-3 rounded-lg flex flex-col items-center">
+            <span className="text-[11px] md:text-xs text-[#b0a8ff]/70">Total Free</span>
+            <p className="text-base md:text-lg font-bold text-white">{totals.free}</p>
+          </div>
+          <div className="bg-[#6205D5]/25 p-2 md:p-3 rounded-lg flex flex-col items-center">
+            <span className="text-[11px] md:text-xs text-[#b0a8ff]/70">Total Geral</span>
+            <p className="text-base md:text-lg font-bold text-white">{totals.total}</p>
+          </div>
+        </div>
 
-          <div className="space-y-2">
-            {loading && servers.length === 0 ? (
-              <div className="flex items-center justify-center p-4">
-                <Loader className="w-6 h-6 text-[#b0a8ff] animate-spin" />
-              </div>
-            ) : (
-              <div className="space-y-2 animate-fadeIn">
-                {servers.map((server) => (
-                  <div
-                    key={`${server.type}-${server.order}`}
-                    className={`
-                      flex justify-between items-center p-4 rounded-lg
-                      transition-all duration-200 hover:scale-[1.02]
-                      ${server.type === 'v2ray' ? 'bg-[#6205D5]/20' : ''}
-                      ${server.type === 'premium' ? 'bg-[#6205D5]/15' : ''}
-                      ${server.type === 'free' ? 'bg-[#6205D5]/10' : ''}
-                      ${server.onlineUsers > 0 ? '' : 'opacity-60'}
-                    `}
-                  >
-                    <span className="font-medium text-white">{server.name}</span>
-                    <span className="text-sm text-[#b0a8ff]">
-                      {server.onlineUsers} online
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+        {/* Lista de servidores com scroll e feedback visual */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar pr-1">
+          {loading && servers.length === 0 ? (
+            <div className="flex items-center justify-center p-4">
+              <Loader className="w-7 h-7 text-[#b0a8ff] animate-spin" />
+            </div>
+          ) : (
+            <div className="space-y-2 animate-fadeIn">
+              {servers.map((server) => (
+                <div
+                  key={`${server.type}-${server.order}`}
+                  className={`
+                    flex justify-between items-center px-3 py-2 md:px-4 md:py-3 rounded-lg
+                    transition-all duration-200 hover:scale-[1.01] active:scale-95
+                    ${server.type === 'v2ray' ? 'bg-[#6205D5]/20' : ''}
+                    ${server.type === 'premium' ? 'bg-[#6205D5]/15' : ''}
+                    ${server.type === 'free' ? 'bg-[#6205D5]/10' : ''}
+                    ${server.onlineUsers > 0 ? '' : 'opacity-60'}
+                    shadow-sm hover:shadow-md cursor-pointer select-none
+                  `}
+                  tabIndex={0}
+                  aria-label={`Servidor ${server.name} com ${server.onlineUsers} online`}
+                >
+                  <span className="font-medium text-white text-sm md:text-base truncate max-w-[60vw] md:max-w-[200px]">{server.name}</span>
+                  <span className="text-xs md:text-sm text-[#b0a8ff] font-mono">
+                    {server.onlineUsers} online
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </Modal>

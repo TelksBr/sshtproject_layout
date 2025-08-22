@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Eye, EyeOff, Scroll, HelpCircle } from 'lucide-react';
+import { Eye, EyeOff, Scroll, HelpCircle, Zap } from 'lucide-react';
 import {
   setUsername as setUsernameApp,
   setPassword as setPasswordApp,
@@ -17,12 +17,17 @@ import {
 import { onDtunnelEvent } from '../utils/dtEvents';
 import { ConfigAuth } from '../types/config';
 import { VpnState } from '../types/vpn';
+import { AutoConnectModal } from './AutoConnectModal';
+import { createPortal } from 'react-dom';
+import { useAutoConnect } from '../hooks/useAutoConnect';
 
 interface ConnectionFormProps {
   vpnState: VpnState;
 }
 
 export function ConnectionForm({ vpnState }: ConnectionFormProps) {
+  // Estado do AutoConnectModal
+  const autoConnect = useAutoConnect();
   const [showPassword, setShowPassword] = useState(false);
   const [showUUID, setShowUUID] = useState(false);
   const [mode, setMode] = useState('');
@@ -348,15 +353,47 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
           <p className="text-red-400 text-xs md:text-sm lg:text-xs text-center">{formError}</p>
         )}
 
-        {/* Botão de logs */}
-        <button
-          className="w-full h-10 md:h-12 lg:h-11 flex items-center justify-center gap-1.5 text-sm md:text-base lg:text-sm font-medium rounded-lg border border-[#6205D5]/30 bg-[#26074d]/40 text-[#b0a8ff] hover:bg-[#6205D5]/20 hover:border-[#6205D5]/60 hover:text-white transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
-          onClick={openDialogLogs}
-        >
-          <Scroll className="w-4 h-4 md:w-5 md:h-5 lg:w-4 lg:h-4" />
-          <span className="font-medium">Registros</span>
-        </button>
+        {/* Botões lado a lado: Registros e Auto Conect */}
+        <div className="flex gap-2">
+          <button
+            className="w-1/2 h-10 md:h-12 lg:h-11 flex items-center justify-center gap-1 text-xs md:text-sm lg:text-xs font-medium rounded-lg border border-[#6205D5]/30 bg-[#26074d]/40 text-[#b0a8ff] hover:bg-[#6205D5]/20 hover:border-[#6205D5]/60 hover:text-white transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
+            onClick={openDialogLogs}
+          >
+            <Scroll className="w-4 h-4 md:w-5 md:h-5 lg:w-4 lg:h-4" />
+            <span className="font-medium">Registros</span>
+          </button>
+          <button
+            className="w-1/2 h-10 md:h-12 lg:h-11 flex items-center justify-center gap-1 text-xs md:text-sm lg:text-xs font-medium rounded-lg border border-[#6205D5]/30 bg-[#26074d]/40 text-[#b0a8ff] hover:bg-[#6205D5]/20 hover:border-[#6205D5]/60 hover:text-white transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
+            onClick={autoConnect.openModal}
+            type="button"
+          >
+            <Zap className="w-4 h-4 md:w-5 md:h-5 lg:w-4 lg:h-4" />
+            <span className="font-medium">Auto Conect</span>
+          </button>
+        </div>
       </div>
+      {/* Modal de AutoConnect sempre no topo da árvore (portal) */}
+      {typeof window !== 'undefined' && createPortal(
+        <AutoConnectModal
+          open={autoConnect.open}
+          onClose={autoConnect.closeModal}
+          currentConfigName={autoConnect.currentName}
+          totalConfigs={autoConnect.total}
+          testedConfigs={autoConnect.tested}
+          successConfigName={autoConnect.success}
+          running={autoConnect.running}
+          onStart={autoConnect.startAutoConnect}
+          onCancel={autoConnect.cancelTest}
+          error={autoConnect.error}
+          logs={autoConnect.logs}
+          currentTestDuration={autoConnect.currentTestDuration}
+          autoConnectConfig={autoConnect.autoConnectConfig}
+          setAutoConnectConfig={autoConnect.setAutoConnectConfig}
+          showSettings={autoConnect.showSettings}
+          setShowSettings={autoConnect.setShowSettings}
+        />,
+        document.body
+      )}
     </section>
   );
 }

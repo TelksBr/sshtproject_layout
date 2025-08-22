@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { ServerSelector } from './components/ServerSelector';
 import { ConnectionForm } from './components/ConnectionForm';
+import { AutoConnectModal } from './components/AutoConnectModal';
 import { NetworkStats } from './components/NetworkStats';
 import { Sidebar } from './components/Sidebar';
 import { getConfigVersion, getLocalIP, getConnectionState } from './utils/appFunctions';
@@ -16,6 +17,21 @@ import { VpnState } from './types/vpn';
 export type ModalType = 'buy' | 'recovery' | 'tutorials' | 'support' | 'speedtest' | 'terms' | 'privacy' | 'checkuser' | 'cleandata' | 'hotspot' | 'services' | 'ipfinder' | 'faq' | 'testgenerate' | 'renewal' | null;
 
 function App() {
+  // Estado para controlar o AutoConnectModal
+  const [autoConnectOpen, setAutoConnectOpen] = useState(false);
+  // TODO: Adapte os dados abaixo conforme seu hook/useAutoConnect real
+  const [autoConnectState, setAutoConnectState] = useState({
+    currentConfigName: null,
+    totalConfigs: 0,
+    testedConfigs: 0,
+    successConfigName: null,
+    running: false,
+    error: null,
+    logs: [],
+    currentTestDuration: 0,
+    autoConnectConfig: {},
+    showSettings: false,
+  });
   const [showMenu, setShowMenu] = useState(false);
   const [currentModal, setCurrentModal] = useState<ModalType>(null);
   
@@ -150,7 +166,26 @@ function App() {
 
             <div className="flex-1 flex flex-col gap-1.5 mt-2 md:max-w-2xl md:mx-auto md:gap-4 md:mt-6 lg:max-w-none lg:mx-0 lg:gap-3 lg:mt-4">
               <ServerSelector />
-              <ConnectionForm vpnState={vpnState} />
+              <ConnectionForm vpnState={vpnState} onOpenAutoConnect={() => setAutoConnectOpen(true)} />
+      {/* Modal AutoConnect controlado pelo App */}
+      <AutoConnectModal
+        open={autoConnectOpen}
+        onClose={() => setAutoConnectOpen(false)}
+        currentConfigName={autoConnectState.currentConfigName}
+        totalConfigs={autoConnectState.totalConfigs}
+        testedConfigs={autoConnectState.testedConfigs}
+        successConfigName={autoConnectState.successConfigName}
+        running={autoConnectState.running}
+        onStart={() => {}}
+        onCancel={() => {}}
+        error={autoConnectState.error}
+        logs={autoConnectState.logs}
+        currentTestDuration={autoConnectState.currentTestDuration}
+        autoConnectConfig={autoConnectState.autoConnectConfig}
+        setAutoConnectConfig={() => {}}
+        showSettings={autoConnectState.showSettings}
+        setShowSettings={() => {}}
+      />
             </div>
           </div>
 

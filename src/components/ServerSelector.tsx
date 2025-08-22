@@ -229,17 +229,7 @@ export function ServerSelector() {
           />
         </button>
 
-        {/* Botão de teste automático (AutoConnect) */}
-        <button
-          className="w-10 h-10 flex items-center justify-center rounded-lg glass-effect"
-          type="button"
-          onClick={() => {
-            autoConnect.openModal();
-          }}
-          title="Teste Automático"
-        >
-          <Zap className="w-4 h-4 text-[#6205D5]" />
-        </button>
+  {/* Botão de teste automático (AutoConnect) removido */}
       </section>
 
       {error && (

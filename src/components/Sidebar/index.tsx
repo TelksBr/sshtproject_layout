@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   Settings, Download,
   Wifi, Battery, Network, Book,
-  RefreshCw, DollarSign, Share2, CalendarClock, BriefcaseBusiness, Search, Zap
+  RefreshCw, DollarSign, Share2, CalendarClock, BriefcaseBusiness, Search, Zap, Phone
 } from 'lucide-react';
 import {
   checkForUpdates,
@@ -14,6 +14,7 @@ import {
 } from '../../utils/appFunctions';
 import { ModalType } from '../../App';
 import { ServersModal } from '../modals/ServersModal';
+import { Support } from '../modals/Support';
 import { useAutoConnect } from '../../hooks/useAutoConnect';
 import { AutoConnectModal } from '../AutoConnectModal';
 
@@ -39,6 +40,7 @@ export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
   
   // Hook para AutoConnect
   const autoConnect = useAutoConnect();
+  const [showSupportModal, setShowSupportModal] = useState(false);
 
   useEffect(() => {
     const statusBarHeight = getStatusbarHeight();
@@ -74,7 +76,8 @@ export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
         { icon: <Download className="w-5 h-5" />, label: "Speed Test", onClick: () => onNavigate('speedtest') },
         { icon: <Share2 className="w-5 h-5" />, label: "Hotspot", onClick: () => onNavigate('hotspot') },
         { icon: <Search className="w-5 h-5" />, label: "Buscador de IP", onClick: () => onNavigate('ipfinder') },
-        { icon: <BriefcaseBusiness className="w-5 h-5" />, label: "Serviços", onClick: () => onNavigate('services') }
+        { icon: <BriefcaseBusiness className="w-5 h-5" />, label: "Serviços", onClick: () => onNavigate('services') },
+        { icon: <Phone className="w-5 h-5" />, label: "Suporte", onClick: () => setShowSupportModal(true), highlight: true }
       ]
     },
     {
@@ -200,6 +203,9 @@ export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
         showSettings={autoConnect.showSettings}
         setShowSettings={autoConnect.setShowSettings}
       />
+      {showSupportModal && (
+        <Support onClose={() => setShowSupportModal(false)} />
+      )}
     </>
   );
 }

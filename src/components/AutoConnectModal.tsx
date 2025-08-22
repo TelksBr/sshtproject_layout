@@ -138,11 +138,10 @@ export function AutoConnectModal({
       title={running ? `Testando (${testedConfigs}/${actualTotalConfigs})` : successConfigName ? 'Conectado!' : 'Teste Automático'} 
       icon={running ? RefreshCw : successConfigName ? CheckCircle : Zap}
     >
-      <div className="w-full max-w-2xl mx-auto">
-        
+      <div className="w-full max-w-2xl mx-auto px-2 sm:px-0">
         {/* Status Header - Sempre visível */}
-        <div className="mb-6">
-          <div className={`relative rounded-xl p-4 border-2 transition-all duration-500 ${
+        <div className="mb-4 sm:mb-6">
+          <div className={`relative rounded-lg sm:rounded-xl p-2 sm:p-4 border transition-all duration-500 ${
             running 
               ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-blue-400/40 shadow-lg shadow-blue-500/20' 
               : successConfigName 
@@ -151,11 +150,10 @@ export function AutoConnectModal({
                   ? 'bg-gradient-to-r from-red-500/10 to-orange-500/10 border-red-400/40 shadow-lg shadow-red-500/20'
                   : 'bg-gradient-to-r from-[#6205D5]/10 to-[#26074d]/20 border-[#6205D5]/30'
           }`}>
-            
             {/* Progress Ring */}
-            <div className="flex items-center gap-4">
-              <div className="relative w-16 h-16 flex-shrink-0">
-                <svg className="w-16 h-16 transform -rotate-90" viewBox="0 0 64 64">
+            <div className="flex items-center gap-2 sm:gap-4">
+              <div className="relative w-10 h-10 sm:w-16 sm:h-16 flex-shrink-0">
+                <svg className="w-10 h-10 sm:w-16 sm:h-16 transform -rotate-90" viewBox="0 0 64 64">
                   <circle
                     cx="32" cy="32" r="28"
                     fill="none" stroke="currentColor" strokeWidth="4"
@@ -173,20 +171,20 @@ export function AutoConnectModal({
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
                   {running ? (
-                    <RefreshCw className="w-6 h-6 text-blue-400 animate-spin" />
+                    <RefreshCw className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400 animate-spin" />
                   ) : successConfigName ? (
-                    <CheckCircle className="w-6 h-6 text-green-400" />
+                    <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-green-400" />
                   ) : error ? (
-                    <AlertCircle className="w-6 h-6 text-red-400" />
+                    <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-400" />
                   ) : (
-                    <Zap className="w-6 h-6 text-[#6205D5]" />
+                    <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-[#6205D5]" />
                   )}
                 </div>
               </div>
               
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-2">
-                  <h3 className="text-lg font-bold text-white truncate">
+                <div className="flex items-center gap-2 mb-1 sm:mb-2">
+                  <h3 className="text-base sm:text-lg font-bold text-white truncate">
                     {running ? 'Testando Conexões...' : successConfigName ? '🎉 Conectado!' : error ? '❌ Erro no Teste' : 'Pronto para Testar'}
                   </h3>
                   {running && (
@@ -196,7 +194,7 @@ export function AutoConnectModal({
                   )}
                 </div>
                 
-                <p className="text-sm text-[#b0a8ff]/70 mb-2 truncate">
+                <p className="text-xs sm:text-sm text-[#b0a8ff]/70 mb-1 sm:mb-2 truncate">
                   {running && currentConfigName 
                     ? `Testando: ${currentConfigName}` 
                     : successConfigName 
@@ -208,8 +206,8 @@ export function AutoConnectModal({
                 </p>
                 
                 {/* Mini Progress Bar */}
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 bg-[#26074d]/60 rounded-full h-2 overflow-hidden">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="flex-1 bg-[#26074d]/60 rounded-full h-1.5 sm:h-2 overflow-hidden">
                     <div 
                       className={`h-full rounded-full transition-all duration-700 ease-out ${
                         running ? 'bg-gradient-to-r from-blue-400 to-purple-400' : 
@@ -219,7 +217,7 @@ export function AutoConnectModal({
                       style={{ width: `${progressPercentage}%` }}
                     />
                   </div>
-                  <span className="text-sm font-bold text-white min-w-[3rem] text-right">
+                  <span className="text-xs sm:text-sm font-bold text-white min-w-[2.2rem] text-right">
                     {progressPercentage.toFixed(0)}%
                   </span>
                 </div>
@@ -229,28 +227,28 @@ export function AutoConnectModal({
         </div>
         
         {/* Tab Navigation - Melhorado */}
-        <div className="flex bg-[#26074d]/40 rounded-xl p-1 mb-6 backdrop-blur-sm">
+  <div className="flex bg-[#26074d]/40 rounded-lg sm:rounded-xl p-0.5 sm:p-1 mb-4 sm:mb-6 backdrop-blur-sm">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-all duration-300 text-sm relative ${
+              className={`flex-1 flex items-center justify-center gap-1 sm:gap-2 py-2 sm:py-3 px-2 sm:px-4 rounded-md sm:rounded-lg font-medium transition-all duration-300 text-xs sm:text-sm relative ${
                 activeTab === tab.id 
                   ? 'bg-[#6205D5] text-white shadow-lg transform scale-105' 
                   : 'text-[#b0a8ff]/70 hover:bg-[#6205D5]/20 hover:text-[#b0a8ff] hover:scale-102'
               }`}
             >
-              <tab.icon className={`w-4 h-4 transition-transform ${activeTab === tab.id ? 'scale-110' : ''}`} />
+              <tab.icon className={`w-4 h-4 sm:w-4 sm:h-4 transition-transform ${activeTab === tab.id ? 'scale-110' : ''}`} />
               <span className="hidden sm:inline font-semibold">{tab.label}</span>
               {activeTab === tab.id && (
-                <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-8 h-1 bg-white rounded-full" />
+                <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-5 sm:w-8 h-0.5 sm:h-1 bg-white rounded-full" />
               )}
             </button>
           ))}
         </div>
 
         {/* Tab Content */}
-        <div className="min-h-[400px]">
+  <div className="min-h-[320px] sm:min-h-[400px]">
           
           {/* STATUS TAB */}
           {activeTab === 'status' && (
