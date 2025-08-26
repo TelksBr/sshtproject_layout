@@ -34,6 +34,9 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
   const [auth, setAuth] = useState<ConfigAuth>({});
   const [formError, setFormError] = useState<string | null>(null);
 
+  // Estado local para controlar tentativa de conexão
+  const [isTryingToConnect, setIsTryingToConnect] = useState(false);
+
   // Estados dos inputs como estado React local
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -94,13 +97,18 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
 
   // Escuta eventos para atualização de erros baseados no estado VPN
   useEffect(() => {
-    setFormError(null); // Limpa erros quando o estado mudar
-    
+    // Não limpa o erro automaticamente, só seta mensagem se necessário
     if (vpnState === 'AUTH_FAILED') {
       setFormError('Falha na autenticação');
+      // Mantém isTryingToConnect true, pois usuário pode querer cancelar
     } else if (vpnState === 'NO_NETWORK') {
       setFormError('Sem conexão com a internet');
+      // Mantém isTryingToConnect true
+    } else if (vpnState === 'DISCONNECTED' || vpnState === 'CONNECTED') {
+      // Só limpa o estado de tentativa quando realmente desconectar ou conectar
+      setIsTryingToConnect(false);
     }
+    // Se for STOPPING, AUTH, CONNECTING, mantém o estado
   }, [vpnState]);
 
   // Handlers para inputs: atualizam estado local e salvam usando as funções nativas
@@ -157,6 +165,7 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
   const connect = () => {
     try {
       setFormError(null);
+      setIsTryingToConnect(true);
       let originalPassword = password;
       let originalUsername = username;
       // Se for hysteria, concatena user:pass no campo senha
@@ -177,82 +186,73 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
       }, 1000);
     } catch (e) {
       setFormError(e instanceof Error ? e.message : 'Falha ao conectar');
+      setIsTryingToConnect(false);
     }
   };
 
   const disconnect = () => {
     try {
       setFormError(null);
+      setIsTryingToConnect(false);
       stopConnection();
     } catch (e) {
       setFormError(e instanceof Error ? e.message : 'Falha ao desconectar');
+      setIsTryingToConnect(false);
     }
   };
 
   // Manipula clique do botão de conexão
   const handleConnection = () => {
     setFormError(null);
-    
-    switch (vpnState) {
-      case 'DISCONNECTED':
-      case 'AUTH_FAILED':
-      case 'NO_NETWORK':
-        // Estados onde podemos iniciar conexão
-        const validation = validateForm();
-        if (validation) {
-          setFormError(validation);
-          return;
-        }
-        
-        connect();
-        break;
-        
-      case 'CONNECTING':
-      case 'AUTH':
-        // Estados onde podemos cancelar/parar
-        disconnect();
-        break;
-        
-      case 'CONNECTED':
-        // Estado conectado - desconectar
-        disconnect();
-        break;
-        
-      case 'STOPPING':
-        // Estado parando - não fazer nada (botão desabilitado)
-        break;
-        
-      default:
-        break;
+    if (!isTryingToConnect) {
+      // Só tenta conectar se não estiver tentando
+      switch (vpnState) {
+        case 'DISCONNECTED':
+        case 'AUTH_FAILED':
+        case 'NO_NETWORK':
+          // Estados onde podemos iniciar conexão
+          const validation = validateForm();
+          if (validation) {
+            setFormError(validation);
+            return;
+          }
+          connect();
+          break;
+        case 'CONNECTED':
+          // Estado conectado - desconectar
+          disconnect();
+          break;
+        default:
+          break;
+      }
+    } else {
+      // Se está tentando conectar, permite cancelar
+      disconnect();
     }
   };
 
   // Texto e estilo do botão baseado no estado
   const getButtonText = () => {
+    if (isTryingToConnect) {
+      return 'Cancelar Conexão';
+    }
     switch (vpnState) {
-      case 'CONNECTING':
-        return 'Cancelar Conexão';
-      case 'AUTH':
-        return 'Cancelar';
       case 'STOPPING':
         return 'Parando...';
       case 'CONNECTED':
         return 'Desconectar';
-      case 'AUTH_FAILED':
-      case 'NO_NETWORK':
-      case 'DISCONNECTED':
       default:
         return 'Conectar';
     }
   };
 
   const getButtonStyle = () => {
+    if (isTryingToConnect) {
+      return 'from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700';
+    }
     switch (vpnState) {
       case 'CONNECTED':
         return 'from-red-500 to-red-600 hover:from-red-600 hover:to-red-700';
-      case 'CONNECTING':
-      case 'AUTH':
-        return 'from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700';
       case 'STOPPING':
         return 'from-orange-500 to-orange-600';
       default:

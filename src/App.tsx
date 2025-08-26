@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { ServerSelector } from './components/ServerSelector';
 import { ConnectionForm } from './components/ConnectionForm';
-import { AutoConnectModal } from './components/AutoConnectModal';
 import { NetworkStats } from './components/NetworkStats';
 import { Sidebar } from './components/Sidebar';
 import { getConfigVersion, getLocalIP, getConnectionState } from './utils/appFunctions';
@@ -17,21 +16,6 @@ import { VpnState } from './types/vpn';
 export type ModalType = 'buy' | 'recovery' | 'tutorials' | 'support' | 'speedtest' | 'terms' | 'privacy' | 'checkuser' | 'cleandata' | 'hotspot' | 'services' | 'ipfinder' | 'faq' | 'testgenerate' | 'renewal' | null;
 
 function App() {
-  // Estado para controlar o AutoConnectModal
-  const [autoConnectOpen, setAutoConnectOpen] = useState(false);
-  // TODO: Adapte os dados abaixo conforme seu hook/useAutoConnect real
-  const [autoConnectState, setAutoConnectState] = useState({
-    currentConfigName: null,
-    totalConfigs: 0,
-    testedConfigs: 0,
-    successConfigName: null,
-    running: false,
-    error: null,
-    logs: [],
-    currentTestDuration: 0,
-    autoConnectConfig: {},
-    showSettings: false,
-  });
   const [showMenu, setShowMenu] = useState(false);
   const [currentModal, setCurrentModal] = useState<ModalType>(null);
   
@@ -156,36 +140,182 @@ function App() {
             />
 
             <section className="flex justify-center mt-3 md:mt-6 lg:mt-4">
-              <img 
-                className="w-30 h-30 sm:w-28 sm:h-28 md:w-40 md:h-40 lg:w-28 lg:h-28 object-contain" 
-                id="app-logo" 
-                src={appLogo}
-                alt="SSH T PROJECT"
+              <div className="relative rounded-full overflow-visible group">
+              <img
+              className="w-28 h-28 md:w-40 md:h-40 lg:w-28 lg:h-28 object-contain animate-logo rounded-full group-hover:animate-logoPulse"
+              id="app-logo"
+              src={appLogo}
+              alt="SSH T PROJECT"
+              style={{
+              filter:
+                'drop-shadow(0 4px 16px rgba(80,0,120,0.18)) drop-shadow(0 1px 4px rgba(0,0,0,0.12))',
+              }}
               />
+              {/* Fade shadow overlays */}
+              <div
+              className="pointer-events-none absolute inset-0 rounded-full animate-shadowPulse"
+              style={{
+              boxShadow:
+                '0 0 16px 6px rgba(80,0,120,0.12), 0 0 0 2px rgba(255,255,255,0.06) inset',
+              borderRadius: '50%',
+              }}
+              />
+              {/* Extra animated glow ring */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none rounded-full">
+              <span className="animate-glowRing block w-full h-full rounded-full border-2 border-violet-400/30" />
+              </div>
+              {/* Pulse ring */}
+              <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <span className="pulse-ring" />
+              </span>
+              </div>
             </section>
+            <style>
+              {`
+              @keyframes logoComplex {
+              0% {
+              transform: scale(0.95) rotate(-10deg) perspective(150px) rotateX(5deg);
+              filter: drop-shadow(0 4px 16px rgba(80,0,120,0.12)) brightness(1);
+              }
+              25% {
+              transform: scale(1.05) rotate(5deg) perspective(120px) rotateY(-8deg);
+              filter: drop-shadow(0 8px 24px rgba(120,0,180,0.16)) brightness(1.1);
+              }
+              50% {
+              transform: scale(1) rotate(0deg) perspective(100px) rotateX(0deg);
+              filter: drop-shadow(0 6px 20px rgba(80,0,120,0.13)) brightness(1.05);
+              }
+              75% {
+              transform: scale(1.03) rotate(-3deg) perspective(110px) rotateY(6deg);
+              filter: drop-shadow(0 7px 21px rgba(100,0,150,0.14)) brightness(1.1);
+              }
+              100% {
+              transform: scale(0.98) rotate(2deg) perspective(130px) rotateX(-4deg);
+              filter: drop-shadow(0 5px 18px rgba(80,0,120,0.12)) brightness(1);
+              }
+              }
+              .animate-logo {
+              animation: logoComplex 5.5s cubic-bezier(0.45,0,0.2,1) infinite alternate;
+              will-change: opacity, transform, filter, box-shadow;
+              transition: filter 0.3s, box-shadow 0.3s;
+              border-radius: 50%;
+              background: transparent;
+              box-shadow:
+              0 0 8px 2px rgba(255, 255, 255, 0.13),
+              0 0 20px 5px rgba(180, 0, 220, 0.22),
+              0 4px 16px 0 rgba(0, 0, 0, 0.18);
+              }
+              .animate-logo:hover {
+              filter: drop-shadow(0 0 0 rgba(255,255,255,0.5)) drop-shadow(0 0 16px #fff8) brightness(1.2) blur(1px);
+              opacity: 1;
+              transform: scale(1.16) rotate(8deg) skewY(2deg) perspective(120px) rotateX(10deg);
+              box-shadow: 0 0 40px 16px rgba(180,0,220,0.13);
+              transition: filter 0.3s, transform 0.3s, opacity 0.3s, box-shadow 0.3s;
+              }
+              @media (prefers-reduced-motion: reduce) {
+              .animate-logo {
+              animation: none;
+              }
+              .animate-logoPulse {
+              animation: none;
+              }
+              .animate-shadowPulse {
+              animation: none;
+              }
+              .animate-glowRing {
+              animation: none;
+              }
+              .pulse-ring {
+              animation: none;
+              }
+              }
+              /* Extra animated glow ring */
+              @keyframes glowRing {
+              0% {
+              box-shadow: 0 0 0 0 rgba(180,0,220,0.07), 0 0 0 0 rgba(255,255,255,0.04);
+              opacity: 0.7;
+              transform: scale(1);
+              }
+              50% {
+              box-shadow: 0 0 16px 6px rgba(180,0,220,0.13), 0 0 8px 4px rgba(255,255,255,0.07);
+              opacity: 1;
+              transform: scale(1.08) rotate(8deg);
+              }
+              100% {
+              box-shadow: 0 0 0 0 rgba(180,0,220,0.07), 0 0 0 0 rgba(255,255,255,0.04);
+              opacity: 0.7;
+              transform: scale(1) rotate(0deg);
+              }
+              }
+              .animate-glowRing {
+              animation: glowRing 3.2s cubic-bezier(0.4,0,0.2,1) infinite;
+              will-change: box-shadow, opacity, transform;
+              border-radius: 50%;
+              }
+              /* Shadow pulse for overlay */
+              @keyframes shadowPulse {
+              0%, 100% {
+              box-shadow: 0 0 16px 6px rgba(80,0,120,0.12), 0 0 0 2px rgba(255,255,255,0.06) inset;
+              opacity: 0.8;
+              }
+              50% {
+              box-shadow: 0 0 32px 12px rgba(180,0,220,0.18), 0 0 0 4px rgba(255,255,255,0.10) inset;
+              opacity: 1;
+              }
+              }
+              .animate-shadowPulse {
+              animation: shadowPulse 4s cubic-bezier(0.4,0,0.2,1) infinite;
+              }
+              /* Logo pulse on hover */
+              @keyframes logoPulse {
+              0%, 100% {
+              filter: drop-shadow(0 4px 16px rgba(80,0,120,0.18));
+              transform: scale(1);
+              }
+              50% {
+              filter: drop-shadow(0 0 32px #fff8) brightness(1.3);
+              transform: scale(1.12) rotate(3deg);
+              }
+              }
+              .group:hover .animate-logoPulse {
+              animation: logoPulse 1.2s cubic-bezier(0.4,0,0.2,1) infinite;
+              }
+              /* Pulse ring */
+              .pulse-ring {
+              position: absolute;
+              width: 120%;
+              height: 120%;
+              left: -10%;
+              top: -10%;
+              border-radius: 50%;
+              border: 2px solid #a78bfa44;
+              box-shadow: 0 0 32px 8px #a78bfa33;
+              opacity: 0.7;
+              animation: pulseRing 2.8s cubic-bezier(0.4,0,0.2,1) infinite;
+              z-index: 1;
+              }
+              @keyframes pulseRing {
+              0% {
+              transform: scale(0.95);
+              opacity: 0.7;
+              }
+              60% {
+              transform: scale(1.15);
+              opacity: 0.4;
+              }
+              100% {
+              transform: scale(0.95);
+              opacity: 0.7;
+              }
+              }
+              `}
+            </style>
+
+          
 
             <div className="flex-1 flex flex-col gap-1.5 mt-2 md:max-w-2xl md:mx-auto md:gap-4 md:mt-6 lg:max-w-none lg:mx-0 lg:gap-3 lg:mt-4">
               <ServerSelector />
-              <ConnectionForm vpnState={vpnState} onOpenAutoConnect={() => setAutoConnectOpen(true)} />
-      {/* Modal AutoConnect controlado pelo App */}
-      <AutoConnectModal
-        open={autoConnectOpen}
-        onClose={() => setAutoConnectOpen(false)}
-        currentConfigName={autoConnectState.currentConfigName}
-        totalConfigs={autoConnectState.totalConfigs}
-        testedConfigs={autoConnectState.testedConfigs}
-        successConfigName={autoConnectState.successConfigName}
-        running={autoConnectState.running}
-        onStart={() => {}}
-        onCancel={() => {}}
-        error={autoConnectState.error}
-        logs={autoConnectState.logs}
-        currentTestDuration={autoConnectState.currentTestDuration}
-        autoConnectConfig={autoConnectState.autoConnectConfig}
-        setAutoConnectConfig={() => {}}
-        showSettings={autoConnectState.showSettings}
-        setShowSettings={() => {}}
-      />
+              <ConnectionForm vpnState={vpnState} />
             </div>
           </div>
 
