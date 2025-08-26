@@ -162,13 +162,13 @@ export function IpFinder({ onClose }: IpFinderProps) {
           <div className="flex gap-2 mt-4">
             <button
               onClick={handleSearchClick}
-              className="btn-primary flex-1 flex items-center justify-center gap-2"
+              className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-[#6205D5] to-[#4B0082] hover:from-[#4B0082] hover:to-[#6205D5] text-white font-bold py-2 px-6 rounded-lg shadow-lg transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {isSearching ? 'Parar' : <><Search className="w-5 h-5" /> Buscar</>}
             </button>
             <button
               onClick={saveIpList}
-              className="btn-outline flex items-center justify-center gap-2"
+              className="flex items-center justify-center gap-2 border border-[#6205D5] text-[#6205D5] font-bold py-2 px-6 rounded-lg bg-transparent hover:bg-[#6205D5]/10 transition-all duration-200"
             >
               <Save className="w-5 h-5" /> Salvar
             </button>
@@ -191,13 +191,13 @@ export function IpFinder({ onClose }: IpFinderProps) {
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleSearchFromList(list)}
-                    className="btn-outline flex items-center justify-center gap-2"
+                    className="flex items-center justify-center gap-2 border border-[#6205D5] text-[#6205D5] font-bold py-1.5 px-4 rounded-lg bg-transparent hover:bg-[#6205D5]/10 transition-all duration-200"
                   >
                     <Play className="w-5 h-5" /> Buscar
                   </button>
                   <button
                     onClick={() => deleteIpList(list.name)}
-                    className="btn-outline flex items-center justify-center gap-2 text-red-400 border-red-400"
+                    className="flex items-center justify-center gap-2 border border-red-400 text-red-400 font-bold py-1.5 px-4 rounded-lg bg-transparent hover:bg-red-500/10 transition-all duration-200"
                   >
                     <Trash2 className="w-5 h-5" />
                   </button>
@@ -216,13 +216,13 @@ export function IpFinder({ onClose }: IpFinderProps) {
               <div className="flex gap-4">
                 <button
                   onClick={confirmClose}
-                  className="btn-primary flex-1"
+                  className="flex-1 bg-gradient-to-r from-[#6205D5] to-[#4B0082] hover:from-[#4B0082] hover:to-[#6205D5] text-white font-bold py-2 px-6 rounded-lg shadow-lg transition-all duration-200"
                 >
                   Sim
                 </button>
                 <button
                   onClick={cancelClose}
-                  className="btn-outline flex-1"
+                  className="flex-1 border border-[#6205D5] text-[#6205D5] font-bold py-2 px-6 rounded-lg bg-transparent hover:bg-[#6205D5]/10 transition-all duration-200"
                 >
                   Não
                 </button>
