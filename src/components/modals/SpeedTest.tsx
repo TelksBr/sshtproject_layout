@@ -196,7 +196,7 @@ export function SpeedTest({ onClose }: SpeedTestProps) {
             <button
               onClick={startTest}
               disabled={testing || loading || !selectedServer}
-              className="w-full h-12 flex items-center justify-center gap-2 rounded-lg bg-[#6205D5] text-[#b0a8ff] font-medium hover:bg-[#6205D5]/90 transition-colors disabled:opacity-50"
+              className="w-full h-12 flex items-center justify-center gap-2 bg-gradient-to-r from-[#6205D5] to-[#4B0082] hover:from-[#4B0082] hover:to-[#6205D5] text-white font-bold py-2 px-6 rounded-lg shadow-lg transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {testing ? (
                 <>

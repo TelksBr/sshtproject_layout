@@ -73,7 +73,6 @@ export function RecoveryModal({ onClose }: RecoveryModalProps) {
                   <div>1. 📮 Verifique sua caixa de entrada</div>
                   <div>2. 📄 Procure por um email com suas credenciais</div>
                   <div>3. 🔍 Se não encontrar, verifique o spam/lixo eletrônico</div>
-                  <div>4. 🔗 Clique no link do email para acessar suas credenciais</div>
                 </div>
               </div>
             </div>
@@ -108,7 +107,7 @@ export function RecoveryModal({ onClose }: RecoveryModalProps) {
               <div className="font-semibold mb-2">ℹ️ Como funciona:</div>
               <div className="space-y-1 text-xs">
                 <div>• Digite o email usado na compra</div>
-                <div>• Receba um link com suas credenciais</div>
+                <div>• Receba um email com suas credenciais</div>
                 <div>• Acesse suas credenciais de forma segura</div>
               </div>
             </div>
@@ -134,16 +133,9 @@ export function RecoveryModal({ onClose }: RecoveryModalProps) {
 
           <div className="flex gap-3">
             <button
-              onClick={handleClose}
-              className="flex-1 py-3 px-4 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors"
-              disabled={isLoading}
-            >
-              Cancelar
-            </button>
-            <button
               onClick={handleRecoverySubmit}
               disabled={isLoading || !email.trim()}
-              className="flex-1 py-3 px-4 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-500 text-white rounded-lg transition-colors flex items-center justify-center font-semibold"
+              className="flex-1 py-3 px-4 bg-gradient-to-r from-[#6205D5] to-[#4B0082] hover:from-[#4B0082] hover:to-[#6205D5] disabled:bg-gray-500 text-white rounded-lg transition-all duration-200 flex items-center justify-center font-semibold shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>

@@ -256,7 +256,8 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
       case 'STOPPING':
         return 'from-orange-500 to-orange-600';
       default:
-        return 'from-green-500 to-green-600 hover:from-green-600 hover:to-green-700';
+        // Roxo padrão sugerido para o botão "Conectar"
+        return 'from-[#6205D5] to-[#4B0082] hover:from-[#4B0082] hover:to-[#6205D5]';
     }
   };
 
