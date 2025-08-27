@@ -1,3 +1,13 @@
+// Utilitário para logo dinâmica
+const LOGO_KEY = 'app-logo-base64';
+
+export function getAppLogo(): string | null {
+  return getStorageItem<string>(LOGO_KEY);
+}
+
+export function setAppLogo(base64: string): void {
+  setStorageItem(LOGO_KEY, base64);
+}
 
 const STORAGE_PREFIX = '@sshproject:';
 

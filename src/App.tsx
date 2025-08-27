@@ -6,7 +6,7 @@ import { NetworkStats } from './components/NetworkStats';
 import { Sidebar } from './components/Sidebar';
 import { getConfigVersion, getLocalIP, getConnectionState } from './utils/appFunctions';
 import { getStorageItem } from './utils/storageUtils';
-import { appLogo } from './constants/appLogo';
+import { getAppLogo, setAppLogo } from './utils/storageUtils';
 import { ActiveConfigProvider } from './context/ActiveConfigContext';
 import { useAppLayout } from './hooks/useAppLayout';
 import { useModalRenderer } from './hooks/useModalRenderer';
@@ -27,6 +27,9 @@ function App() {
   const { containerStyle } = useAppLayout();
   const { getModal } = useModalRenderer();
 
+  // Estado para logo dinâmica
+  const [logo, setLogo] = useState<string | null>(null);
+
   // Inicialização dos estados conforme padrão documentado
   useEffect(() => {
     // Busca estados iniciais das funções nativas
@@ -37,7 +40,25 @@ function App() {
       setVpnState(initialVpnState);
     }
     setLocalIP(initialLocalIP);
-    
+
+    // Logo dinâmica: tenta pegar do storage, senão busca da web e salva
+    const tryLoadLogo = async () => {
+      let storedLogo = getAppLogo();
+      if (storedLogo) {
+        setLogo(storedLogo);
+      } else {
+        try {
+          const res = await fetch('https://pastebin.com/raw/JSzP76tH');
+          if (res.ok) {
+            const base64 = await res.text();
+            setAppLogo(base64);
+            setLogo(base64);
+          }
+        } catch {}
+      }
+    };
+    tryLoadLogo();
+
     // Polling adicional para garantir sincronização inicial do estado VPN
     let attempts = 0;
     const maxAttempts = 5;
@@ -142,14 +163,14 @@ function App() {
             <section className="flex justify-center mt-3 md:mt-6 lg:mt-4">
               <div className="relative rounded-full overflow-visible group">
               <img
-              className="w-28 h-28 md:w-40 md:h-40 lg:w-28 lg:h-28 object-contain animate-logo rounded-full group-hover:animate-logoPulse"
-              id="app-logo"
-              src={appLogo}
-              alt="SSH T PROJECT"
-              style={{
-              filter:
-                'drop-shadow(0 4px 16px rgba(80,0,120,0.18)) drop-shadow(0 1px 4px rgba(0,0,0,0.12))',
-              }}
+                className="w-28 h-28 md:w-40 md:h-40 lg:w-28 lg:h-28 object-contain animate-logo rounded-full group-hover:animate-logoPulse"
+                id="app-logo"
+                src={logo || ''}
+                alt="SSH T PROJECT"
+                style={{
+                  filter:
+                    'drop-shadow(0 4px 16px rgba(80,0,120,0.18)) drop-shadow(0 1px 4px rgba(0,0,0,0.12))',
+                }}
               />
               {/* Fade shadow overlays */}
               <div
