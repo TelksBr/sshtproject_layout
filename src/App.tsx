@@ -161,35 +161,37 @@ function App() {
             />
 
             <section className="flex justify-center mt-3 md:mt-6 lg:mt-4">
-              <div className="relative rounded-full overflow-visible group">
-              <img
-                className="w-28 h-28 md:w-40 md:h-40 lg:w-28 lg:h-28 object-contain animate-logo rounded-full group-hover:animate-logoPulse"
-                id="app-logo"
-                src={logo || ''}
-                alt="SSH T PROJECT"
-                style={{
-                  filter:
-                    'drop-shadow(0 4px 16px rgba(80,0,120,0.18)) drop-shadow(0 1px 4px rgba(0,0,0,0.12))',
-                }}
-              />
-              {/* Fade shadow overlays */}
-              <div
-              className="pointer-events-none absolute inset-0 rounded-full animate-shadowPulse"
-              style={{
-              boxShadow:
-                '0 0 16px 6px rgba(80,0,120,0.12), 0 0 0 2px rgba(255,255,255,0.06) inset',
-              borderRadius: '50%',
-              }}
-              />
-              {/* Extra animated glow ring */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none rounded-full">
-              <span className="animate-glowRing block w-full h-full rounded-full border-2 border-violet-400/30" />
-              </div>
-              {/* Pulse ring */}
-              <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <span className="pulse-ring" />
-              </span>
-              </div>
+              {logo ? (
+                <div className="relative rounded-full overflow-visible group">
+                  <img
+                    className="w-28 h-28 md:w-40 md:h-40 lg:w-28 lg:h-28 object-contain animate-logo rounded-full group-hover:animate-logoPulse"
+                    id="app-logo"
+                    src={logo}
+                    alt="SSH T PROJECT"
+                    style={{
+                      filter:
+                        'drop-shadow(0 4px 16px rgba(80,0,120,0.18)) drop-shadow(0 1px 4px rgba(0,0,0,0.12))',
+                    }}
+                  />
+                  {/* Fade shadow overlays */}
+                  <div
+                    className="pointer-events-none absolute inset-0 rounded-full animate-shadowPulse"
+                    style={{
+                      boxShadow:
+                        '0 0 16px 6px rgba(80,0,120,0.12), 0 0 0 2px rgba(255,255,255,0.06) inset',
+                      borderRadius: '50%',
+                    }}
+                  />
+                  {/* Extra animated glow ring */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none rounded-full">
+                    <span className="animate-glowRing block w-full h-full rounded-full border-2 border-violet-400/30" />
+                  </div>
+                  {/* Pulse ring */}
+                  <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <span className="pulse-ring" />
+                  </span>
+                </div>
+              ) : null}
             </section>
             <style>
               {`

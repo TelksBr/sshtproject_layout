@@ -35,7 +35,15 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
   const [formError, setFormError] = useState<string | null>(null);
 
   // Estado local para controlar tentativa de conexão
-  const [isTryingToConnect, setIsTryingToConnect] = useState(false);
+  const [isTryingToConnect, setIsTryingToConnect] = useState(() => {
+    // Detecta se o status inicial já é de tentativa de conexão
+    // AUTH, CONNECTING, STOPPING são estados "em andamento"
+    return [
+      'AUTH',
+      'CONNECTING',
+      'STOPPING'
+    ].includes(vpnState);
+  });
 
   // Estados dos inputs como estado React local
   const [username, setUsername] = useState('');
@@ -56,10 +64,19 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
           v2ray_uuid: authObj.v2ray_uuid || undefined,
         };
         setAuth(newAuth);
-        
+
         // Carrega valores dos inputs das funções nativas
-        setUsername(getUsername() || '');
-        setPassword(getPassword() || '');
+        let loadedUsername = getUsername() || '';
+        let loadedPassword = getPassword() || '';
+        // Se for Hysteria e senha está concatenada, separar
+        if ((config.mode || '').toLowerCase().startsWith('hysteria') && loadedPassword.includes(':')) {
+          const [user, pass] = loadedPassword.split(':');
+          setUsername(user || '');
+          setPassword(pass || '');
+        } else {
+          setUsername(loadedUsername);
+          setPassword(loadedPassword);
+        }
         setUuid(getUUID() || '');
       }
     };
@@ -83,10 +100,18 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
         };
         setAuth(newAuth);
         setFormError(null); // Limpa erros quando trocar de config
-        
+
         // Carrega valores dos inputs das funções nativas
-        setUsername(getUsername() || '');
-        setPassword(getPassword() || '');
+        let loadedUsername = getUsername() || '';
+        let loadedPassword = getPassword() || '';
+        if ((config.mode || '').toLowerCase().startsWith('hysteria') && loadedPassword.includes(':')) {
+          const [user, pass] = loadedPassword.split(':');
+          setUsername(user || '');
+          setPassword(pass || '');
+        } else {
+          setUsername(loadedUsername);
+          setPassword(loadedPassword);
+        }
         setUuid(getUUID() || '');
       }
     };
@@ -101,14 +126,22 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
     if (vpnState === 'AUTH_FAILED') {
       setFormError('Falha na autenticação');
       // Mantém isTryingToConnect true, pois usuário pode querer cancelar
+      setIsTryingToConnect(true);
     } else if (vpnState === 'NO_NETWORK') {
       setFormError('Sem conexão com a internet');
-      // Mantém isTryingToConnect true
+      setIsTryingToConnect(true);
     } else if (vpnState === 'DISCONNECTED' || vpnState === 'CONNECTED') {
       // Só limpa o estado de tentativa quando realmente desconectar ou conectar
       setIsTryingToConnect(false);
+    } else if ([
+      'AUTH',
+      'CONNECTING',
+      'STOPPING'
+    ].includes(vpnState)) {
+      // Se o status mudou para um desses, garante que o botão fique em modo "cancelar"
+      setIsTryingToConnect(true);
     }
-    // Se for STOPPING, AUTH, CONNECTING, mantém o estado
+    // Se for outros estados, mantém o estado
   }, [vpnState]);
 
   // Handlers para inputs: atualizam estado local e salvam usando as funções nativas
@@ -168,9 +201,13 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
       setIsTryingToConnect(true);
       let originalPassword = password;
       let originalUsername = username;
-      // Se for hysteria, concatena user:pass no campo senha
+      // Se for hysteria, só concatena se ainda não estiver concatenado
       if (isHysteria) {
-        setPasswordApp(buildHysteriaPassword(username, password));
+        if (!password.includes(':')) {
+          setPasswordApp(buildHysteriaPassword(username, password));
+        } else {
+          setPasswordApp(password); // já está concatenado
+        }
       }
       // Se for SSH e senha está no formato user:pass, faz o reverso
       if (isSSH && password.includes(':')) {
