@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo, useCallback, useMemo } from 'react';
+import { useDebounce } from '../utils/performanceUtils';
 import { Settings, RefreshCw, CalendarClock, Wifi, AlertCircle, ChevronLeft, Search, Plane } from 'lucide-react';
 import { getAllConfigs, checkUserStatus, getAirplaneState, toggleAirplaneMode, checkForUpdates, setActiveConfig } from '../utils/appFunctions';
 import { Modal } from './modals/Modal';
@@ -44,7 +45,7 @@ export function ServerSelector() {
     return () => clearInterval(interval);
   }, []);
 
-  const loadConfigs = () => {
+  const loadConfigs = useCallback(() => {
     setLoading(true);
     setError(null);
     try {
@@ -57,7 +58,7 @@ export function ServerSelector() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [refreshActiveConfig]);
 
   // Adiciona estado de loading para feedback visual ao selecionar config
   const [pendingConfigId, setPendingConfigId] = useState<number | null>(null);
@@ -102,25 +103,34 @@ export function ServerSelector() {
     setSelectedCategory(category);
   };
 
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     setSelectedCategory(null);
-  };
+  }, []);
 
-  const handleUpdate = () => {
+  const handleUpdate = useCallback(() => {
     checkForUpdates();
     loadConfigs(); // Reload configs after update
-  };
+  }, []);
 
-  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(event.target.value);
+  // Função de busca com debounce para melhor performance
+  const debouncedSearch = useDebounce((value: string) => {
+    setSearchTerm(value);
     setSelectedCategory(null); // Reset selected category on search
-  };
+  }, 300); // 300ms de delay
+
+  const handleSearch = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    debouncedSearch(event.target.value);
+  }, [debouncedSearch]);
 
   const toggleAirplaneModeHandler = async () => {
     const newState = !airplaneMode;
     const updatedState = await toggleAirplaneMode(newState);
     setAirplaneMode(updatedState); // Atualiza o estado com o valor retornado
   };
+
+  const openConfigModal = useCallback(() => {
+    setShowConfigModal(true);
+  }, []);
 
   useEffect(() => {
     const checkAirplaneState = () => {
@@ -160,7 +170,7 @@ export function ServerSelector() {
         <button
           className="flex-1 min-w-0 max-w-full h-10 flex items-center justify-between px-3 rounded-lg glass-effect overflow-hidden group hover:bg-[#6205D5]/5 transition-all duration-200"
           type="button"
-          onClick={() => setShowConfigModal(true)}
+          onClick={openConfigModal}
         >
           <div className="flex items-center gap-2 flex-shrink-0">
             <Settings className="w-4 h-4 text-[#6205D5] flex-shrink-0 group-hover:text-[#7c4dff] transition-colors" />
@@ -490,3 +500,5 @@ export function ServerSelector() {
     </>
   );
 }
+
+export default memo(ServerSelector);

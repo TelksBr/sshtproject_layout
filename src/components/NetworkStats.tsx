@@ -1,14 +1,15 @@
 
+import { memo } from 'react';
 import { Download, Upload } from 'lucide-react';
-import { useNetworkStats } from '../hooks/useNetworkStats';
+import { useNetworkStatsGlobal } from '../hooks/useGlobalPolling';
 
-export function NetworkStats() {
+const NetworkStats = memo(function NetworkStats() {
   const {
     downloadSpeed,
     uploadSpeed,
     formattedTotalDownloaded,
     formattedTotalUploaded
-  } = useNetworkStats();
+  } = useNetworkStatsGlobal();
 
   return (
     <section className="w-full max-w-md md:max-w-xl lg:max-w-xs lg:w-full mx-auto p-4 md:p-6 lg:p-3 network-stats-mobile-landscape rounded-2xl lg:rounded-xl bg-gradient-to-br from-[#26074d]/60 to-[#3a0a7a]/40 border border-[#6205D5]/30 shadow-lg backdrop-blur-md flex flex-col gap-3 md:gap-6 lg:gap-3 lg:mt-4 lg:sticky lg:top-4">
@@ -48,4 +49,7 @@ export function NetworkStats() {
       </div>
     </section>
   );
-}
+});
+
+export { NetworkStats };
+export default NetworkStats;

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo, useCallback, useMemo } from 'react';
 import { Eye, EyeOff, Scroll, HelpCircle, Zap } from 'lucide-react';
 import {
   setUsername as setUsernameApp,
@@ -145,27 +145,32 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
   }, [vpnState]);
 
   // Handlers para inputs: atualizam estado local e salvam usando as funções nativas
-  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUsernameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setUsername(value);
     setUsernameApp(value);
-  };
+  }, []);
   
-  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePasswordChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setPassword(value);
     setPasswordApp(value);
-  };
+  }, []);
   
-  const handleUUIDChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUUIDChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setUuid(value);
     setUUIDApp(value);
-  };
+  }, []);
 
   // Lógica de exibição dos campos baseada no modo da config
-  const isV2Ray = mode.toLowerCase().startsWith('v2ray');
-  const isHysteria = mode.toLowerCase().startsWith('hysteria');
+  const { isV2Ray, isHysteria } = useMemo(() => {
+    const modeLower = mode.toLowerCase();
+    return {
+      isV2Ray: modeLower.startsWith('v2ray'),
+      isHysteria: modeLower.startsWith('hysteria')
+    };
+  }, [mode]);
   const isSSH = mode.toLowerCase().startsWith('ssh');
   // Para hysteria, mostrar os mesmos campos que SSH
   const showUsernameInput = (!isV2Ray && !auth.username) || isHysteria;
@@ -176,6 +181,15 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
   const usernameValue = showUsernameInput ? username : '';
   const passwordValue = showPasswordInput ? password : '';
   const uuidValue = showUUIDInput ? uuid : '';
+
+  // Handlers para toggle de visibilidade
+  const togglePasswordVisibility = useCallback(() => {
+    setShowPassword(prev => !prev);
+  }, []);
+
+  const toggleUUIDVisibility = useCallback(() => {
+    setShowUUID(prev => !prev);
+  }, []);
 
   // Debug: Log para verificar mudanças na lógica de exibição
   useEffect(() => {
@@ -330,7 +344,7 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
             />
             <button
               className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-400 hover:text-purple-300 transition-colors"
-              onClick={() => setShowPassword(!showPassword)}
+              onClick={togglePasswordVisibility}
               type="button"
             >
               {showPassword ? <EyeOff className="w-4 h-4 md:w-5 md:h-5 lg:w-4 lg:h-4" /> : <Eye className="w-4 h-4 md:w-5 md:h-5 lg:w-4 lg:h-4" />}
@@ -350,7 +364,7 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
             />
             <button
               className="absolute right-8 md:right-10 lg:right-9 top-1/2 -translate-y-1/2 text-purple-400 hover:text-purple-300 transition-colors"
-              onClick={() => setShowUUID(!showUUID)}
+              onClick={toggleUUIDVisibility}
               type="button"
             >
               {showUUID ? <EyeOff className="w-4 h-4 md:w-5 md:h-5 lg:w-4 lg:h-4" /> : <Eye className="w-4  h-4 md:w-5 md:h-5 lg:w-4 lg:h-4" />}
@@ -435,3 +449,5 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
     </section>
   );
 }
+
+export default memo(ConnectionForm);
