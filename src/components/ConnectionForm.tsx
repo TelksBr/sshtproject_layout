@@ -191,12 +191,6 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
     setShowUUID(prev => !prev);
   }, []);
 
-  // Debug: Log para verificar mudanças na lógica de exibição
-  useEffect(() => {
-    // Este useEffect garante que o componente re-renderize quando auth ou mode mudam
-    // e força a re-avaliação das condições de exibição dos inputs
-  }, [auth, mode, auth.username, auth.password, auth.v2ray_uuid]);
-
   // Validação antes de conectar
   const validateForm = () => {
     if (isV2Ray) {

@@ -109,11 +109,7 @@ export async function autoConnectTest({
         
         if (internetOk) {
           // Salva a config funcional como ativa
-          try {
-            // Importação dinâmica para evitar dependência circular
-            const { setActiveConfig } = await import('./appFunctions');
-            setActiveConfig(config.id);
-          } catch {}
+          setActiveConfig(config.id);
           setSuccess(config.name);
           setSelectedCategory(null);
           onTestResult?.(config.name, true, 'Conexão bem-sucedida!');

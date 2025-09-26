@@ -5,7 +5,7 @@ import {
   getDownloadBytes, 
   getUploadBytes 
 } from '../utils/appFunctions';
-import { getHotspotStatus } from '../utils/hotspotUtils';
+import { getHotspotStatus, startHotspot, stopHotspot } from '../utils/hotspotUtils';
 import { onDtunnelEvent } from '../utils/dtEvents';
 import { debounce, throttle } from '../utils/performanceUtils';
 import { VpnState } from '../types/vpn';
@@ -82,9 +82,17 @@ const updateGlobalStateImmediate = () => {
     let hotspotState: 'RUNNING' | 'STOPPED' = 'STOPPED';
     try {
       const status = getHotspotStatus();
-      hotspotState = status ? 'RUNNING' : 'STOPPED';
+      // Melhora a lógica de detecção
+      if (status === 'RUNNING') {
+        hotspotState = 'RUNNING';
+      } else if (status === 'STOPPED') {
+        hotspotState = 'STOPPED';
+      } else {
+        // Se status for null ou inválido, assume STOPPED
+        hotspotState = 'STOPPED';
+      }
     } catch (error) {
-      // Ignore hotspot errors
+      hotspotState = 'STOPPED'; // Fallback seguro
     }
     
     // Atualizar estado global
@@ -106,7 +114,7 @@ const updateGlobalStateImmediate = () => {
     // Notificar todos os listeners (throttled para performance)
     notifyListeners();
   } catch (error) {
-    console.error('Error updating global state:', error);
+    // Error updating global state
   }
 };
 
@@ -119,7 +127,7 @@ const notifyListeners = throttle(() => {
     try {
       listener();
     } catch (error) {
-      console.warn('Error in polling listener:', error);
+      // Error in polling listener
     }
   });
 }, 100); // Throttle notificações a cada 100ms
@@ -218,13 +226,55 @@ export function useHotspotGlobal() {
   const { hotspotState, forceUpdate } = useGlobalPolling();
   const [loading, setLoading] = useState(false);
   
-  const toggleHotspot = useCallback(() => {
+  const toggleHotspot = useCallback(async () => {
     setLoading(true);
-    // Simula operação async
-    setTimeout(() => {
-      forceUpdate();
+    
+    try {
+      let success = false;
+      
+      if (hotspotState === 'RUNNING') {
+        // Para o hotspot se estiver rodando
+        success = stopHotspot();
+      } else {
+        // Inicia o hotspot se estiver parado
+        success = startHotspot();
+      }
+      
+      if (success) {
+        // Aguarda processamento com verificações periódicas
+        let attempts = 0;
+        const maxAttempts = 10; // 5 segundos total
+        
+        while (attempts < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // Força verificação do novo status
+          updateGlobalStateImmediate();
+          
+          // Verifica se o estado mudou
+          const newStatus = getHotspotStatus();
+          
+          if (newStatus !== hotspotState) {
+            break;
+          }
+          
+          attempts++;
+        }
+        
+        // Força atualização final
+        forceUpdate();
+      }
+    } catch (error) {
+      // Error toggling hotspot
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
+  }, [hotspotState, forceUpdate]);
+
+  const checkStatus = useCallback(() => {
+    // Força verificação imediata do status
+    updateGlobalStateImmediate();
+    forceUpdate();
   }, [forceUpdate]);
   
   return {
@@ -232,6 +282,6 @@ export function useHotspotGlobal() {
     hotspotState,
     loading,
     toggleHotspot,
-    checkStatus: forceUpdate
+    checkStatus
   };
 }

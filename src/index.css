@@ -3,6 +3,12 @@
 @import "tailwindcss/utilities";
 
 @layer base {
+  /* Correção para avisos CSS do Tailwind */
+  iframe, embed, object {
+    display: block;
+    /* vertical-align removido - conflito com display: block */
+  }
+  
   html {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
@@ -63,7 +69,7 @@
     -khtml-user-drag: none;
     -moz-user-drag: none;
     -o-user-drag: none;
-    user-drag: none;
+    /* user-drag: none; - Removido: propriedade não padrão */
   }
 
   ::-webkit-scrollbar {
@@ -248,7 +254,7 @@ input {
 /* Range Input Styles */
 input[type="range"] {
   -webkit-appearance: none;
-  appearance: none;
+  appearance: none; /* Propriedade padrão para compatibilidade */
   height: 8px;
   border-radius: 4px;
   outline: none;
@@ -256,7 +262,7 @@ input[type="range"] {
 
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
-  appearance: none;
+  appearance: none; /* Propriedade padrão para compatibilidade */
   width: 18px;
   height: 18px;
   border-radius: 50%;

@@ -1,37 +1,48 @@
-import { getHotspotNativeStatus, startHotspotNative, stopHotspotNative } from './appFunctions';
-
-export interface HotspotDebugInfo {
-  nativeStatus: string | null;
-  nativeFunction: boolean;
-  nativeError: string | null;
-  lastAttempt: string | null;
-  lastError: string | null;
-  rawResponse: string | null;
-}
+// Hotspot utilities - interface direta com as APIs nativas
 
 export function getHotspotStatus(): 'STOPPED' | 'RUNNING' | null {
   try {
-    const nativeStatus = getHotspotNativeStatus();
-    if (!nativeStatus) return null;
-    const normalizedStatus = String(nativeStatus).toUpperCase();
-    return normalizedStatus === 'RUNNING' ? 'RUNNING' : 'STOPPED';
-  } catch {
+    if (window?.DtGetStatusHotSpotService?.execute && 
+        typeof window.DtGetStatusHotSpotService.execute === "function") {
+      const status = window.DtGetStatusHotSpotService.execute();
+      
+      const normalizedStatus = String(status).toUpperCase().trim();
+      if (normalizedStatus === 'RUNNING' || normalizedStatus === 'ACTIVE') {
+        return 'RUNNING';
+      } else if (normalizedStatus === 'STOPPED' || normalizedStatus === 'INACTIVE') {
+        return 'STOPPED';
+      }
+      
+      return 'STOPPED';
+    }
+    return null;
+  } catch (error) {
     return null;
   }
 }
 
-export function startHotspot(): void {
+export function startHotspot(): boolean {
   try {
-    startHotspotNative();
-  } catch {
-    // Error will be captured in debug info on next status check
+    if (window?.DtStartHotSpotService?.execute && 
+        typeof window.DtStartHotSpotService.execute === "function") {
+      window.DtStartHotSpotService.execute();
+      return true;
+    }
+    return false;
+  } catch (error) {
+    return false;
   }
 }
 
-export function stopHotspot(): void {
+export function stopHotspot(): boolean {
   try {
-    stopHotspotNative();
-  } catch {
-    // Error will be captured in debug info on next status check
+    if (window?.DtStopHotSpotService?.execute && 
+        typeof window.DtStopHotSpotService.execute === "function") {
+      window.DtStopHotSpotService.execute();
+      return true;
+    }
+    return false;
+  } catch (error) {
+    return false;
   }
 }

@@ -149,38 +149,6 @@ export function getLocalIP(): string | null {
   }
   return null;
 }
-   
-/**
- * Retorna o tipo de rede detectado pelo app/container.
- */
-export function getNetworkType(): string {
-  if (window?.DtGetNetworkType?.execute && typeof window.DtGetNetworkType.execute === "function") {
-    return window.DtGetNetworkType.execute();
-  }
-  return 'unknown';
-}
-
-/**
- * Verifica se há conectividade de rede.
- */
-export function checkNetworkConnectivity(): boolean {
-  if (window?.DtCheckNetworkConnectivity?.execute && 
-      typeof window.DtCheckNetworkConnectivity.execute === "function") {
-    return window.DtCheckNetworkConnectivity.execute() === true;
-  }
-  return false;
-}
-
-/**
- * Retorna o status da rede (ex: CONNECTED, NO_NETWORK).
- */
-export function getNetworkStatus(): string {
-  if (window?.DtGetNetworkStatus?.execute && 
-      typeof window.DtGetNetworkStatus.execute === "function") {
-    return window.DtGetNetworkStatus.execute();
-  }
-  return 'NO_NETWORK';
-}
 
 // Checkuser Functions
 export function checkUserStatus(): void {
@@ -227,14 +195,6 @@ export function checkForUpdates(): void {
   }
 }
 
-export function openWebView(url: string): void {
-  if (window?.DtStartWebViewActivity?.execute && typeof window.DtStartWebViewActivity.execute === "function") {
-    window.DtStartWebViewActivity.execute(url);
-  } else {
-    window.open(url, '_blank');
-  }
-}
-
 // Airplane Mode Functions
 export function getAirplaneState(): boolean {
   if (window?.DtAirplaneState?.execute && typeof window.DtAirplaneState.execute === "function") {
@@ -262,7 +222,7 @@ export async function toggleAirplaneMode(enable: boolean): Promise<boolean> {
   }
 }
 
-// Remover tipos duplicados, usar apenas importados
+
 // Funções de configuração centralizadas
 export function getAllConfigs(): ConfigCategory[] {
   if (window?.DtGetConfigs?.execute && typeof window.DtGetConfigs.execute === "function") {
@@ -373,9 +333,6 @@ export function openExternalUrl(uri: string) {
 // Tipagem global para DtTranslateText e funções de Hotspot
 declare global {
   interface Window {
-    DtGetNetworkType?: { execute: () => string };
-    DtCheckNetworkConnectivity?: { execute: () => boolean };
-    DtGetNetworkStatus?: { execute: () => string };
     DtTranslateText?: { execute: (key: string) => string };
     DtGetStatusHotSpotService?: { execute: () => string };
     DtStartHotSpotService?: { execute: () => void };

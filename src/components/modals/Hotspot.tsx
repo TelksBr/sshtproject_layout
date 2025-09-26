@@ -1,19 +1,16 @@
 import { Wifi, WifiOff, Settings, Bell } from 'lucide-react';
 import { Modal } from './Modal';
 import { useHotspotGlobal } from '../../hooks/useGlobalPolling';
-import { useEffect } from 'react';
+import { memo } from 'react';
 
 interface HotspotProps {
   onClose: () => void;
 }
 
-export function Hotspot({ onClose }: HotspotProps) {
-  const { isEnabled, loading, toggleHotspot, checkStatus } = useHotspotGlobal();
+const Hotspot = memo(function Hotspot({ onClose }: HotspotProps) {
+  const { isEnabled, loading, toggleHotspot, } = useHotspotGlobal();
 
-  // Verifica o estado do hotspot sempre que o modal é aberto
-  useEffect(() => {
-    checkStatus();
-  }, [checkStatus]);
+
 
   return (
 
@@ -39,23 +36,41 @@ export function Hotspot({ onClose }: HotspotProps) {
                 ) : (
                   <WifiOff className="w-5 h-5 text-[#6205D5]" />
                 )}
-                <span className="text-[#b0a8ff] font-medium">
-                  {isEnabled ? 'Hotspot Ativo' : 'Hotspot Inativo'}
-                </span>
+                <div className="flex flex-col">
+                  <span className="text-[#b0a8ff] font-medium">
+                    {loading ? 
+                      (isEnabled ? 'Parando Hotspot...' : 'Iniciando Hotspot...') :
+                      (isEnabled ? 'Hotspot Ativo' : 'Hotspot Inativo')
+                    }
+                  </span>
+                  {!loading && (
+                    <span className={`text-xs ${isEnabled ? 'text-green-400' : 'text-gray-400'}`}>
+                      {isEnabled ? 'Compartilhamento ativo' : 'Clique para ativar'}
+                    </span>
+                  )}
+                </div>
               </div>
               <button
                 onClick={toggleHotspot}
                 disabled={loading}
                 className={`
-                  px-4 h-8 rounded-full font-medium text-sm transition-colors
+                  px-4 h-8 rounded-full font-medium text-sm transition-all duration-200
                   ${isEnabled 
-                    ? 'bg-red-500/20 text-red-300 hover:bg-red-500/30' 
-                    : 'bg-[#6205D5] text-[#b0a8ff] hover:bg-[#6205D5]/90'
+                    ? 'bg-red-500/20 text-red-300 hover:bg-red-500/30 border border-red-500/30' 
+                    : 'bg-[#6205D5] text-[#b0a8ff] hover:bg-[#6205D5]/90 border border-[#6205D5]/50'
                   }
-                  disabled:opacity-50
+                  disabled:opacity-50 disabled:cursor-not-allowed
+                  ${loading ? 'animate-pulse' : ''}
                 `}
               >
-                {loading ? 'Aguarde...' : isEnabled ? 'Desativar' : 'Ativar'}
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
+                    {isEnabled ? 'Parando...' : 'Iniciando...'}
+                  </span>
+                ) : (
+                  isEnabled ? 'Desativar' : 'Ativar'
+                )}
               </button>
             </div>
 
@@ -79,10 +94,13 @@ export function Hotspot({ onClose }: HotspotProps) {
                   </p>
                 </div>
               </div>
+
             </div>
           </div>
         </div>
       </div>
     </Modal>
   );
-}
+});
+
+export { Hotspot };
