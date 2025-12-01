@@ -25,7 +25,7 @@ interface GlobalPollingState {
   lastUpdate: number;
 }
 
-// Estado global compartilhado
+// Estado global compartilhado (inicializado preguiçosamente)
 let globalState: GlobalPollingState = {
   vpnState: 'DISCONNECTED',
   localIP: '0.0.0.0',
@@ -40,6 +40,7 @@ let globalState: GlobalPollingState = {
   hotspotState: 'STOPPED',
   lastUpdate: Date.now()
 };
+let globalStateInitialized = false;
 
 // Sistema de listeners para notificar componentes
 const listeners = new Set<() => void>();
@@ -60,62 +61,196 @@ function formatSpeed(bytesPerSecond: number): string {
   return formatBytes(bytesPerSecond) + '/s';
 }
 
-// Função para atualizar o estado global
-const updateGlobalStateImmediate = () => {
+// Cria o estado inicial buscando diretamente os valores nativos.
+// Isso evita que o app renderize primeiro com valores default (DESCONNECTED / 0.0.0.0)
+// quando o usuário já está conectado.
+function createInitialGlobalState(): GlobalPollingState {
+  const now = Date.now();
+
+  let vpnState: VpnState = 'DISCONNECTED';
+  let localIP = '0.0.0.0';
+  let downloadBytes = 0;
+  let uploadBytes = 0;
+  let hotspotState: 'RUNNING' | 'STOPPED' = 'STOPPED';
+
   try {
-    const vpnState = getConnectionState() as VpnState;
-    const localIP = getLocalIP() || '0.0.0.0';
-    const downloadBytes = getDownloadBytes() || 0;
-    const uploadBytes = getUploadBytes() || 0;
-    
-    // Calcular velocidades baseado na diferença
-    const now = Date.now();
-    const timeDiff = (now - globalState.lastUpdate) / 1000; // segundos
-    
-    const downloadDiff = Math.max(0, downloadBytes - globalState.networkStats.totalDownloaded);
-    const uploadDiff = Math.max(0, uploadBytes - globalState.networkStats.totalUploaded);
-    
-    const downloadSpeed = timeDiff > 0 ? downloadDiff / timeDiff : 0;
-    const uploadSpeed = timeDiff > 0 ? uploadDiff / timeDiff : 0;
-    
-    // Obter status do hotspot
-    let hotspotState: 'RUNNING' | 'STOPPED' = 'STOPPED';
-    try {
-      const status = getHotspotStatus();
-      // Melhora a lógica de detecção
-      if (status === 'RUNNING') {
-        hotspotState = 'RUNNING';
-      } else if (status === 'STOPPED') {
-        hotspotState = 'STOPPED';
-      } else {
-        // Se status for null ou inválido, assume STOPPED
-        hotspotState = 'STOPPED';
-      }
-    } catch (error) {
-      hotspotState = 'STOPPED'; // Fallback seguro
+    const s = getConnectionState() as VpnState | null;
+    if (s) {
+      vpnState = s;
     }
-    
-    // Atualizar estado global
-    globalState = {
-      vpnState,
-      localIP,
-      networkStats: {
-        downloadSpeed: formatSpeed(downloadSpeed),
-        uploadSpeed: formatSpeed(uploadSpeed),
-        totalDownloaded: downloadBytes,
-        totalUploaded: uploadBytes,
-        formattedTotalDownloaded: formatBytes(downloadBytes),
-        formattedTotalUploaded: formatBytes(uploadBytes)
-      },
-      hotspotState,
-      lastUpdate: now
-    };
-    
-    // Notificar todos os listeners (throttled para performance)
-    notifyListeners();
-  } catch (error) {
-    // Error updating global state
+  } catch {
+    // mantém valor padrão
   }
+
+  try {
+    const ip = getLocalIP();
+    if (ip) {
+      localIP = ip;
+    }
+  } catch {
+    // mantém 0.0.0.0
+  }
+
+  try {
+    const d = getDownloadBytes();
+    if (typeof d === 'number' && !Number.isNaN(d)) {
+      downloadBytes = d;
+    }
+  } catch {
+    // mantém 0
+  }
+
+  try {
+    const u = getUploadBytes();
+    if (typeof u === 'number' && !Number.isNaN(u)) {
+      uploadBytes = u;
+    }
+  } catch {
+    // mantém 0
+  }
+
+  try {
+    const status = getHotspotStatus();
+    if (status === 'RUNNING') {
+      hotspotState = 'RUNNING';
+    }
+  } catch {
+    // mantém STOPPED
+  }
+
+  return {
+    vpnState,
+    localIP,
+    networkStats: {
+      downloadSpeed: '0 KB/s',
+      uploadSpeed: '0 KB/s',
+      totalDownloaded: downloadBytes,
+      totalUploaded: uploadBytes,
+      formattedTotalDownloaded: formatBytes(downloadBytes),
+      formattedTotalUploaded: formatBytes(uploadBytes)
+    },
+    hotspotState,
+    lastUpdate: now
+  };
+}
+
+// Garante que o estado global inicial foi resolvido a partir do nativo
+function ensureGlobalStateInitialized(): GlobalPollingState {
+  if (!globalStateInitialized) {
+    try {
+      globalState = createInitialGlobalState();
+    } catch {
+      // Em caso de erro inesperado, mantém defaults mas atualiza o timestamp
+      globalState = {
+        ...globalState,
+        lastUpdate: Date.now()
+      };
+    }
+    globalStateInitialized = true;
+  }
+  return globalState;
+}
+
+// Função para atualizar o estado global
+// Mais resiliente: cada chamada nativa é protegida individualmente para evitar
+// que um erro bloqueie a atualização do restante do estado.
+const updateGlobalStateImmediate = () => {
+  // Garante que já temos um snapshot inicial válido
+  ensureGlobalStateInitialized();
+  const previous = globalState;
+  const now = Date.now();
+
+  // Valores baseados no estado anterior (fallback seguro)
+  let vpnState: VpnState = previous.vpnState;
+  let localIP: string = previous.localIP;
+  let downloadBytes: number = previous.networkStats.totalDownloaded;
+  let uploadBytes: number = previous.networkStats.totalUploaded;
+  let hotspotState: 'RUNNING' | 'STOPPED' = previous.hotspotState;
+
+  // Atualiza estado VPN
+  try {
+    const state = getConnectionState() as VpnState | null;
+    if (state) {
+      vpnState = state;
+    }
+  } catch {
+    // Mantém valor anterior em caso de erro
+  }
+
+  // Atualiza IP local
+  try {
+    const ip = getLocalIP();
+    if (ip) {
+      localIP = ip;
+    } else if (!localIP) {
+      localIP = '0.0.0.0';
+    }
+  } catch {
+    if (!localIP) {
+      localIP = '0.0.0.0';
+    }
+  }
+
+  // Atualiza bytes de download
+  try {
+    const bytes = getDownloadBytes();
+    if (typeof bytes === 'number' && !Number.isNaN(bytes)) {
+      downloadBytes = bytes;
+    }
+  } catch {
+    // Mantém valor anterior
+  }
+
+  // Atualiza bytes de upload
+  try {
+    const bytes = getUploadBytes();
+    if (typeof bytes === 'number' && !Number.isNaN(bytes)) {
+      uploadBytes = bytes;
+    }
+  } catch {
+    // Mantém valor anterior
+  }
+
+  // Calcular velocidades baseado na diferença
+  const timeDiff = Math.max(0.001, (now - previous.lastUpdate) / 1000); // evita divisão por zero
+  const downloadDiff = Math.max(0, downloadBytes - previous.networkStats.totalDownloaded);
+  const uploadDiff = Math.max(0, uploadBytes - previous.networkStats.totalUploaded);
+
+  const downloadSpeed = downloadDiff / timeDiff;
+  const uploadSpeed = uploadDiff / timeDiff;
+
+  // Obter status do hotspot (não deve bloquear o resto do estado)
+  try {
+    const status = getHotspotStatus();
+    if (status === 'RUNNING') {
+      hotspotState = 'RUNNING';
+    } else if (status === 'STOPPED') {
+      hotspotState = 'STOPPED';
+    } else {
+      hotspotState = 'STOPPED';
+    }
+  } catch {
+    // Se falhar, mantém o último valor conhecido (ou STOPPED já definido acima)
+  }
+
+  // Atualizar estado global
+  globalState = {
+    vpnState,
+    localIP,
+    networkStats: {
+      downloadSpeed: formatSpeed(downloadSpeed),
+      uploadSpeed: formatSpeed(uploadSpeed),
+      totalDownloaded: downloadBytes,
+      totalUploaded: uploadBytes,
+      formattedTotalDownloaded: formatBytes(downloadBytes),
+      formattedTotalUploaded: formatBytes(uploadBytes)
+    },
+    hotspotState,
+    lastUpdate: now
+  };
+
+  // Notificar todos os listeners (throttled para performance)
+  notifyListeners();
 };
 
 // Versão debounced para chamadas manuais (evita spam de atualizações)
@@ -135,6 +270,9 @@ const notifyListeners = throttle(() => {
 // Função para iniciar o polling global
 const startGlobalPolling = () => {
   if (globalInterval === null) {
+    // Garante que o estado inicial foi lido do nativo
+    ensureGlobalStateInitialized();
+
     // Atualização inicial (imediata)
     updateGlobalStateImmediate();
     
@@ -156,7 +294,7 @@ const stopGlobalPolling = () => {
  * Otimização: Um único interval para todo o app
  */
 export function useGlobalPolling() {
-  const [state, setState] = useState<GlobalPollingState>(globalState);
+  const [state, setState] = useState<GlobalPollingState>(() => ensureGlobalStateInitialized());
   const listenerRef = useRef<(() => void) | null>(null);
   
   useEffect(() => {

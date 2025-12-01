@@ -71,7 +71,7 @@ function App() {
 
   return (
     <ActiveConfigProvider>
-      <main className="w-full h-screen flex flex-col md:flex-row bg-gradient-to-br from-[#1A0628] via-[#2A0A3E] to-[#1A0628] relative">
+      <main className="w-full min-h-screen flex flex-col md:flex-row bg-gradient-to-br from-[#1A0628] via-[#2A0A3E] to-[#1A0628] relative">
         <Sidebar 
           isOpen={showMenu}
           onClose={handleMenuClose}
@@ -79,7 +79,7 @@ function App() {
         />
 
         <section 
-          className="flex-1 w-full h-full flex flex-col overflow-hidden md:max-w-5xl md:mx-auto md:px-6 md:py-4 lg:max-w-none lg:mx-0 lg:px-4 lg:py-3 lg:flex-row lg:gap-6 lg:items-start" 
+          className="flex-1 w-full h-full flex flex-col overflow-y-auto md:overflow-visible md:max-w-5xl md:mx-auto md:px-6 md:py-4 lg:max-w-none lg:mx-0 lg:px-4 lg:py-3 lg:flex-row lg:gap-6 lg:items-start" 
           id="container-home"
           style={containerStyle}
         >

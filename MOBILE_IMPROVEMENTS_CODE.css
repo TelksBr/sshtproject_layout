@@ -1,0 +1,621 @@
+/* 📱 MELHORIAS DE UI/UX MOBILE - SSH T PROJECT
+ * Adicione estes estilos ao seu src/index.css
+ */
+
+/* ========================================
+   1. TOUCH TARGETS MAIORES
+   ======================================== */
+
+/* Todos os botões e elementos interativos */
+@media (max-width: 768px) {
+  button, [role="button"], a[href] {
+    min-height: 44px !important;
+    min-width: 44px !important;
+  }
+  
+  /* Inputs com altura confortável */
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea {
+    min-height: 48px !important;
+    font-size: 16px !important; /* Previne zoom no iOS */
+  }
+  
+  /* Botão conectar destacado */
+  button[type="submit"],
+  .btn-connect {
+    min-height: 56px !important;
+    font-size: 18px !important;
+    font-weight: 600 !important;
+  }
+}
+
+/* ========================================
+   2. FEEDBACK VISUAL AO TOCAR
+   ======================================== */
+
+/* Efeito de press em todos os botões */
+button:active,
+[role="button"]:active {
+  transform: scale(0.96);
+  transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Ripple effect (inspirado no Material Design) */
+.ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.ripple:active::after {
+  width: 300px;
+  height: 300px;
+}
+
+/* ========================================
+   3. MELHOR CONTRASTE (WCAG AA)
+   ======================================== */
+
+:root {
+  /* Cores com contraste melhorado */
+  --text-primary: #FFFFFF;
+  --text-secondary: #E8E3FF;
+  --text-tertiary: #C5BFDD;
+  --text-muted: #9B93B8;
+  
+  /* Status colors vibrantes */
+  --success: #10B981;
+  --warning: #F59E0B;
+  --error: #F87171;
+  --info: #3B82F6;
+}
+
+/* Aplicar em textos */
+.text-primary {
+  color: var(--text-primary);
+}
+
+.text-secondary {
+  color: var(--text-secondary);
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+/* Status com contraste forte */
+.status-connected {
+  color: var(--success) !important;
+  font-weight: 600;
+}
+
+.status-error {
+  color: var(--error) !important;
+  font-weight: 600;
+}
+
+.status-warning {
+  color: var(--warning) !important;
+  font-weight: 600;
+}
+
+/* ========================================
+   4. ESPAÇAMENTO MELHORADO
+   ======================================== */
+
+@media (max-width: 768px) {
+  /* Container principal */
+  #container-home,
+  .main-container {
+    padding: 16px !important;
+    gap: 16px !important;
+  }
+  
+  /* Cards com mais respiro */
+  .card {
+    padding: 20px !important;
+    margin-bottom: 16px !important;
+  }
+  
+  /* Gap entre elementos */
+  .card > * + * {
+    margin-top: 16px;
+  }
+  
+  /* Button groups */
+  .button-group,
+  .flex.gap-1\.5 {
+    gap: 8px !important;
+  }
+}
+
+/* ========================================
+   5. ANIMAÇÕES SUAVES E RÁPIDAS
+   ======================================== */
+
+/* Transições globais mais rápidas */
+* {
+  transition-duration: 200ms !important;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Animação de shake para erros */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+.shake {
+  animation: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+/* Breathing animation para status conectando */
+@keyframes breathe {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.1); }
+}
+
+.breathe {
+  animation: breathe 2s ease-in-out infinite;
+}
+
+/* Shimmer loading effect */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(98, 5, 213, 0.05) 0%,
+    rgba(98, 5, 213, 0.15) 50%,
+    rgba(98, 5, 213, 0.05) 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite linear;
+}
+
+/* ========================================
+   6. BOTÃO CONECTAR MELHORADO
+   ======================================== */
+
+.btn-connect {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #6205D5 0%, #7c4dff 100%);
+  box-shadow: 0 4px 16px rgba(98, 5, 213, 0.4);
+  transition: all 0.3s ease;
+}
+
+.btn-connect:hover {
+  box-shadow: 0 6px 24px rgba(98, 5, 213, 0.6);
+  transform: translateY(-2px);
+}
+
+.btn-connect:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Gradient animado */
+.btn-connect::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: left 0.5s;
+}
+
+.btn-connect:hover::before {
+  left: 100%;
+}
+
+/* Estado conectado (vermelho) */
+.btn-disconnect {
+  background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.4);
+}
+
+/* Estado conectando (amarelo) */
+.btn-connecting {
+  background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.4);
+}
+
+/* ========================================
+   7. CARDS INTERATIVOS
+   ======================================== */
+
+.card-interactive {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.card-interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.card-interactive:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Card ativo com brilho */
+.card-active {
+  position: relative;
+  border: 2px solid #6205D5 !important;
+  background: linear-gradient(135deg, rgba(98, 5, 213, 0.15) 0%, rgba(124, 77, 255, 0.1) 100%);
+}
+
+.card-active::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    45deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 70%
+  );
+  background-size: 200% 200%;
+  animation: shine 3s infinite;
+}
+
+@keyframes shine {
+  0% { background-position: 200% 200%; }
+  100% { background-position: -200% -200%; }
+}
+
+/* ========================================
+   8. MODAIS MOBILE (Bottom Sheet)
+   ======================================== */
+
+@media (max-width: 768px) {
+  /* Modal vem de baixo em mobile */
+  .modal-mobile {
+    position: fixed;
+    inset: 0;
+    top: auto;
+    max-height: 90vh;
+    border-radius: 24px 24px 0 0 !important;
+    animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  @keyframes slideUp {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+  
+  /* Drag handle */
+  .modal-mobile::before {
+    content: '';
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 48px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+  }
+  
+  /* Conteúdo do modal */
+  .modal-mobile .modal-content {
+    padding-top: 32px; /* Espaço para o drag handle */
+  }
+}
+
+/* ========================================
+   9. TOAST NOTIFICATIONS
+   ======================================== */
+
+.toast {
+  position: fixed;
+  bottom: 80px; /* Acima da navegação mobile */
+  left: 16px;
+  right: 16px;
+  padding: 16px 20px;
+  border-radius: 12px;
+  background: rgba(26, 6, 40, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(98, 5, 213, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  animation: toastIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 9999;
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.toast-success {
+  border-left: 4px solid var(--success);
+}
+
+.toast-error {
+  border-left: 4px solid var(--error);
+}
+
+.toast-warning {
+  border-left: 4px solid var(--warning);
+}
+
+/* ========================================
+   10. STATUS INDICATOR MELHORADO
+   ======================================== */
+
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 24px;
+  background: rgba(98, 5, 213, 0.1);
+  border: 1px solid rgba(98, 5, 213, 0.2);
+}
+
+.status-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  position: relative;
+}
+
+/* Conectado - verde com pulse */
+.status-dot.connected {
+  background: var(--success);
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+  }
+}
+
+/* Conectando - amarelo com breathing */
+.status-dot.connecting {
+  background: var(--warning);
+  animation: breathe 2s infinite;
+}
+
+/* Desconectado - vermelho */
+.status-dot.disconnected {
+  background: var(--error);
+}
+
+/* ========================================
+   11. SKELETON LOADING
+   ======================================== */
+
+.skeleton-box {
+  background: rgba(98, 5, 213, 0.05);
+  border-radius: 8px;
+  animation: shimmer 2s infinite linear;
+}
+
+.skeleton-text {
+  height: 16px;
+  margin-bottom: 8px;
+  background: rgba(98, 5, 213, 0.05);
+  border-radius: 4px;
+  animation: shimmer 2s infinite linear;
+}
+
+.skeleton-card {
+  padding: 20px;
+  background: rgba(98, 5, 213, 0.05);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+
+/* ========================================
+   12. EMPTY STATES
+   ======================================== */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.empty-state-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.empty-state-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.empty-state-description {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+  max-width: 320px;
+}
+
+/* ========================================
+   13. GRÁFICO DE VELOCIDADE (MINI)
+   ======================================== */
+
+.speed-graph {
+  position: relative;
+  height: 60px;
+  width: 100%;
+  background: rgba(98, 5, 213, 0.05);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.speed-bar {
+  position: absolute;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to top, #6205D5, #7c4dff);
+  transition: height 0.3s ease;
+}
+
+/* ========================================
+   14. SWIPE INDICATOR
+   ======================================== */
+
+.swipe-indicator {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(to right, transparent, #6205D5, transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.swipeable:active .swipe-indicator {
+  opacity: 1;
+}
+
+/* ========================================
+   15. PROGRESS RING (Loading Circle)
+   ======================================== */
+
+.progress-ring {
+  transform: rotate(-90deg);
+}
+
+.progress-ring-circle {
+  fill: none;
+  stroke: #6205D5;
+  stroke-width: 4;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.3s ease;
+}
+
+/* ========================================
+   16. GLASS EFFECT MELHORADO
+   ======================================== */
+
+.glass-enhanced {
+  background: rgba(98, 5, 213, 0.08);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(98, 5, 213, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+/* ========================================
+   17. UTILITY CLASSES
+   ======================================== */
+
+/* Prevent text selection (except inputs) */
+.no-select {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Safe area paddings */
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Smooth scroll */
+.smooth-scroll {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Hide scrollbar but keep functionality */
+.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* ========================================
+   18. RESPONSIVO - BREAKPOINTS
+   ======================================== */
+
+/* Extra small devices (phones, 320px and down) */
+@media (max-width: 360px) {
+  .card {
+    padding: 12px !important;
+  }
+  
+  button {
+    font-size: 14px !important;
+  }
+  
+  input {
+    font-size: 14px !important;
+  }
+}
+
+/* Small devices (landscape phones, 576px and up) */
+@media (min-width: 576px) and (max-width: 767px) {
+  .container-home {
+    max-width: 540px;
+    margin: 0 auto;
+  }
+}
+
+/* ========================================
+   FIM DAS MELHORIAS
+   ======================================== */
+
+

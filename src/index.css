@@ -586,3 +586,65 @@ textarea:focus {
   user-select: text !important;
   -webkit-touch-callout: default !important;
 }
+
+/* ========================================
+   MOBILE EXTRA-PEQUENO (<= 360px)
+   Ajustes específicos para telas muito estreitas,
+   como aparelhos com ~300px de largura
+   ======================================== */
+@media (max-width: 360px) {
+  /* Container principal mais compacto e com rolagem já tratada no React */
+  #container-home {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+    gap: 0.5rem !important;
+  }
+
+  /* Header empilhado para evitar quebra horizontal */
+  .header-mobile-landscape {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .header-mobile-landscape > * {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Estatísticas ocupando toda a largura em telas muito pequenas */
+  .network-stats-mobile-landscape {
+    max-width: 100% !important;
+    margin-top: 0.5rem;
+  }
+
+  /* Sidebar ocupando toda a largura quando aberta em telas muito pequenas */
+  .sidebar-mobile-landscape {
+    width: 100vw !important;
+    max-width: 100vw !important;
+  }
+
+  /* Linha de seleção de servidor permite quebra para a segunda linha */
+  .server-selector-row {
+    flex-wrap: wrap;
+    row-gap: 0.5rem;
+  }
+
+  /* Botões laterais da barra de servidor levemente menores em telas mínimas */
+  .server-selector-row > :not(:first-child) {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+
+  /* Cards e tipografia um pouco mais compactos */
+  .card {
+    padding: 0.75rem !important;
+  }
+
+  button,
+  input {
+    font-size: 0.875rem !important; /* ~14px */
+  }
+}

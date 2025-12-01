@@ -159,14 +159,14 @@ export function ServerSelector() {
       && category.items.length > 0 // <-- só exibe categorias com configs
     );
 
-  const activeCategory = configs.find(category => 
+  const activeCategory = configs.find(category =>
     category.items.some(item => item.id === activeConfig?.id)
   );
 
   // Substitui o botão de AutoConnect para abrir o modal externo
   return (
     <>
-      <section className="flex gap-1.5">
+      <section className="flex gap-1.5 server-selector-row">
         <button
           className="flex-1 min-w-0 max-w-full h-10 flex items-center justify-between px-3 rounded-lg glass-effect overflow-hidden group hover:bg-[#6205D5]/5 transition-all duration-200"
           type="button"
