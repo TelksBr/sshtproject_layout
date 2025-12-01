@@ -38,24 +38,49 @@ function App() {
     setShowMenu(false);
   }, []);
 
-  // Logo dinâmica: carregamento otimizado
+  // Logo dinâmica: carregamento otimizado com verificação de atualização
   useEffect(() => {
-    const tryLoadLogo = async () => {
-      let storedLogo = getAppLogo();
-      if (storedLogo) {
+    let cancelled = false;
+
+    const syncLogo = async () => {
+      // 1) Carrega logo armazenado para não atrasar o render inicial
+      const storedLogo = getAppLogo();
+      if (storedLogo && !cancelled) {
         setLogo(storedLogo);
-      } else {
-        try {
-          const res = await fetch('https://pastebin.com/raw/JSzP76tH');
-          if (res.ok) {
-            const base64 = await res.text();
-            setAppLogo(base64);
-            setLogo(base64);
+      }
+
+      // 2) Busca a versão mais recente online e compara
+      try {
+        const res = await fetch(
+          'https://raw.githubusercontent.com/TelksBr/logo-base64/refs/heads/main/sshtproject/app_logo'
+        );
+        if (!res.ok) return;
+
+        const remoteBase64 = (await res.text()).trim();
+        if (!remoteBase64) return;
+
+        const currentStored = getAppLogo();
+
+        // Se não há nada salvo, ou se mudou, atualiza storage e estado
+        if (!currentStored || currentStored !== remoteBase64) {
+          setAppLogo(remoteBase64);
+          if (!cancelled) {
+            setLogo(remoteBase64);
           }
-        } catch {}
+        } else if (!storedLogo && !cancelled) {
+          // Caso não tivesse nada em memória mas o storage já tenha algo válido
+          setLogo(currentStored);
+        }
+      } catch {
+        // Em caso de erro de rede, mantemos o que já temos (offline-safe)
       }
     };
-    tryLoadLogo();
+
+    syncLogo();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {

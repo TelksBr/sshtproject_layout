@@ -602,6 +602,11 @@ textarea:focus {
     gap: 0.5rem !important;
   }
 
+  /* Header mais compacto */
+  .header-mobile-landscape {
+    padding: 0.5rem !important;
+  }
+
   /* Header empilhado para evitar quebra horizontal */
   .header-mobile-landscape {
     flex-direction: column;
@@ -632,6 +637,11 @@ textarea:focus {
     row-gap: 0.5rem;
   }
 
+  /* Altura mais baixa para a linha do seletor de servidor */
+  .server-selector-row button {
+    height: 2.25rem !important;
+  }
+
   /* Botões laterais da barra de servidor levemente menores em telas mínimas */
   .server-selector-row > :not(:first-child) {
     width: 2.25rem;
@@ -646,5 +656,61 @@ textarea:focus {
   button,
   input {
     font-size: 0.875rem !important; /* ~14px */
+  }
+
+  /* Logo menor em telas ultra estreitas */
+  #app-logo {
+    width: 4.5rem !important;
+    height: 4.5rem !important;
+  }
+
+  /* NetworkStats ainda mais compacto */
+  .network-stats-mobile-landscape {
+    padding: 0.75rem !important;
+  }
+}
+
+/* ========================================
+   MOBILE BAIXO (altura <= 640px)
+   Otimizações para telas com pouca altura
+   ======================================== */
+@media (max-height: 640px) {
+  #container-home {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+    gap: 0.5rem !important;
+  }
+
+  .header-mobile-landscape {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+
+  .card {
+    padding: 0.9rem 0.8rem !important;
+  }
+
+  /* Inputs e botão de conexão um pouco mais baixos */
+  button,
+  input {
+    min-height: 2.4rem;
+  }
+
+  /* Logo reduzida para liberar espaço vertical */
+  #app-logo {
+    width: 5rem !important;
+    height: 5rem !important;
+  }
+
+  /* Menos espaço em branco acima/abaixo da logo */
+  .logo-section-tight {
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+
+  /* NetworkStats mais enxuto */
+  .network-stats-mobile-landscape {
+    padding: 0.75rem !important;
+    margin-top: 0.5rem !important;
   }
 }

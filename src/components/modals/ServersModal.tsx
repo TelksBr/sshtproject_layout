@@ -28,8 +28,8 @@ export function ServersModal({ onClose }: ServersModalProps) {
   const [failedServers, setFailedServers] = useState<Set<string>>(new Set());
 
   const premiumV2rayServers = 3;
-  const premiumServers = 4;
-  const freeServers = 2;
+  const premiumServers = 3;
+  const freeServers = 0;
   const token = 'KZQ4h03hLSzhefDAwRvjWVl9dp';
 
   // Função para atualizar totais baseada na lista de servidores

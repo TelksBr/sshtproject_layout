@@ -337,7 +337,7 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
               onChange={handlePasswordChange}
             />
             <button
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-400 hover:text-purple-300 transition-colors"
+              className="absolute inset-y-0 right-3 flex items-center text-purple-400 hover:text-purple-300 transition-colors"
               onClick={togglePasswordVisibility}
               type="button"
             >
@@ -357,7 +357,7 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
               onChange={handleUUIDChange}
             />
             <button
-              className="absolute right-8 md:right-10 lg:right-9 top-1/2 -translate-y-1/2 text-purple-400 hover:text-purple-300 transition-colors"
+              className="absolute inset-y-0 right-8 md:right-10 lg:right-9 flex items-center text-purple-400 hover:text-purple-300 transition-colors"
               onClick={toggleUUIDVisibility}
               type="button"
             >
