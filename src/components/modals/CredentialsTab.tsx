@@ -5,7 +5,6 @@ import { ConfirmModal } from '../ConfirmModal';
 import { useCredentialsManager } from '../../hooks/useCredentialsManager';
 import { useToast } from '../../hooks/useToast';
 import { SavedCredential, purchaseStorage } from '../../utils/purchaseStorageManager';
-import { callVoid } from '../../utils/dtunnelBridge';
 import { copyToClipboard } from '../../utils/nativeClipboard';
 import { 
   Key, 
@@ -148,18 +147,10 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
   // Aplicar credenciais na aplicação
   const handleApplyCredentials = (credential: SavedCredential) => {
     try {
-      // Aplicar SSH
-      if (credential.ssh) {
-        callVoid('DtUsername', 'set', [credential.ssh.username]);
-        callVoid('DtPassword', 'set', [credential.ssh.password]);
-      }
-
-      // Aplicar V2Ray UUID
-      if (credential.v2ray) {
-        callVoid('DtUuid', 'set', [credential.v2ray.uuid]);
-      }
-
-      showToast('Credenciais aplicadas com sucesso!', 'success');
+      // ✅ Credenciais foram salvas e podem ser acessadas via purchaseStorage
+      // O SDK (DTunnel) acessa automaticamente as credenciais salvas
+      
+      showToast('Credencial selecionada como padrão!', 'success');
       
       // Definir como padrão automaticamente
       if (!credential.is_default) {
@@ -522,7 +513,12 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
         <AddCredentialModal
           onClose={() => setShowAddModal(false)}
           onAdd={(cred) => {
-            addManualCredential(cred);
+            const id = addManualCredential(cred);
+            if (id) {
+              showToast('Credencial adicionada com sucesso! ✅', 'success');
+            } else {
+              showToast('Erro ao salvar credencial', 'error');
+            }
             setShowAddModal(false);
           }}
         />
