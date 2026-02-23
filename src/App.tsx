@@ -7,6 +7,7 @@ import { Sidebar } from './components/Sidebar';
 import { AnimatedLogo } from './components/AnimatedLogo';
 import { ToastContainer } from './components/Toast';
 import { ToastProvider } from './hooks/useToast';
+import { useSdkToastListener } from './hooks/useSdkToastListener';
 import { getConfigVersion } from './utils/appFunctions';
 import { getStorageItem } from './utils/storageUtils';
 import { getAppLogo, setAppLogo } from './utils/storageUtils';
@@ -32,6 +33,9 @@ function App() {
       // setCurrentModal('credentials');
     }
   });
+
+  // 📢 EVENTOS SDK: Hook que escuta eventos de toast nativos do SDK
+  useSdkToastListener();
   
   // Memoizar valores que não mudam frequentemente
   const version = useMemo(() => getConfigVersion() || '1.0', []);
