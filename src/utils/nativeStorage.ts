@@ -80,16 +80,11 @@ export function clearStorage(): void {
 
 /**
  * Obtém todas as chaves armazenadas
+ * ✅ Usa: localStorage do browser
+ * ❌ Removido: window.DtStorage
  */
 export function getStorageKeys(): string[] {
   try {
-    // Checa se há método SDK para storage
-    if (typeof (window as any).DtStorage !== 'undefined') {
-      const result = call('DtStorage', 'keys');
-      if (Array.isArray(result)) return result as string[];
-    }
-
-    // Fallback: localStorage
     return Array.from({ length: localStorage.length }, (_, i) => {
       const key = localStorage.key(i);
       return key?.startsWith(STORAGE_PREFIX) ? key.slice(STORAGE_PREFIX.length) : null;
