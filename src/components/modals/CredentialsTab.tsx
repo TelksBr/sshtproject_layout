@@ -7,6 +7,7 @@ import { useToast } from '../../hooks/useToast';
 import { SavedCredential, purchaseStorage } from '../../utils/purchaseStorageManager';
 import { copyToClipboard } from '../../utils/nativeClipboard';
 import { getSdk } from '../../utils/sdkInstance';
+import { setUsername, setPassword, setUUID } from '../../utils/appFunctions';
 import { 
   Key, 
   Star, 
@@ -104,7 +105,7 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
     setEditLabel('');
   };
 
-  // Handler para definir como padrão
+  // Handler para definir como padrão e carregar no formulário
   const handleSetDefault = (id: string) => {
     try {
       const credential = credentials.find(c => c.id === id);
@@ -117,32 +118,26 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
         return;
       }
 
-      // Aplicar credencial no app via SDK
-      const sdk = getSdk();
-      if (sdk?.app?.setConnectionInfo) {
-        const info: any = {
-          uuid: null,
-          username: null,
-          password: null
-        };
-
+      // ✅ Carregar credencial nas funções nativas do app
+      try {
         // Configurar SSH se disponível
         if (credential.ssh) {
-          info.username = credential.ssh.username;
-          info.password = credential.ssh.password;
+          setUsername(credential.ssh.username);
+          setPassword(credential.ssh.password);
         }
 
         // Configurar V2Ray se disponível
         if (credential.v2ray) {
-          info.uuid = credential.v2ray.uuid;
+          setUUID(credential.v2ray.uuid);
         }
-
-        sdk.app.setConnectionInfo(info);
+      } catch (error) {
+        console.error('Erro ao carregar credencial no app:', error);
       }
 
-      showToast(`✅ "${credential.label}" definida como padrão e carregada!`, 'success');
+      showToast(`✅ "${credential.label}" carregada no formulário!`, 'success');
     } catch (error) {
       showToast('Erro ao carregar credencial', 'error');
+      console.error('handleSetDefault error:', error);
     }
   };
 
