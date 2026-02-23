@@ -111,14 +111,7 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
       const credential = credentials.find(c => c.id === id);
       if (!credential) return;
 
-      // Definir como padrão no storage
-      const success = setDefault(id);
-      if (!success) {
-        showToast('Erro ao definir credencial como padrão', 'error');
-        return;
-      }
-
-      // ✅ Carregar credencial nas funções nativas do app
+      // ✅ SEMPRE carregar credencial nas funções nativas do app ANTES de marcar como padrão
       try {
         // Configurar SSH se disponível
         if (credential.ssh) {
@@ -132,11 +125,20 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
         }
       } catch (error) {
         console.error('Erro ao carregar credencial no app:', error);
+        showToast('Erro ao carregar credencial no formulário', 'error');
+        return;
       }
 
-      showToast(`✅ "${credential.label}" carregada no formulário!`, 'success');
+      // Depois definir como padrão no storage
+      const success = setDefault(id);
+      if (!success) {
+        showToast('Erro ao definir credencial como padrão', 'error');
+        return;
+      }
+
+      showToast(`✅ "${credential.label}" setada e carregada!`, 'success');
     } catch (error) {
-      showToast('Erro ao carregar credencial', 'error');
+      showToast('Erro ao processar credencial', 'error');
       console.error('handleSetDefault error:', error);
     }
   };
