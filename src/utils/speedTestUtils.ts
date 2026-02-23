@@ -38,12 +38,13 @@ const FAST_API_URL = 'https://api.fast.com/netflix/speedtest/v2?https=true&token
 const TEST_DURATION = 30000;
 const PING_TIMEOUT = 2000;
 const MAX_ACCEPTABLE_PING = 200; // ms
-const PARALLEL_CONNECTIONS = 8; // Aumentado para 8 conexões simultâneas
-const CHUNK_SIZE = 26214400; // 25MB em bytes
+const PARALLEL_CONNECTIONS = 4; // Reduzido para 4 para webview (otimizado)
+const CHUNK_SIZE = 8388608; // 8MB em bytes (reduzido para menos CPU)
 const STABILITY_THRESHOLD = 0.1; // 10% de variação máxima
 const STABILITY_SAMPLES = 5; // Número de amostras para confirmar estabilidade
 const MIN_TEST_DURATION = 5000; // Mínimo de 5 segundos de teste
 const LATENCY_MEASUREMENTS_FREQUENCY_MS = 1000; // Intervalo entre medições
+const UPDATE_THROTTLE_MS = 500; // Atualização da UI a cada 500ms (otimizado para webview)
 
 function decodeSpecialCharacters(text: string): string {
   try {
@@ -256,7 +257,7 @@ async function measureDownloadSpeed(
             totalBytes += value.length;
             const now = performance.now();
             
-            if (now - lastUpdate > 200) {
+            if (now - lastUpdate > UPDATE_THROTTLE_MS) {
               const currentDuration = (now - startTime) / 1000;
               const currentSpeed = (totalBytes * 8) / (currentDuration * 1000000);
               const roundedSpeed = Math.round(currentSpeed * 100) / 100;
@@ -338,7 +339,7 @@ async function measureUploadSpeed(
         totalBytesSent += CHUNK_SIZE;
         
         const now = performance.now();
-        if (now - lastUpdate > 200) {
+        if (now - lastUpdate > UPDATE_THROTTLE_MS) {
           const currentDuration = (now - startTime) / 1000;
           const currentSpeed = (totalBytesSent * 8) / (currentDuration * 1000000);
           const roundedSpeed = Math.round(currentSpeed * 100) / 100;
@@ -382,12 +383,37 @@ async function measureUploadSpeed(
   }
 }
 
+// Cache de dados para reutilização (evita regeneração constante)
+let cachedDataBlob: Blob | null = null;
+let cachedDataSize = 0;
+
 function generateRandomData(size: number): Blob {
-  const array = new Uint8Array(size);
-  for (let i = 0; i < size; i++) {
-    array[i] = Math.floor(Math.random() * 256);
+  // Reutiliza cache se mesmo tamanho
+  if (cachedDataBlob && cachedDataSize === size) {
+    return cachedDataBlob;
   }
-  return new Blob([array]);
+  
+  const array = new Uint8Array(size);
+  
+  // Usa crypto.getRandomValues quando disponível (muito mais rápido)
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    // Preenche em chunks de 65536 bytes (limite do crypto.getRandomValues)
+    const chunkSize = 65536;
+    for (let i = 0; i < size; i += chunkSize) {
+      const chunk = array.subarray(i, Math.min(i + chunkSize, size));
+      crypto.getRandomValues(chunk);
+    }
+  } else {
+    // Fallback: preenche com padrão repetido (muito mais rápido que Math.random)
+    const pattern = new Uint8Array([0x00, 0xFF, 0xAA, 0x55]);
+    for (let i = 0; i < size; i++) {
+      array[i] = pattern[i % pattern.length];
+    }
+  }
+  
+  cachedDataBlob = new Blob([array]);
+  cachedDataSize = size;
+  return cachedDataBlob;
 }
 
 export async function runSpeedTest(

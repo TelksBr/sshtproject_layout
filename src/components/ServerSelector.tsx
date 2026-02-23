@@ -1,6 +1,6 @@
 import React, { useState, useEffect, memo, useCallback } from 'react';
 import { useDebounce } from '../utils/performanceUtils';
-import { Settings, RefreshCw, CalendarClock, Wifi, AlertCircle, ChevronLeft, Search, Plane } from 'lucide-react';
+import { Settings, RefreshCw, CalendarClock, Wifi, AlertCircle, ChevronLeft, Search, Plane } from '../utils/icons';
 import { getAllConfigs, checkUserStatus, getAirplaneState, toggleAirplaneMode, checkForUpdates, setActiveConfig } from '../utils/appFunctions';
 import { Modal } from './modals/Modal';
 import { useAutoConnect } from '../hooks/useAutoConnect';
@@ -207,24 +207,24 @@ export function ServerSelector() {
         </button>
 
         <button
-          className="w-10 h-10 flex items-center justify-center rounded-lg glass-effect"
+          className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 flex items-center justify-center rounded-lg glass-effect"
           type="button"
           onClick={handleUpdate}
         >
-          <RefreshCw className={`w-4 h-4 text-[#6205D5] ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 text-[#6205D5] ${loading ? 'animate-spin' : ''}`} />
         </button>
 
         <button
-          className="w-10 h-10 flex items-center justify-center rounded-lg glass-effect"
+          className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 flex items-center justify-center rounded-lg glass-effect"
           type="button"
           onClick={checkUserStatus}
         >
-          <CalendarClock className="w-4 h-4 text-[#6205D5]" />
+          <CalendarClock className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 text-[#6205D5]" />
         </button>
 
         <button
           className={`
-            w-10 h-10 flex items-center justify-center rounded-lg glass-effect
+            w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 flex items-center justify-center rounded-lg glass-effect
             ${airplaneMode ? 'bg-[#6205D5]/30' : ''}
           `}
           type="button"
@@ -232,7 +232,7 @@ export function ServerSelector() {
         >
           <Plane 
             className={`
-              w-4 h-4 transition-all
+              w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 transition-all
               ${airplaneMode ? 'text-white' : 'text-[#6205D5]'}
               ${airplaneMode ? 'rotate-45' : ''}
             `}

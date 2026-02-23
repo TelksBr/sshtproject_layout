@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Modal } from './Modal';
 import { requestCredentialRecovery } from '../../utils/salesUtils';
 import { validateEmail } from '../../utils/emailValidation';
-import { Mail, Search } from 'lucide-react';
+import { Mail, Search } from '../../utils/icons';
 
 interface RecoveryModalProps {
   onClose: () => void;

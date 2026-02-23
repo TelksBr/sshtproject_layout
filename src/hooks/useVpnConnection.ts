@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getConnectionState, startConnection, stopConnection, getActiveConfig } from '../utils/appFunctions';
+import { useDTunnelEvent } from './useDTunnelEvent';
 
 export function useVpnConnection() {
   const [connectionState, setConnectionState] = useState<string>('DISCONNECTED');
@@ -103,21 +104,11 @@ export function useVpnConnection() {
       checkConnection();
     };
 
-    // Registra eventos nativos se disponíveis
-    if (typeof window !== 'undefined') {
-      (window as any).DtVpnStateEvent = handleStateChange;
-      (window as any).DtVpnStartedSuccessEvent = handleStateChange;
-      (window as any).DtVpnStoppedSuccessEvent = handleStateChange;
-    }
-
-    return () => {
-      // Cleanup dos eventos
-      if (typeof window !== 'undefined') {
-        (window as any).DtVpnStateEvent = undefined;
-        (window as any).DtVpnStartedSuccessEvent = undefined;
-        (window as any).DtVpnStoppedSuccessEvent = undefined;
-      }
-    };
+    // Registra eventos via SDK event bridge
+    useDTunnelEvent('vpnState', handleStateChange);
+    useDTunnelEvent('vpnStartedSuccess', handleStateChange);
+    useDTunnelEvent('vpnStoppedSuccess', handleStateChange);
+    
   }, [checkConnection]);
 
   return {

@@ -8,6 +8,8 @@ export function useModalRenderer() {
       if (!currentModal) return null;
       const ModalComponent = modalComponents[currentModal] as React.ComponentType<ModalComponentProps>;
       if (!ModalComponent) return null;
+      
+      // Renderização direta sem Suspense
       if (currentModal === 'terms') {
         return <ModalComponent onClose={() => setCurrentModal(null)} onAccept={() => setCurrentModal('privacy')} />;
       }

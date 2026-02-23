@@ -1,5 +1,5 @@
 import { useState, useEffect, memo, useCallback, useMemo } from 'react';
-import { Eye, EyeOff, Scroll, HelpCircle, Zap } from 'lucide-react';
+import { Eye, EyeOff, Scroll, HelpCircle, Zap } from '../utils/icons';
 import {
   setUsername as setUsernameApp,
   setPassword as setPasswordApp,
@@ -14,7 +14,7 @@ import {
   buildHysteriaPassword,
   parseHysteriaPassword
 } from '../utils/appFunctions';
-import { onDtunnelEvent } from '../utils/dtEvents';
+import { useDTunnelEvent } from '../hooks/useDTunnelEvent';
 import { ConfigAuth } from '../types/config';
 import { VpnState } from '../types/vpn';
 import { AutoConnectModal } from './AutoConnectModal';
@@ -116,8 +116,8 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
       }
     };
 
-    onDtunnelEvent('DtNewDefaultConfigEvent', handleConfigChanged);
-    return () => onDtunnelEvent('DtNewDefaultConfigEvent', () => {});
+    // Escuta novo config via SDK
+    useDTunnelEvent('newDefaultConfig', handleConfigChanged);
   }, []);
 
   // Escuta eventos para atualização de erros baseados no estado VPN
@@ -307,16 +307,15 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
   };
 
   return (
-    <section className="card md:p-8 md:rounded-2xl lg:p-6">
-      <h1 className="text-gradient text-base md:text-lg lg:text-base font-medium text-center mb-3 md:mb-5 lg:mb-4">
+    <section className="card p-6 lg:p-6">
+      <h1 className="text-gradient text-base lg:text-lg font-medium text-center mb-4 lg:mb-4">
         Dados de Acesso
       </h1>
-      <div className="space-y-3 md:space-y-5 lg:space-y-4">
-        {/* Input de usuário */}
+      <div className="space-y-4">
         {showUsernameInput && (
           <div className="relative">
             <input
-              className="w-full h-10 md:h-12 lg:h-11 px-3 md:px-4 lg:px-3 rounded-lg glass-effect text-white placeholder-gray-400 outline-hidden focus:border-purple-500 text-sm md:text-base lg:text-sm allow-select"
+              className="w-full h-10 lg:h-11 px-3 rounded-lg glass-effect text-white placeholder-gray-400 outline-hidden focus:border-purple-500 text-sm allow-select"
               type="text"
               autoCapitalize="none"
               placeholder="Usuário"
@@ -326,11 +325,10 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
           </div>
         )}
 
-        {/* Input de senha */}
         {showPasswordInput && (
           <div className="relative">
             <input
-              className="w-full h-10 md:h-12 lg:h-11 px-3 md:px-4 lg:px-3 pr-10 rounded-lg glass-effect text-white placeholder-gray-400 outline-hidden focus:border-purple-500 text-sm md:text-base lg:text-sm allow-select"
+              className="w-full h-10 lg:h-11 px-3 pr-10 rounded-lg glass-effect text-white placeholder-gray-400 outline-hidden focus:border-purple-500 text-sm allow-select"
               type={showPassword ? 'text' : 'password'}
               placeholder="Senha"
               value={passwordValue}
@@ -341,33 +339,32 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
               onClick={togglePasswordVisibility}
               type="button"
             >
-              {showPassword ? <EyeOff className="w-4 h-4 md:w-5 md:h-5 lg:w-4 lg:h-4" /> : <Eye className="w-4 h-4 md:w-5 md:h-5 lg:w-4 lg:h-4" />}
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
         )}
 
-        {/* Input de UUID */}
         {showUUIDInput && (
           <div className="relative">
             <input
-              className="w-full h-10 md:h-12 lg:h-11 px-3 md:px-4 lg:px-3 pr-16 md:pr-20 lg:pr-18 rounded-lg glass-effect text-white placeholder-gray-400 outline-hidden focus:border-purple-500 text-sm md:text-base lg:text-sm allow-select"
+              className="w-full h-10 lg:h-11 px-3 pr-16 rounded-lg glass-effect text-white placeholder-gray-400 outline-hidden focus:border-purple-500 text-sm allow-select"
               type={showUUID ? 'text' : 'password'}
               placeholder="UUID"
               value={uuidValue}
               onChange={handleUUIDChange}
             />
             <button
-              className="absolute inset-y-0 right-8 md:right-10 lg:right-9 flex items-center text-purple-400 hover:text-purple-300 transition-colors"
+              className="absolute inset-y-0 right-8 flex items-center text-purple-400 hover:text-purple-300 transition-colors"
               onClick={toggleUUIDVisibility}
               type="button"
             >
-              {showUUID ? <EyeOff className="w-4 h-4 md:w-5 md:h-5 lg:w-4 lg:h-4" /> : <Eye className="w-4  h-4 md:w-5 md:h-5 lg:w-4 lg:h-4" />}
+              {showUUID ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
-            <div className="absolute right-1 md:right-2 lg:right-1.5 top-1/2 -translate-y-1/2 group">
+            <div className="absolute right-1 top-1/2 -translate-y-1/2 group">
               <button className="text-[#b0a8ff] cursor-pointer flex items-center p-1" type="button" tabIndex={-1}>
-                <HelpCircle className="w-4 h-4 md:w-5 md:h-5 lg:w-4 lg:h-4" />
+                <HelpCircle className="w-4 h-4" />
               </button>
-              <div className="absolute bottom-full right-0 mb-2 w-64 md:w-80 lg:w-72 text-sm md:text-base lg:text-sm bg-[#26074d] text-[#b0a8ff] p-3 rounded-lg shadow-lg z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none border border-[#6205D5]/30">
+              <div className="absolute bottom-full right-0 mb-2 w-72 text-sm bg-[#26074d] text-[#b0a8ff] p-3 rounded-lg shadow-lg z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none border border-[#6205D5]/30">
                 <div className="font-bold mb-1 text-[#b0a8ff]">O que é o UUID?</div>
                 <div className="mb-1">É a chave única de login do seu V2Ray.</div>
                 <div className="mb-1">Recebida no bot após a compra.</div>
@@ -386,7 +383,7 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
 
         {/* Botão de conexão */}
         <button
-          className={`w-full h-10 md:h-12 lg:h-11 text-sm md:text-base lg:text-sm font-bold rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center bg-gradient-to-r ${getButtonStyle()}`}
+          className={`w-full h-10 lg:h-11 text-sm lg:text-base font-bold rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center bg-gradient-to-r ${getButtonStyle()}`}
           onClick={handleConnection}
           disabled={vpnState === 'STOPPING'}
           title={`Estado atual: ${vpnState}`}
@@ -396,24 +393,25 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
 
         {/* Exibição de erro */}
         {formError && (
-          <p className="text-red-400 text-xs md:text-sm lg:text-xs text-center">{formError}</p>
+          <p className="text-red-400 text-xs text-center">{formError}
+        </p>
         )}
 
         {/* Botões lado a lado: Registros e Auto Conect */}
         <div className="flex gap-2">
           <button
-            className="w-1/2 h-10 md:h-12 lg:h-11 flex items-center justify-center gap-1 text-xs md:text-sm lg:text-xs font-medium rounded-lg border border-[#6205D5]/30 bg-[#26074d]/40 text-[#b0a8ff] hover:bg-[#6205D5]/20 hover:border-[#6205D5]/60 hover:text-white transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
+            className="w-1/2 h-10 lg:h-11 flex items-center justify-center gap-1 text-xs lg:text-sm font-medium rounded-lg border border-[#6205D5]/30 bg-[#26074d]/40 text-[#b0a8ff] hover:bg-[#6205D5]/20 hover:border-[#6205D5]/60 hover:text-white transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
             onClick={openDialogLogs}
           >
-            <Scroll className="w-4 h-4 md:w-5 md:h-5 lg:w-4 lg:h-4" />
+            <Scroll className="w-4 h-4" />
             <span className="font-medium">Registros</span>
           </button>
           <button
-            className="w-1/2 h-10 md:h-12 lg:h-11 flex items-center justify-center gap-1 text-xs md:text-sm lg:text-xs font-medium rounded-lg border border-[#6205D5]/30 bg-[#26074d]/40 text-[#b0a8ff] hover:bg-[#6205D5]/20 hover:border-[#6205D5]/60 hover:text-white transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
+            className="w-1/2 h-10 lg:h-11 flex items-center justify-center gap-1 text-xs lg:text-sm font-medium rounded-lg border border-[#6205D5]/30 bg-[#26074d]/40 text-[#b0a8ff] hover:bg-[#6205D5]/20 hover:border-[#6205D5]/60 hover:text-white transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
             onClick={autoConnect.openModal}
             type="button"
           >
-            <Zap className="w-4 h-4 md:w-5 md:h-5 lg:w-4 lg:h-4" />
+            <Zap className="w-4 h-4" />
             <span className="font-medium">Auto Conect</span>
           </button>
         </div>

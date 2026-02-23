@@ -1,4 +1,4 @@
-import { Shield, Check, ShieldCheck } from 'lucide-react';
+import { Shield, Check, ShieldCheck } from '../../utils/icons';
 import { Modal } from './Modal';
 import { usePrivacyAcceptance } from '../../hooks/usePrivacyAcceptance';
 

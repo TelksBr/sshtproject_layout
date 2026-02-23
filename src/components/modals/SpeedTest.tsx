@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Download, Upload, RefreshCw, Server, ChevronDown } from 'lucide-react';
 import { Modal } from './Modal';
 import { getSpeedTestServers, runSpeedTest, measureLatency } from '../../utils/speedTestUtils';
@@ -20,6 +20,32 @@ export function SpeedTest({ onClose }: SpeedTestProps) {
     ping: '0'
   });
   const [error, setError] = useState<string | null>(null);
+  
+  // Use ref para evitar re-renderizações excessivas
+  const updateThrottleRef = useRef<number>(0);
+  
+  // Callback otimizado com throttling
+  const updateResult = useCallback((phase: 'ping' | 'download' | 'upload', value: any) => {
+    const now = Date.now();
+    // Throttle: atualiza no máximo a cada 500ms
+    if (now - updateThrottleRef.current < 500 && phase !== 'ping') {
+      return;
+    }
+    updateThrottleRef.current = now;
+    
+    setCurrentPhase(phase);
+    switch (phase) {
+      case 'ping':
+        setResults(prev => ({ ...prev, ping: value.toString() }));
+        break;
+      case 'download':
+        setResults(prev => ({ ...prev, download: value.toFixed(1) }));
+        break;
+      case 'upload':
+        setResults(prev => ({ ...prev, upload: value.toFixed(1) }));
+        break;
+    }
+  }, []);
 
   useEffect(() => {
     loadServers();
@@ -65,21 +91,10 @@ export function SpeedTest({ onClose }: SpeedTestProps) {
 
     setTesting(true);
     setError(null);
+    updateThrottleRef.current = 0; // Reset throttle
+    
     try {
-      await runSpeedTest(selectedServer, (phase: 'ping' | 'download' | 'upload', value: any) => {
-        setCurrentPhase(phase);
-        switch (phase) {
-          case 'ping':
-            setResults(prev => ({ ...prev, ping: value.toString() }));
-            break;
-          case 'download':
-            setResults(prev => ({ ...prev, download: value.toFixed(1) }));
-            break;
-          case 'upload':
-            setResults(prev => ({ ...prev, upload: value.toFixed(1) }));
-            break;
-        }
-      });
+      await runSpeedTest(selectedServer, updateResult);
     } catch (err) {
       setError('Falha ao realizar o teste de velocidade. Por favor, tente novamente.');
     } finally {
@@ -171,7 +186,7 @@ export function SpeedTest({ onClose }: SpeedTestProps) {
               <div 
                 className="absolute inset-0 rounded-full border-4 border-[#6205D5] transition-all duration-500"
                 style={{
-                  animation: testing ? 'spin 1s linear infinite' : 'none',
+                  animation: testing ? 'spin 2s linear infinite' : 'none',
                   borderTopColor: testing ? 'transparent' : '#6205D5'
                 }}
               />

@@ -1,4 +1,4 @@
-import { AlertTriangle, Wifi, Trash2 } from 'lucide-react';
+import { AlertTriangle, Wifi, Trash2 } from '../../utils/icons';
 import { Modal } from './Modal';
 import { cleanAppData } from '../../utils/appFunctions';
 

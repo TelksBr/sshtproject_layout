@@ -4,11 +4,12 @@ import { checkRenewalUser, getPlans, purchaseRenewal } from '../../utils/salesUt
 import usePaymentPolling from '../../hooks/usePaymentPolling';
 import QRCode from 'qrcode';
 import { Modal } from './Modal';
-import { RefreshCw, CheckCircle, XCircle, DollarSign } from 'lucide-react';
+import { RefreshCw, CheckCircle, XCircle, DollarSign } from '../../utils/icons';
 
 
 interface RenewalModalProps {
   onClose: () => void;
+  initialUsername?: string;
 }
 
 type RenewalData = {
@@ -22,8 +23,8 @@ type RenewalData = {
 };
 
 
-const RenewalModal: React.FC<RenewalModalProps> = ({ onClose }) => {
-  const [username, setUsername] = useState('');
+const RenewalModal: React.FC<RenewalModalProps> = ({ onClose, initialUsername }) => {
+  const [username, setUsername] = useState(initialUsername || '');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<RenewalData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -63,6 +64,13 @@ const RenewalModal: React.FC<RenewalModalProps> = ({ onClose }) => {
     }
   }, [result]);
 
+  // Auto-verificar quando username inicial for fornecido
+  useEffect(() => {
+    if (initialUsername && !result && !loading) {
+      handleSubmit(new Event('submit') as any);
+    }
+  }, [initialUsername]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -73,7 +81,11 @@ const RenewalModal: React.FC<RenewalModalProps> = ({ onClose }) => {
     try {
       const response = await checkRenewalUser(username);
       if (response.success && response.data) {
-        setResult(response.data);
+        // Garante que username sempre existe usando o input do usuário
+        setResult({
+          ...response.data,
+          username: response.data.username || username
+        });
       } else {
         setError(response.message || 'Não foi possível verificar o usuário.');
       }
@@ -86,6 +98,7 @@ const RenewalModal: React.FC<RenewalModalProps> = ({ onClose }) => {
 
   const handleRenew = async () => {
     if (!result || !selectedPlan) return;
+    
     setRenewLoading(true);
     setRenewResult(null);
     setPaymentData(null);

@@ -9,7 +9,7 @@ export default defineConfig({
     // Gera relatório de peso visual
     visualizer({
       filename: './dist/report.html',
-      open: true, // Abre no navegador automaticamente
+      open: false, // Não abre automaticamente
       gzipSize: true,
       brotliSize: true,
       template: 'treemap',
@@ -22,12 +22,31 @@ export default defineConfig({
     cssCodeSplit: true, // Evita CSS gigantesco num arquivo só
     sourcemap: false, // Remove mapa de código no build final (mais leve)
     chunkSizeWarningLimit: 500, // Te avisa se algum arquivo ficar gigante
+    
+    // 🆕 Code splitting otimizado para melhor cache
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Separa React em chunk próprio (raramente muda)
+          'vendor-react': ['react', 'react-dom'],
+          // Separa ícones em chunk próprio
+          'vendor-icons': ['lucide-react'],
+          // Utilitários de terceiros
+          'vendor-utils': ['qrcode'],
+        },
+      },
+    },
   },
+  
   esbuild: {
     drop: ['console', 'debugger'],
+    // Minificação mais agressiva
+    legalComments: 'none',
   },
 
   optimizeDeps: {
-    exclude: ['lucide-react'], // Evita pré-bundle desnecessário
+    // Pré-bundle apenas o essencial
+    include: ['react', 'react-dom', 'qrcode'],
+    exclude: ['lucide-react'], // Melhor tree-shaking
   },
 });

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CalendarClock, User, Clock, Calendar, RefreshCw, AlertTriangle, Search } from 'lucide-react';
+import { CalendarClock, User, Clock, Calendar, RefreshCw, AlertTriangle, Search } from '../../utils/icons';
 import { Modal } from './Modal';
 import { fetchUserInfo, UserInfo } from '../../utils/checkUserUtils';
 
@@ -35,18 +35,18 @@ export function CheckUser({ onClose }: CheckUserProps) {
   if (error) {
     return (
       <Modal onClose={onClose} title="Erro" icon={AlertTriangle}>
-        <div className="flex-1 p-4">
+        <div className="flex-1">
           <header className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 rounded-full bg-[#26074d] flex items-center justify-center">
-              <AlertTriangle className="w-6 h-6 text-[#b0a8ff]" />
+            <div className="w-12 h-12 lg:w-14 lg:h-14 2xl:w-16 2xl:h-16 rounded-full bg-[#26074d] flex items-center justify-center">
+              <AlertTriangle className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 text-[#b0a8ff]" />
             </div>
           </header>
 
-          <div className="p-6 rounded-lg glass-effect text-center">
-            <p className="text-[#b0a8ff]/80 mb-4">{error}</p>
+          <div className="p-4 lg:p-6 2xl:p-8 rounded-lg glass-effect text-center">
+            <p className="text-[#b0a8ff]/80 text-sm lg:text-base 2xl:text-lg mb-4">{error}</p>
             <button
               onClick={() => setError(null)}
-              className="w-full h-12 rounded-lg font-medium bg-[#6205D5] text-[#b0a8ff] hover:bg-[#6205D5]/90 transition-colors"
+              className="w-full min-h-[44px] lg:min-h-[48px] 2xl:min-h-[56px] rounded-lg font-medium bg-[#6205D5] text-[#b0a8ff] hover:bg-[#6205D5]/90 transition-colors text-sm lg:text-base 2xl:text-lg"
             >
               Tentar Novamente
             </button>
@@ -58,27 +58,27 @@ export function CheckUser({ onClose }: CheckUserProps) {
 
   return (
     <Modal onClose={onClose} title="Consultar Usuário" icon={CalendarClock}>
-      <div className="flex-1 p-4">
+      <div className="flex-1">
 
         {!userInfo ? (
-          <div className="p-4 rounded-lg glass-effect">
+          <div className="p-4 lg:p-5 2xl:p-6 rounded-lg glass-effect">
             <div className="flex gap-2 mb-4">
               <input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Nome do usuário"
-                className="flex-1 h-12 px-4 rounded-lg glass-effect text-white placeholder-gray-400 outline-hidden focus:border-purple-500 allow-select"
+                className="flex-1 min-h-[44px] lg:min-h-[48px] 2xl:min-h-[56px] px-4 rounded-lg glass-effect text-white placeholder-gray-400 outline-hidden focus:border-purple-500 allow-select text-sm lg:text-base 2xl:text-lg"
               />
               <button
                 onClick={handleCheck}
                 disabled={loading}
-                className="w-12 h-12 flex items-center justify-center rounded-lg bg-[#6205D5] text-[#b0a8ff] hover:bg-[#6205D5]/90 transition-colors disabled:opacity-50"
+                className="w-[44px] h-[44px] lg:w-[48px] lg:h-[48px] 2xl:w-[56px] 2xl:h-[56px] flex items-center justify-center rounded-lg bg-[#6205D5] text-[#b0a8ff] hover:bg-[#6205D5]/90 transition-colors disabled:opacity-50 flex-shrink-0"
               >
                 {loading ? (
-                  <RefreshCw className="w-5 h-5 animate-spin" />
+                  <RefreshCw className="w-5 h-5 lg:w-6 lg:h-6 animate-spin" />
                 ) : (
-                  <Search className="w-5 h-5" />
+                  <Search className="w-5 h-5 lg:w-6 lg:h-6" />
                 )}
               </button>
             </div>

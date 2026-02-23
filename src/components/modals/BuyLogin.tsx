@@ -1,4 +1,4 @@
-import { Shield, Zap, Clock, Users, Check, Phone, Send, ArrowRight, ShoppingCart } from 'lucide-react';
+import { Shield, Zap, Clock, Users, Check, Phone, Send, ArrowRight, ShoppingCart } from '../../utils/icons';
 import { Modal } from './Modal';
 import { openExternalUrl } from '../../utils/appFunctions';
 
@@ -9,74 +9,74 @@ interface BuyLoginProps {
 export function BuyLogin({ onClose }: BuyLoginProps) {
   return (
     <Modal onClose={onClose} title="Planos Premium SSH T Project" icon={ShoppingCart}>
-      <div className="max-w-md mx-auto p-4">
-        <div className="text-center mb-8">
-          <p className="text-lg text-gray-300">
+      <div className="max-w-4xl mx-auto">
+        <div className="text-center mb-6 lg:mb-8">
+          <p className="text-base lg:text-lg 2xl:text-xl text-gray-300">
             Eleve sua experiência com nossos planos premium. Mais velocidade, mais segurança e suporte prioritário.
           </p>
         </div>
 
-        <div className="grid gap-4 mb-8">
-          <div className="card">
-            <Shield className="w-6 h-6 text-purple-400 mb-2" />
-            <h3 className="text-lg font-semibold mb-1">Segurança Reforçada</h3>
-            <p className="text-gray-400 text-sm">Conexão criptografada de ponta a ponta para máxima proteção dos seus dados.</p>
+        <div className="grid gap-3 lg:gap-4 mb-6 lg:mb-8">
+          <div className="card p-4 lg:p-5 2xl:p-6">
+            <Shield className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 text-purple-400 mb-2" />
+            <h3 className="text-base lg:text-lg 2xl:text-xl font-semibold mb-1">Segurança Reforçada</h3>
+            <p className="text-gray-400 text-sm lg:text-base 2xl:text-lg">Conexão criptografada de ponta a ponta para máxima proteção dos seus dados.</p>
           </div>
-          <div className="card">
-            <Zap className="w-6 h-6 text-purple-400 mb-2" />
-            <h3 className="text-lg font-semibold mb-1">Velocidade Superior</h3>
-            <p className="text-gray-400 text-sm">Servidores otimizados para oferecer a melhor velocidade possível.</p>
+          <div className="card p-4 lg:p-5 2xl:p-6">
+            <Zap className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 text-purple-400 mb-2" />
+            <h3 className="text-base lg:text-lg 2xl:text-xl font-semibold mb-1">Velocidade Superior</h3>
+            <p className="text-gray-400 text-sm lg:text-base 2xl:text-lg">Servidores otimizados para oferecer a melhor velocidade possível.</p>
           </div>
-          <div className="card">
-            <Clock className="w-6 h-6 text-purple-400 mb-2" />
-            <h3 className="text-lg font-semibold mb-1">Suporte 24/7</h3>
-            <p className="text-gray-400 text-sm">Assistência técnica disponível 24 horas por dia, 7 dias por semana.</p>
+          <div className="card p-4 lg:p-5 2xl:p-6">
+            <Clock className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 text-purple-400 mb-2" />
+            <h3 className="text-base lg:text-lg 2xl:text-xl font-semibold mb-1">Suporte 24/7</h3>
+            <p className="text-gray-400 text-sm lg:text-base 2xl:text-lg">Assistência técnica disponível 24 horas por dia, 7 dias por semana.</p>
           </div>
-          <div className="card">
-            <Users className="w-6 h-6 text-purple-400 mb-2" />
-            <h3 className="text-lg font-semibold mb-1">Multi-dispositivos</h3>
-            <p className="text-gray-400 text-sm">Conecte até 2 dispositivos simultaneamente com uma única conta.</p>
+          <div className="card p-4 lg:p-5 2xl:p-6">
+            <Users className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 text-purple-400 mb-2" />
+            <h3 className="text-base lg:text-lg 2xl:text-xl font-semibold mb-1">Multi-dispositivos</h3>
+            <p className="text-gray-400 text-sm lg:text-base 2xl:text-lg">Conecte até 2 dispositivos simultaneamente com uma única conta.</p>
           </div>
         </div>
 
-        <div className="grid gap-4 mb-8">
-          <div className="card relative">
-            <h3 className="text-xl font-bold mb-2">Mensal</h3>
+        <div className="grid gap-3 lg:gap-4">
+          <div className="card p-4 lg:p-5 2xl:p-6 relative">
+            <h3 className="text-lg lg:text-xl 2xl:text-2xl font-bold mb-2">Mensal</h3>
             <div className="mb-4">
-              <span className="text-3xl font-bold text-purple-400">R$ 4</span>
-              <span className="text-gray-400">/30 dias</span>
+              <span className="text-2xl lg:text-3xl 2xl:text-4xl font-bold text-purple-400">R$ 4</span>
+              <span className="text-gray-400 text-sm lg:text-base 2xl:text-lg">/30 dias</span>
             </div>
             <ul className="space-y-2 mb-4">
-              <li className="flex items-center gap-2 text-sm">
-                <Check className="w-4 h-4 text-purple-400" />
+              <li className="flex items-center gap-2 text-sm lg:text-base 2xl:text-lg">
+                <Check className="w-4 h-4 lg:w-5 lg:h-5 text-purple-400 flex-shrink-0" />
                 <span>Acesso Premium</span>
               </li>
-              <li className="flex items-center gap-2 text-sm">
-                <Check className="w-4 h-4 text-purple-400" />
+              <li className="flex items-center gap-2 text-sm lg:text-base 2xl:text-lg">
+                <Check className="w-4 h-4 lg:w-5 lg:h-5 text-purple-400 flex-shrink-0" />
                 <span>Suporte 24/7</span>
               </li>
-              <li className="flex items-center gap-2 text-sm">
-                <Check className="w-4 h-4 text-purple-400" />
+              <li className="flex items-center gap-2 text-sm lg:text-base 2xl:text-lg">
+                <Check className="w-4 h-4 lg:w-5 lg:h-5 text-purple-400 flex-shrink-0" />
                 <span>1 Dispositivo</span>
               </li>
-              <li className="flex items-center gap-2 text-sm">
-                <Check className="w-4 h-4 text-purple-400" />
+              <li className="flex items-center gap-2 text-sm lg:text-base 2xl:text-lg">
+                <Check className="w-4 h-4 lg:w-5 lg:h-5 text-purple-400 flex-shrink-0" />
                 <span>Velocidade Ilimitada</span>
               </li>
             </ul>
             <div className="flex flex-col gap-2">
               <a
                 onClick={() => openExternalUrl("https://wa.me/5521965687520?text=menu")}
-                className="btn-primary flex items-center justify-center gap-2"
+                className="btn-primary min-h-[44px] lg:min-h-[48px] 2xl:min-h-[56px] flex items-center justify-center gap-2 text-sm lg:text-base 2xl:text-lg"
               >
-                <Phone className="w-4 h-4" />
+                <Phone className="w-4 h-4 lg:w-5 lg:h-5" />
                 WhatsApp
               </a>
               <a
                 onClick={() => openExternalUrl("https://t.me/ssh_t_project_vip_bot")}
-                className="btn-outline flex items-center justify-center gap-2"
+                className="btn-outline min-h-[44px] lg:min-h-[48px] 2xl:min-h-[56px] flex items-center justify-center gap-2 text-sm lg:text-base 2xl:text-lg"
               >
-                <Send className="w-4 h-4" />
+                <Send className="w-4 h-4 lg:w-5 lg:h-5" />
                 Telegram
               </a>
             </div>

@@ -1,18 +1,49 @@
 import { useEffect, useState } from 'react';
 import { Modal } from './Modal';
-import { Loader, RefreshCw, Server } from 'lucide-react';
+import { Loader, RefreshCw, Server } from '../../utils/icons';
 
-interface Server {
+interface ServerConfig {
   name: string;
-  onlineUsers: number;
-  type: 'v2ray' | 'premium' | 'free';
+  host: string;
+  port: number;
+  order?: number;
+}
+
+interface SystemResources {
+  memory: {
+    total: number;
+    available: number;
+    used: number;
+    free: number;
+    usage_percent: number;
+  };
+  cpu: {
+    usage_percent: number;
+    user: number;
+    nice: number;
+    system: number;
+    idle: number;
+    iowait: number;
+    irq: number;
+    softirq: number;
+    steal: number;
+  };
+}
+
+interface ServerStatus {
+  name: string;
+  host: string;
+  sshUsers: number;
+  v2rayUsers: number;
+  totalUsers: number;
+  isOnline: boolean;
   order: number;
+  resources?: SystemResources;
 }
 
 interface ServerTotals {
+  ssh: number;
   v2ray: number;
-  premium: number;
-  free: number;
   total: number;
 }
 
@@ -21,38 +52,110 @@ interface ServersModalProps {
 }
 
 export function ServersModal({ onClose }: ServersModalProps) {
-  const [servers, setServers] = useState<Server[]>([]);
+  const [serverConfigs, setServerConfigs] = useState<ServerConfig[]>([]);
+  const [servers, setServers] = useState<ServerStatus[]>([]);
   const [loading, setLoading] = useState(true);
-  const [totals, setTotals] = useState<ServerTotals>({ v2ray: 0, premium: 0, free: 0, total: 0 });
+  const [totals, setTotals] = useState<ServerTotals>({ ssh: 0, v2ray: 0, total: 0 });
   const [refreshing, setRefreshing] = useState(false);
   const [failedServers, setFailedServers] = useState<Set<string>>(new Set());
+  const [configError, setConfigError] = useState<string | null>(null);
 
-  const premiumV2rayServers = 3;
-  const premiumServers = 3;
-  const freeServers = 0;
-  const token = 'KZQ4h03hLSzhefDAwRvjWVl9dp';
+  // Configuração da URL do GitHub Gist
+  const CONFIG_API_URL = 'https://gist.githubusercontent.com/TelksBr/d640030312bb682ac1ef6891f4bdf2ba/raw/8930bd8e57f80fd5a0d02d1450e4514a0affa4ff/servers.json';
+  const CACHE_KEY = 'servers_config_cache';
+  const CACHE_TIMESTAMP_KEY = 'servers_config_timestamp';
+  
+  // Função para salvar configuração no cache
+  const saveConfigToCache = (config: ServerConfig[]) => {
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify(config));
+      localStorage.setItem(CACHE_TIMESTAMP_KEY, Date.now().toString());
+    } catch (error) {
+      // Falha silenciosa ao salvar cache
+    }
+  };
+
+  // Função para carregar configuração do cache
+  const loadConfigFromCache = (): ServerConfig[] | null => {
+    try {
+      const cached = localStorage.getItem(CACHE_KEY);
+      if (cached) {
+        return JSON.parse(cached);
+      }
+    } catch (error) {
+      // Falha silenciosa ao carregar cache
+    }
+    return null;
+  };
+
+  // Função para buscar configuração dos servidores
+  const fetchServerConfig = async (): Promise<ServerConfig[]> => {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      
+      const response = await fetch(CONFIG_API_URL, {
+        method: 'GET',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        },
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`Erro ao buscar configuração: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (!data.servers || !Array.isArray(data.servers)) {
+        throw new Error('Formato de configuração inválido');
+      }
+      
+      // Adiciona ordem hierárquica baseada na posição no JSON
+      const serversWithOrder = data.servers.map((server: ServerConfig, index: number) => ({
+        ...server,
+        order: index
+      }));
+      
+      // Salva no cache após sucesso
+      saveConfigToCache(serversWithOrder);
+      
+      return serversWithOrder;
+    } catch (error) {
+      setConfigError(error instanceof Error ? error.message : 'Erro desconhecido');
+      
+      // Tenta usar o cache em caso de erro
+      const cached = loadConfigFromCache();
+      if (cached && cached.length > 0) {
+        return cached;
+      }
+      
+      return [];
+    }
+  };
 
   // Função para atualizar totais baseada na lista de servidores
-  const updateTotals = (serverList: Server[]) => {
-    const newTotals = { v2ray: 0, premium: 0, free: 0, total: 0 };
+  const updateTotals = (serverList: ServerStatus[]) => {
+    const newTotals = { ssh: 0, v2ray: 0, total: 0 };
     serverList.forEach(server => {
-      newTotals[server.type] += server.onlineUsers;
-      newTotals.total += server.onlineUsers;
+      if (server.isOnline) {
+        newTotals.ssh += server.sshUsers;
+        newTotals.v2ray += server.v2rayUsers;
+        newTotals.total += server.totalUsers;
+      }
     });
     setTotals(newTotals);
   };
 
   // Função para adicionar ou atualizar um servidor na lista
-  const upsertServer = (newServer: Server) => {
+  const upsertServer = (newServer: ServerStatus) => {
     setServers(prevServers => {
-      const filtered = prevServers.filter(s => s.name !== newServer.name);
-      const updated = [...filtered, newServer].sort((a, b) => {
-        const typeOrder = { v2ray: 1, premium: 2, free: 3 };
-        if (typeOrder[a.type] !== typeOrder[b.type]) {
-          return typeOrder[a.type] - typeOrder[b.type];
-        }
-        return a.order - b.order;
-      });
+      const filtered = prevServers.filter(s => s.host !== newServer.host);
+      const updated = [...filtered, newServer].sort((a, b) => a.order - b.order);
       updateTotals(updated);
       return updated;
     });
@@ -84,61 +187,100 @@ export function ServersModal({ onClose }: ServersModalProps) {
   };
 
   // Função para buscar dados de um servidor específico
-  const fetchServer = async (url: string, name: string, type: Server['type'], order: number) => {
+  const fetchServer = async (config: ServerConfig) => {
+    const urlOnlines = `http://${config.host}:${config.port}/onlines`;
+    const urlResources = `http://${config.host}:${config.port}/system/resources`;
+    
     try {
-      const response = await fetchWithRetry(url);
-      const data = await response.json();
-      const users = data.onlineUsers ?? data.onlineV2rayUsers ?? 0;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
+      // Busca dados de usuários online
+      const responseOnlines = await fetch(urlOnlines, {
+        method: 'GET',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        },
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!responseOnlines.ok) {
+        throw new Error(`HTTP ${responseOnlines.status}`);
+      }
+      
+      const dataOnlines = await responseOnlines.json();
+      
+      // Busca recursos do sistema (não bloqueia se falhar)
+      let resources: SystemResources | undefined;
+      try {
+        const controllerResources = new AbortController();
+        const timeoutIdResources = setTimeout(() => controllerResources.abort(), 5000);
+        
+        const responseResources = await fetch(urlResources, {
+          method: 'GET',
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          },
+          signal: controllerResources.signal
+        });
+        
+        clearTimeout(timeoutIdResources);
+        
+        if (responseResources.ok) {
+          resources = await responseResources.json();
+        }
+      } catch (error) {
+        // Falha silenciosa ao buscar recursos
+      }
+      
+      const serverStatus: ServerStatus = {
+        name: config.name,
+        host: config.host,
+        sshUsers: dataOnlines.ssh_users ?? 0,
+        v2rayUsers: dataOnlines.v2ray_users ?? 0,
+        totalUsers: dataOnlines.total_users ?? 0,
+        isOnline: true,
+        order: config.order ?? 999,
+        resources
+      };
+      
       setFailedServers(prev => {
         const next = new Set(prev);
-        next.delete(url);
+        next.delete(config.host);
         return next;
       });
-      upsertServer({ name, onlineUsers: users, type, order });
+      
+      upsertServer(serverStatus);
     } catch (error) {
-      setFailedServers(prev => new Set(prev).add(url));
-      // Mantém o servidor na lista, mas com 0 usuários
-      upsertServer({ name, onlineUsers: 0, type, order });
+      setFailedServers(prev => new Set(prev).add(config.host));
+      
+      // Mantém o servidor na lista, mas marcado como offline
+      upsertServer({
+        name: config.name,
+        host: config.host,
+        sshUsers: 0,
+        v2rayUsers: 0,
+        totalUsers: 0,
+        isOnline: false,
+        order: config.order ?? 999
+      });
     }
   };
 
   // Função para buscar todos os servidores
-  const fetchServerData = async () => {
+  const fetchServerData = async (configs: ServerConfig[]) => {
+    if (configs.length === 0) return;
+    
     setLoading(true);
-    const fetchPromises: Promise<void>[] = [];
-    // V2Ray
-    for (let i = 0; i < premiumV2rayServers; i++) {
-      fetchPromises.push(
-        fetchServer(
-          `http://v2premium-${i + 1}.sshtproject.com:2095/onlines/v2ray?token=${token}`,
-          `Premium V2Ray ${i + 1}`,
-          'v2ray',
-          i + 1
-        )
-      );
-    }
-    // Premium
-    for (let i = 0; i < premiumServers; i++) {
-      fetchPromises.push(
-        fetchServer(
-          `http://premium${i + 1}.sshtproject.com:2095/onlines/ssh?token=${token}`,
-          `Premium ${i + 1}`,
-          'premium',
-          i + 1
-        )
-      );
-    }
-    // Free
-    for (let i = 0; i < freeServers; i++) {
-      fetchPromises.push(
-        fetchServer(
-          `http://free${i + 1}.sshtproject.com:2095/onlines/ssh?token=${token}`,
-          `Free ${i + 1}`,
-          'free',
-          i + 1
-        )
-      );
-    }
+    const fetchPromises = configs.map((config, index) => {
+      // Garante que cada config tenha a ordem correta
+      const configWithOrder = { ...config, order: config.order ?? index };
+      return fetchServer(configWithOrder);
+    });
     await Promise.all(fetchPromises);
     setLoading(false);
   };
@@ -147,30 +289,45 @@ export function ServersModal({ onClose }: ServersModalProps) {
   const retryFailedServers = async () => {
     const currentFailed = Array.from(failedServers);
     if (currentFailed.length === 0) return;
-    for (const url of currentFailed) {
-      let name = '';
-      let type: Server['type'] = 'free';
-      let order = 1;
-      if (url.includes('v2premium')) {
-        type = 'v2ray';
-        order = parseInt(url.match(/v2premium(\d+)/)?.[1] || '1', 10);
-        name = `Premium V2Ray ${order}`;
-      } else if (url.includes('premium')) {
-        type = 'premium';
-        order = parseInt(url.match(/premium(\d+)/)?.[1] || '1', 10);
-        name = `Premium ${order}`;
-      } else if (url.includes('free')) {
-        type = 'free';
-        order = parseInt(url.match(/free(\d+)/)?.[1] || '1', 10);
-        name = `Free ${order}`;
-      }
-      await fetchServer(url, name, type, order);
+    
+    const failedConfigs = serverConfigs.filter(config => 
+      currentFailed.includes(config.host)
+    );
+    
+    for (const config of failedConfigs) {
+      await fetchServer(config);
     }
   };
 
-  // Atualiza servidores ao abrir modal
+  // Inicializa: busca configuração e dados dos servidores
   useEffect(() => {
-    fetchServerData();
+    const initialize = async () => {
+      // Primeiro tenta carregar do cache para exibição rápida
+      const cachedConfig = loadConfigFromCache();
+      if (cachedConfig && cachedConfig.length > 0) {
+        setServerConfigs(cachedConfig);
+        // Busca dados dos servidores em cache
+        await fetchServerData(cachedConfig);
+      }
+      
+      // Em paralelo, busca atualização da configuração
+      const configs = await fetchServerConfig();
+      
+      // Se obteve nova configuração e é diferente do cache, atualiza
+      if (configs.length > 0) {
+        const configChanged = JSON.stringify(configs) !== JSON.stringify(cachedConfig);
+        
+        if (configChanged) {
+          setServerConfigs(configs);
+          await fetchServerData(configs);
+        }
+      } else if (!cachedConfig || cachedConfig.length === 0) {
+        // Sem cache e sem sucesso ao buscar
+        setLoading(false);
+      }
+    };
+    
+    initialize();
   }, []);
 
   // Tenta reconectar servidores falhos a cada 10 segundos
@@ -178,32 +335,50 @@ export function ServersModal({ onClose }: ServersModalProps) {
     if (failedServers.size === 0) return;
     const retryInterval = setInterval(retryFailedServers, 10000);
     return () => clearInterval(retryInterval);
-  }, [failedServers]);
-
-  // Atualiza totais sempre que a lista de servidores mudar
-  useEffect(() => {
-    updateTotals(servers);
-  }, [servers]);
+  }, [failedServers, serverConfigs]);
 
   const handleRefresh = async () => {
-    if (refreshing) return;
+    if (refreshing || serverConfigs.length === 0) return;
     setRefreshing(true);
-    await fetchServerData();
+    
+    // Atualiza configuração do GitHub Gist
+    const newConfigs = await fetchServerConfig();
+    
+    if (newConfigs.length > 0) {
+      setServerConfigs(newConfigs);
+      await fetchServerData(newConfigs);
+    } else {
+      // Se falhar, usa a configuração atual
+      await fetchServerData(serverConfigs);
+    }
+    
     setRefreshing(false);
   };
 
   return (
     <Modal onClose={onClose} title="Status dos Servidores" icon={Server}>
       <div className="flex flex-col h-[80vh] max-h-[90dvh] w-full p-2 md:p-6">
+        {/* Erro de configuração */}
+        {configError && (
+          <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
+            <p className="text-sm text-red-200">
+              <strong>Erro ao carregar configuração:</strong> {configError}
+            </p>
+            <p className="text-xs text-red-300 mt-1">
+              Verifique a URL do GitHub Gist em CONFIG_API_URL
+            </p>
+          </div>
+        )}
+
         {/* Cabeçalho fixo com refresh */}
         <div className="flex items-center justify-between mb-2 sticky top-0 z-10 bg-[#18122B] rounded-t-lg p-2 md:p-0">
           <span className="font-semibold text-base md:text-lg text-white">Status dos Servidores</span>
           <button
             onClick={handleRefresh}
-            disabled={refreshing}
+            disabled={refreshing || serverConfigs.length === 0}
             className={`
               p-2 rounded-lg transition-all duration-200
-              ${refreshing 
+              ${refreshing || serverConfigs.length === 0
                 ? 'bg-[#6205D5]/10 cursor-not-allowed' 
                 : 'hover:bg-[#6205D5]/20 active:scale-95'
               }
@@ -219,25 +394,7 @@ export function ServersModal({ onClose }: ServersModalProps) {
           </button>
         </div>
 
-        {/* Totais responsivos */}
-        <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 mb-2">
-          <div className="bg-[#6205D5]/20 p-2 md:p-3 rounded-lg flex flex-col items-center">
-            <span className="text-[11px] md:text-xs text-[#b0a8ff]/70">Total V2Ray</span>
-            <p className="text-base md:text-lg font-bold text-white">{totals.v2ray}</p>
-          </div>
-          <div className="bg-[#6205D5]/15 p-2 md:p-3 rounded-lg flex flex-col items-center">
-            <span className="text-[11px] md:text-xs text-[#b0a8ff]/70">Total SSH</span>
-            <p className="text-base md:text-lg font-bold text-white">{totals.premium}</p>
-          </div>
-          <div className="bg-[#6205D5]/10 p-2 md:p-3 rounded-lg flex flex-col items-center">
-            <span className="text-[11px] md:text-xs text-[#b0a8ff]/70">Total Free</span>
-            <p className="text-base md:text-lg font-bold text-white">{totals.free}</p>
-          </div>
-          <div className="bg-[#6205D5]/25 p-2 md:p-3 rounded-lg flex flex-col items-center">
-            <span className="text-[11px] md:text-xs text-[#b0a8ff]/70">Total Geral</span>
-            <p className="text-base md:text-lg font-bold text-white">{totals.total}</p>
-          </div>
-        </div>
+ 
 
         {/* Lista de servidores com scroll e feedback visual */}
         <div className="flex-1 overflow-y-auto custom-scrollbar pr-1">
@@ -245,27 +402,97 @@ export function ServersModal({ onClose }: ServersModalProps) {
             <div className="flex items-center justify-center p-4">
               <Loader className="w-7 h-7 text-[#b0a8ff] animate-spin" />
             </div>
+          ) : servers.length === 0 ? (
+            <div className="flex items-center justify-center p-8 text-[#b0a8ff]/70">
+              <p>Nenhum servidor configurado</p>
+            </div>
           ) : (
             <div className="space-y-2 animate-fadeIn">
               {servers.map((server) => (
                 <div
-                  key={`${server.type}-${server.order}`}
+                  key={server.host}
                   className={`
-                    flex justify-between items-center px-3 py-2 md:px-4 md:py-3 rounded-lg
+                    px-3 py-3 md:px-4 md:py-4 rounded-lg
                     transition-all duration-200 hover:scale-[1.01] active:scale-95
-                    ${server.type === 'v2ray' ? 'bg-[#6205D5]/20' : ''}
-                    ${server.type === 'premium' ? 'bg-[#6205D5]/15' : ''}
-                    ${server.type === 'free' ? 'bg-[#6205D5]/10' : ''}
-                    ${server.onlineUsers > 0 ? '' : 'opacity-60'}
+                    ${server.isOnline ? 'bg-[#6205D5]/20' : 'bg-red-500/10'}
+                    ${server.isOnline ? '' : 'opacity-60'}
                     shadow-sm hover:shadow-md cursor-pointer select-none
                   `}
                   tabIndex={0}
-                  aria-label={`Servidor ${server.name} com ${server.onlineUsers} online`}
+                  aria-label={`Servidor ${server.name} com ${server.totalUsers} usuários online`}
                 >
-                  <span className="font-medium text-white text-sm md:text-base truncate max-w-[60vw] md:max-w-[200px]">{server.name}</span>
-                  <span className="text-xs md:text-sm text-[#b0a8ff] font-mono">
-                    {server.onlineUsers} online
-                  </span>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="font-medium text-white text-sm md:text-base truncate max-w-[60vw] md:max-w-[250px]">
+                      {server.name}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={`
+                        text-xs font-semibold px-2 py-1 rounded
+                        ${server.isOnline ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'}
+                      `}>
+                        {server.isOnline ? 'Online' : 'Offline'}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {server.isOnline && (
+                    <>
+                      <div className="grid grid-cols-3 gap-2 text-xs md:text-sm mb-2">
+                        <div className="bg-[#6205D5]/10 p-2 rounded">
+                          <span className="text-[#b0a8ff]/70 block">SSH</span>
+                          <span className="text-white font-mono font-semibold">{server.sshUsers}</span>
+                        </div>
+                        <div className="bg-[#6205D5]/10 p-2 rounded">
+                          <span className="text-[#b0a8ff]/70 block">V2Ray</span>
+                          <span className="text-white font-mono font-semibold">{server.v2rayUsers}</span>
+                        </div>
+                        <div className="bg-[#6205D5]/15 p-2 rounded">
+                          <span className="text-[#b0a8ff]/70 block">Total</span>
+                          <span className="text-white font-mono font-semibold">{server.totalUsers}</span>
+                        </div>
+                      </div>
+                      
+                      {/* Recursos do Sistema */}
+                      {server.resources && (
+                        <div className="grid grid-cols-2 gap-2 text-xs md:text-sm pt-2 border-t border-[#6205D5]/20">
+                          <div className="bg-[#6205D5]/5 p-2 rounded">
+                            <span className="text-[#b0a8ff]/70 block mb-1">💾 Memória</span>
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 bg-[#6205D5]/20 rounded-full h-2">
+                                <div 
+                                  className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-300"
+                                  style={{ width: `${server.resources.memory.usage_percent}%` }}
+                                />
+                              </div>
+                              <span className="text-white font-mono font-semibold text-xs">
+                                {server.resources.memory.usage_percent.toFixed(1)}%
+                              </span>
+                            </div>
+                            <span className="text-[#b0a8ff]/50 text-[10px] block mt-1">
+                              {(server.resources.memory.used / 1024).toFixed(0)}MB / {(server.resources.memory.total / 1024).toFixed(0)}MB
+                            </span>
+                          </div>
+                          <div className="bg-[#6205D5]/5 p-2 rounded">
+                            <span className="text-[#b0a8ff]/70 block mb-1">⚡ CPU</span>
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 bg-[#6205D5]/20 rounded-full h-2">
+                                <div 
+                                  className="bg-gradient-to-r from-green-500 to-cyan-500 h-2 rounded-full transition-all duration-300"
+                                  style={{ width: `${server.resources.cpu.usage_percent}%` }}
+                                />
+                              </div>
+                              <span className="text-white font-mono font-semibold text-xs">
+                                {server.resources.cpu.usage_percent.toFixed(1)}%
+                              </span>
+                            </div>
+                            <span className="text-[#b0a8ff]/50 text-[10px] block mt-1">
+                              Uso do processador
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
               ))}
             </div>

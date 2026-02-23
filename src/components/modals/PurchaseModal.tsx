@@ -5,7 +5,8 @@ import { getPlans, createPurchase, formatPrice, formatDate } from '../../utils/s
 import { validateEmail } from '../../utils/emailValidation';
 import { generateQRCodeDataURL, isValidPixCode } from '../../utils/qrCodeGenerator';
 import usePaymentPolling from '../../hooks/usePaymentPolling';
-import { ShoppingCart } from 'lucide-react';
+import { purchaseStorage, PendingPurchase } from '../../utils/purchaseStorageManager';
+import { ShoppingCart } from '../../utils/icons';
 
 interface PurchaseModalProps {
   onClose: () => void;
@@ -43,11 +44,20 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
     // Só processa se realmente tiver credenciais E status completed
     if (hookCredentials && hookCredentials.status === 'completed') {
       setCredentials(hookCredentials);
+      
+      // 💾 Salvar credenciais quando modal está aberto
+      // purchaseStorage.saveCredentials verifica duplicação automaticamente
+      const label = selectedPlan?.name 
+        ? `Compra ${selectedPlan.name}` 
+        : 'Compra Recente';
+      
+      purchaseStorage.saveCredentials(hookCredentials, label);
+      
       if (currentStep === 'payment') {
         setCurrentStep('success');
       }
     }
-  }, [hookCredentials, currentStep]);
+  }, [hookCredentials, currentStep, selectedPlan]);
 
   // Carregar planos ao montar o componente
   useEffect(() => {
@@ -140,6 +150,25 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
 
       const response = await createPurchase(purchaseRequest);
       setPurchaseData(response);
+      
+      // 💾 Salvar compra pendente no localStorage
+      const pendingPurchase: PendingPurchase = {
+        order_id: response.order_id || response.invoice_id,
+        payment_id: response.payment_id,
+        amount: response.amount,
+        created_at: new Date().toISOString(),
+        expires_at: response.expires_in 
+          ? new Date(Date.now() + response.expires_in * 60 * 1000).toISOString()
+          : new Date(Date.now() + 15 * 60 * 1000).toISOString(), // Default 15 min
+        status: 'pending',
+        customer_email: email.trim(),
+        plan_name: selectedPlan.name,
+        qr_code: response.qr_code,
+        ticket_url: response.ticket_url
+      };
+      
+      purchaseStorage.savePendingPurchase(pendingPurchase);
+      
       setCurrentStep('payment');
       
       // O polling será iniciado automaticamente pelo hook
@@ -233,29 +262,29 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
     switch (currentStep) {
       case 'plans':
         return (
-          <div className="space-y-4">
+          <div className="space-y-4 lg:space-y-6">
             <div className="text-center">
-              <h3 className="text-xl font-semibold text-white mb-2">Escolha seu Plano</h3>
-              <p className="text-gray-300">Selecione o plano que melhor atende suas necessidades</p>
+              <h3 className="text-lg lg:text-xl 2xl:text-2xl font-semibold text-white mb-2">Escolha seu Plano</h3>
+              <p className="text-sm lg:text-base 2xl:text-lg text-gray-300">Selecione o plano que melhor atende suas necessidades</p>
             </div>
 
             {isLoading ? (
-              <div className="flex justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+              <div className="flex justify-center py-6 sm:py-8">
+                <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-blue-500"></div>
               </div>
             ) : (
-              <div className="grid gap-4 max-h-96 overflow-y-auto">
+              <div className="grid gap-2 sm:gap-3 md:gap-4 max-h-60 sm:max-h-80 md:max-h-96 overflow-y-auto px-1">
                 {plans.map((plan) => (
                   <div
                     key={plan.id}
                     onClick={() => handlePlanSelect(plan)}
-                    className="p-4 border border-gray-600 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-gray-800/50 transition-all"
+                    className="p-3 sm:p-4 border border-gray-600 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-gray-800/50 transition-all"
                   >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-semibold text-white">{plan.name}</h4>
-                        <p className="text-sm text-gray-300 mt-1">{plan.description}</p>
-                        <div className="flex flex-wrap gap-2 mt-2">
+                    <div className="flex justify-between items-start gap-2">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-white text-sm sm:text-base truncate">{plan.name}</h4>
+                        <p className="text-xs sm:text-sm text-gray-300 mt-1 line-clamp-2">{plan.description}</p>
+                        <div className="flex flex-wrap gap-1 sm:gap-2 mt-1 sm:mt-2">
                           {plan.protocols && plan.protocols.length > 0 ? (
                             plan.protocols.map((protocol) => (
                               <span key={protocol} className="px-2 py-1 bg-blue-600 text-xs rounded">
@@ -269,12 +298,12 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
                           )}
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-lg font-bold text-green-400">
+                      <div className="text-right flex-shrink-0">
+                        <div className="text-base sm:text-lg font-bold text-green-400">
                           {formatPrice(plan.price)}
                         </div>
-                        <div className="text-sm text-gray-400">
-                          {plan.duration_days || plan.validate || 30} dias
+                        <div className="text-xs sm:text-sm text-gray-400">
+                          {plan.duration_days || plan.validate || 30}d
                         </div>
                       </div>
                     </div>
@@ -287,27 +316,27 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
 
       case 'email':
         return (
-          <div className="space-y-4">
+          <div className="space-y-4 lg:space-y-6">
             <div className="text-center">
-              <h3 className="text-xl font-semibold text-white mb-2">Seus Dados</h3>
-              <p className="text-gray-300">Preencha seus dados para receber as credenciais</p>
+              <h3 className="text-lg lg:text-xl 2xl:text-2xl font-semibold text-white mb-2">Seus Dados</h3>
+              <p className="text-sm lg:text-base 2xl:text-lg text-gray-300">Preencha seus dados para receber as credenciais</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm lg:text-base 2xl:text-lg font-medium text-gray-300 mb-2">
                 Nome
               </label>
               <input
                 type="text"
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
-                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                className="w-full min-h-[44px] lg:min-h-[48px] 2xl:min-h-[56px] px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm lg:text-base 2xl:text-lg focus:outline-none focus:border-blue-500"
                 placeholder="Seu nome"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm lg:text-base 2xl:text-lg font-medium text-gray-300 mb-2">
                 Email
               </label>
               <input
@@ -315,24 +344,24 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleEmailSubmit()}
-                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                className="w-full min-h-[44px] lg:min-h-[48px] 2xl:min-h-[56px] px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm lg:text-base 2xl:text-lg focus:outline-none focus:border-blue-500"
                 placeholder="seu@email.com"
               />
               {emailError && (
-                <p className="text-red-400 text-sm mt-1">{emailError}</p>
+                <p className="text-red-400 text-sm lg:text-base mt-2">{emailError}</p>
               )}
             </div>
 
             <div className="flex gap-3">
               <button
                 onClick={() => setCurrentStep('plans')}
-                className="flex-1 py-2 px-4 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors"
+                className="flex-1 min-h-[44px] lg:min-h-[48px] 2xl:min-h-[56px] px-4 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors text-sm lg:text-base 2xl:text-lg"
               >
                 Voltar
               </button>
               <button
                 onClick={handleEmailSubmit}
-                className="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors"
+                className="flex-1 min-h-[44px] lg:min-h-[48px] 2xl:min-h-[56px] px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors text-sm lg:text-base 2xl:text-lg"
               >
                 Continuar
               </button>
@@ -422,15 +451,15 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
 
                 {/* QR Code Visual Gerado Dinamicamente */}
                 {generatedQRCode ? (
-                  <div className="bg-gradient-to-br from-blue-900 to-blue-800 p-6 rounded-lg border border-blue-600">
+                  <div className="bg-gradient-to-br from-blue-900 to-blue-800 p-4 lg:p-6 2xl:p-8 rounded-lg border border-blue-600">
                     <div className="text-center">
-                      <p className="text-white mb-4 font-semibold text-lg">📱 Escaneie o QR Code PIX</p>
+                      <p className="text-white mb-4 lg:mb-6 font-semibold text-base lg:text-lg 2xl:text-xl">📱 Escaneie o QR Code PIX</p>
                       
-                      <div className="bg-white p-6 rounded-xl inline-block mb-4 shadow-lg">
+                      <div className="bg-white p-4 lg:p-6 2xl:p-8 rounded-xl inline-block mb-4 lg:mb-6 shadow-lg">
                         <img 
                           src={generatedQRCode}
                           alt="QR Code PIX"
-                          className="w-56 h-56 mx-auto block"
+                          className="w-[min(80vw,256px)] h-[min(80vw,256px)] lg:w-64 lg:h-64 2xl:w-80 2xl:h-80 mx-auto block"
                           onLoad={() => {
                             // QR Code carregado
                           }}
@@ -440,7 +469,7 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
                         />
                       </div>
 
-                      <div className="text-sm text-blue-100 bg-blue-800/50 p-3 rounded-lg">
+                      <div className="text-sm lg:text-base 2xl:text-lg text-blue-100 bg-blue-800/50 p-3 lg:p-4 rounded-lg">
                         💡 <strong>Dica:</strong> Abra seu app de banco e escaneie o código acima
                       </div>
                     </div>

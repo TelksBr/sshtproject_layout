@@ -1,21 +1,17 @@
-// Hotspot utilities - interface direta com as APIs nativas
+// Hotspot utilities - usa wrapper do SDK/bridge
+import { call, callVoid } from './dtunnelBridge';
 
 export function getHotspotStatus(): 'STOPPED' | 'RUNNING' | null {
   try {
-    if (window?.DtGetStatusHotSpotService?.execute && 
-        typeof window.DtGetStatusHotSpotService.execute === "function") {
-      const status = window.DtGetStatusHotSpotService.execute();
-      
-      const normalizedStatus = String(status).toUpperCase().trim();
-      if (normalizedStatus === 'RUNNING' || normalizedStatus === 'ACTIVE') {
-        return 'RUNNING';
-      } else if (normalizedStatus === 'STOPPED' || normalizedStatus === 'INACTIVE') {
-        return 'STOPPED';
-      }
-      
+    const status = call('DtGetStatusHotSpotService', 'execute');
+    if (status == null) return null;
+    const normalizedStatus = String(status).toUpperCase().trim();
+    if (normalizedStatus === 'RUNNING' || normalizedStatus === 'ACTIVE') {
+      return 'RUNNING';
+    } else if (normalizedStatus === 'STOPPED' || normalizedStatus === 'INACTIVE') {
       return 'STOPPED';
     }
-    return null;
+    return 'STOPPED';
   } catch (error) {
     return null;
   }
@@ -23,12 +19,8 @@ export function getHotspotStatus(): 'STOPPED' | 'RUNNING' | null {
 
 export function startHotspot(): boolean {
   try {
-    if (window?.DtStartHotSpotService?.execute && 
-        typeof window.DtStartHotSpotService.execute === "function") {
-      window.DtStartHotSpotService.execute();
-      return true;
-    }
-    return false;
+    callVoid('DtStartHotSpotService', 'execute');
+    return true;
   } catch (error) {
     return false;
   }
@@ -36,12 +28,8 @@ export function startHotspot(): boolean {
 
 export function stopHotspot(): boolean {
   try {
-    if (window?.DtStopHotSpotService?.execute && 
-        typeof window.DtStopHotSpotService.execute === "function") {
-      window.DtStopHotSpotService.execute();
-      return true;
-    }
-    return false;
+    callVoid('DtStopHotSpotService', 'execute');
+    return true;
   } catch (error) {
     return false;
   }

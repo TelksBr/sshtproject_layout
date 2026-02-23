@@ -6,7 +6,7 @@ import {
   getUploadBytes 
 } from '../utils/appFunctions';
 import { getHotspotStatus, startHotspot, stopHotspot } from '../utils/hotspotUtils';
-import { onDtunnelEvent } from '../utils/dtEvents';
+import { useDTunnelEvent } from './useDTunnelEvent';
 import { debounce, throttle } from '../utils/performanceUtils';
 import { VpnState } from '../types/vpn';
 
@@ -254,7 +254,7 @@ const updateGlobalStateImmediate = () => {
 };
 
 // Versão debounced para chamadas manuais (evita spam de atualizações)
-const updateGlobalState = debounce(updateGlobalStateImmediate, 100);
+const updateGlobalState = debounce(updateGlobalStateImmediate, 150);
 
 // Versão throttled para notificação de listeners (evita re-renders excessivos)
 const notifyListeners = throttle(() => {
@@ -265,7 +265,7 @@ const notifyListeners = throttle(() => {
       // Error in polling listener
     }
   });
-}, 100); // Throttle notificações a cada 100ms
+}, 150); // Throttle notificações a cada 150ms (otimizado para webview)
 
 // Função para iniciar o polling global
 const startGlobalPolling = () => {
@@ -276,8 +276,8 @@ const startGlobalPolling = () => {
     // Atualização inicial (imediata)
     updateGlobalStateImmediate();
     
-    // Interval de 2000ms (usa versão imediata para manter consistência)
-    globalInterval = setInterval(updateGlobalStateImmediate, 2000);
+    // Interval de 3000ms - otimizado para webview (menos recursos)
+    globalInterval = setInterval(updateGlobalStateImmediate, 3000);
   }
 };
 
@@ -297,6 +297,15 @@ export function useGlobalPolling() {
   const [state, setState] = useState<GlobalPollingState>(() => ensureGlobalStateInitialized());
   const listenerRef = useRef<(() => void) | null>(null);
   
+  // Registra listeners para eventos VPN para forçar atualizações imediatas
+  const handleVpnEvents = useCallback(() => {
+    setTimeout(updateGlobalState, 100);
+  }, []);
+  
+  useDTunnelEvent('vpnState', handleVpnEvents);
+  useDTunnelEvent('vpnStartedSuccess', handleVpnEvents);
+  useDTunnelEvent('vpnStoppedSuccess', handleVpnEvents);
+  
   useEffect(() => {
     // Cria listener para este hook
     const listener = () => {
@@ -309,20 +318,6 @@ export function useGlobalPolling() {
     
     // Inicia polling global se necessário
     startGlobalPolling();
-    
-    // Registra eventos VPN para forçar atualizações imediatas
-    const handleVpnEvents = () => {
-      // Força atualização imediata quando eventos VPN disparam
-      setTimeout(updateGlobalState, 100);
-    };
-    
-    try {
-      onDtunnelEvent('DtVpnStateEvent', handleVpnEvents);
-      onDtunnelEvent('DtVpnStartedSuccessEvent', handleVpnEvents);
-      onDtunnelEvent('DtVpnStoppedSuccessEvent', handleVpnEvents);
-    } catch (error) {
-      // Ignore event registration errors in development
-    }
     
     // Cleanup
     return () => {

@@ -1,5 +1,5 @@
 
-import { LucideIcon } from 'lucide-react';
+import { type LucideIcon } from '../utils/icons';
 
 export interface Tutorial {
   id: number;

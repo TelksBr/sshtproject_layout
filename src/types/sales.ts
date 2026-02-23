@@ -1,4 +1,16 @@
 // Tipos para a API de vendas
+
+// =============================
+// API v1 RESTful - Wrapper de Resposta
+// =============================
+export interface ApiResponse<T = any> {
+  success: boolean;
+  message?: string;
+  data?: T;
+  error?: string;
+  details?: string;
+}
+
 export interface Plan {
   id: string;
   name: string;
@@ -16,26 +28,42 @@ export interface PurchaseRequest {
   customer_name: string;
 }
 
-export interface PurchaseResponse {
-  invoice_id: string;
+// =============================
+// API v1 RESTful - Order Response
+// =============================
+export interface OrderResponse {
+  order_id: string;
   payment_id: string;
-  qr_code?: string;
-  ticket_url?: string;
+  qr_code: string;
   amount: number;
-  username?: string;
-  current_expiration?: string;
-  expires_in?: number;
+  expires_in: number;
+  provider: 'mercado_pago' | 'asaas' | string;
+  ticket_url?: string;  // Opcional - alguns provedores
+  username?: string;    // Opcional - para renovações
+  current_expiration?: string;  // Opcional - para renovações
 }
 
-export interface PaymentStatus {
-  invoice_id: string;
-  payment_id?: string | number; // Pode vir como string ou number da API
+// Alias para compatibilidade - DEPRECADO: usar OrderResponse
+export interface PurchaseResponse extends OrderResponse {
+  invoice_id: string;  // Alias de order_id para compatibilidade
+}
+
+// =============================
+// API v1 RESTful - Invoice/Order Status
+// =============================
+export interface InvoiceStatus {
+  order_id?: string;    // Campo v1 RESTful
+  invoice_id?: string;  // Compatibilidade com legado
+  payment_id: string | number;
   status: 'pending' | 'completed' | 'approved' | 'expired' | 'cancelled';
   amount: number;
-  created_at: string;
-  expires_at: string;
+  created_at?: string;
+  expires_at?: string;
   processed_at?: string;
 }
+
+// Alias para compatibilidade - DEPRECADO: usar InvoiceStatus
+export type PaymentStatus = InvoiceStatus;
 
 export interface SSHCredentials {
   username: string;
@@ -103,13 +131,6 @@ export interface CredentialsResponse {
       is_active: boolean;
     };
   };
-}
-
-export interface ApiResponse<T = any> {
-  success: boolean;
-  message?: string;
-  data?: T;
-  status?: string;
 }
 
 export type PaymentStep = 'plans' | 'form' | 'payment' | 'processing' | 'success' | 'error' | 'email' | 'confirm';

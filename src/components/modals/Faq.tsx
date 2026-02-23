@@ -1,5 +1,5 @@
 import { Modal } from './Modal';
-import { HelpCircle } from 'lucide-react';
+import { HelpCircle } from '../../utils/icons';
 
 interface FaqProps {
   onClose: () => void;

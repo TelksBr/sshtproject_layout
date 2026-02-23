@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Modal } from './Modal';
-import { Search, Save, Play, Trash2 } from 'lucide-react';
+import { Search, Save, Play, Trash2 } from '../../utils/icons';
 import { getStorageItem, setStorageItem } from '../../utils/storageUtils';
 import { toggleAirplaneMode, getLocalIP } from '../../utils/appFunctions';
 

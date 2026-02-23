@@ -1,20 +1,124 @@
 export interface UserInfo {
   username: string;
+  password?: string;
+  limit: number;
   limit_connections: number;
   count_connections: number;
   expiration_date: string;
   expiration_days: number;
 }
 
-export async function fetchUserInfo(username: string): Promise<UserInfo> {
+export interface CheckUserResponse {
+  success: boolean;
+  message: string;
+  data?: UserInfo;
+  error?: string;
+}
+
+// Token de autenticação da API
+const SALES_API_TOKEN = 'sales-api_8c28c7dd151694afab5cb0958f1c443bb7e45315ed4cfeb1ea1569093287ca0d';
+
+// Verificar usuário (CheckUser API)
+export async function checkUser(identifier: string): Promise<CheckUserResponse> {
   try {
-    const response = await fetch(`https://bot.sshtproject.com/check/${username}`);
+    const url = `https://bot.sshtproject.com/check/${encodeURIComponent(identifier)}`;
+    
+    const response = await fetch(url, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        Authorization: `Bearer ${SALES_API_TOKEN}`,
+      },
+    });
+    
+    if (!response.ok) {
+      return {
+        success: false,
+        message: 'Falha ao buscar informações do usuário'
+      };
+    }
+    
+    const result = await response.json();
+    
+    // API retorna dados diretamente (sem wrapper)
+    if (result && result.username) {
+      return {
+        success: true,
+        message: 'Usuário validado com sucesso',
+        data: {
+          username: result.username,
+          password: result.password,
+          limit: result.limit_connections || result.limit,
+          limit_connections: result.limit_connections,
+          count_connections: result.count_connections,
+          expiration_date: result.expiration_date,
+          expiration_days: result.expiration_days
+        }
+      };
+    }
+    
+    // Fallback para formato com wrapper (compatibilidade)
+    if (result.success && result.data) {
+      return {
+        success: true,
+        message: 'Usuário validado com sucesso',
+        data: {
+          ...result.data,
+          limit: result.data.limit_connections || result.data.limit
+        }
+      };
+    }
+    
+    return {
+      success: false,
+      message: result.error || 'Erro ao buscar dados do usuário',
+      error: result.error
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: 'Erro ao conectar com a API',
+      error: String(error)
+    };
+  }
+}
+
+// Buscar informações do usuário (CheckUser API)
+export async function fetchUserInfo(username: string, deviceId?: string): Promise<UserInfo> {
+  try {
+    const url = deviceId 
+      ? `https://bot.sshtproject.com/check/${encodeURIComponent(username)}?deviceId=${encodeURIComponent(deviceId)}`
+      : `https://bot.sshtproject.com/check/${encodeURIComponent(username)}`;
+    
+    const response = await fetch(url, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        Authorization: `Bearer ${SALES_API_TOKEN}`,
+      },
+    });
+    
     if (!response.ok) {
       throw new Error('Falha ao buscar informações do usuário');
     }
     
-    const data = await response.json();
-    return data;
+    const result = await response.json();
+    
+    // API retorna dados diretamente (sem wrapper)
+    if (result && result.username) {
+      return result;
+    }
+    
+    // Fallback para formato com wrapper (compatibilidade)
+    if (result.success && result.data) {
+      return result.data;
+    }
+    
+    throw new Error(result.error || 'Erro ao buscar dados do usuário');
   } catch (error) {
     throw error;
   }

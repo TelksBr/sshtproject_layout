@@ -1,4 +1,4 @@
-import { Wifi, WifiOff, Settings, Bell } from 'lucide-react';
+import { Wifi, WifiOff, Settings, Bell } from '../../utils/icons';
 import { Modal } from './Modal';
 import { useHotspotGlobal } from '../../hooks/useGlobalPolling';
 import { memo } from 'react';
