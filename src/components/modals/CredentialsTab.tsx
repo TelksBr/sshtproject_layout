@@ -18,7 +18,8 @@ import {
   AlertTriangle,
   Copy,
   CheckCircle,
-  Shield
+  Shield,
+  X
 } from '../../utils/icons';
 
 interface CredentialsTabProps {
@@ -180,67 +181,76 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
 
   return (
     <Modal onClose={onClose}>
-      <div className="flex flex-col h-full max-h-[85vh] sm:max-h-[90vh]">
-        {/* Header */}
-        <div className="flex flex-wrap items-center justify-between gap-2 p-3 md:p-4 border-b border-[#6205D5]/30">
-          <div className="flex items-center gap-2 md:gap-3">
-            <Key className="w-5 h-5 md:w-6 md:h-6 text-[#6205D5]" />
-            <h2 className="text-base md:text-xl font-bold text-white">Credenciais</h2>
+      <div className="flex flex-col h-full max-h-[85vh] sm:max-h-[90vh] bg-gradient-to-b from-[#1a0628] to-[#26074d]">
+        {/* Header - Mobile Optimized */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-2 p-4 sm:p-5 border-b border-[#6205D5]/30 bg-gradient-to-r from-[#26074d]/80 to-[#1a0628]/80">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-[#6205D5]/20 rounded-lg">
+              <Key className="w-6 h-6 text-[#6205D5]" />
+            </div>
+            <div>
+              <h2 className="text-lg sm:text-xl font-bold text-white">Credenciais</h2>
+              <p className="text-xs text-gray-400 mt-0.5">Gerencie suas credenciais SSH e V2Ray</p>
+            </div>
           </div>
           <div className="flex gap-2">
             <button
               onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-1 md:gap-2 px-3 md:px-4 py-2 bg-[#6205D5] hover:bg-[#4B0082] rounded-lg transition-colors text-sm"
+              className="flex-1 sm:flex-initial flex items-center justify-center sm:justify-start gap-2 px-4 py-2.5 sm:py-2 bg-gradient-to-r from-[#6205D5] to-[#7a19eb] hover:from-[#7a19eb] hover:to-[#6205D5] text-white rounded-lg transition-all active:scale-95 font-semibold text-sm"
             >
-              <Plus className="w-4 h-4" />
-              <span className="hidden md:inline">Adicionar</span>
+              <Plus className="w-5 h-5" />
+              <span>Adicionar</span>
             </button>
             <button
               onClick={refreshCredentials}
               disabled={loading}
-              className="p-2 rounded-lg bg-[#6205D5]/20 hover:bg-[#6205D5]/30 transition-colors"
+              className="p-2.5 rounded-lg bg-[#6205D5]/20 hover:bg-[#6205D5]/30 transition-colors disabled:opacity-50 active:scale-95"
+              title="Atualizar"
             >
-              <RefreshCw className={`w-4 h-4 text-white ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-5 h-5 text-white ${loading ? 'animate-spin' : ''}`} />
             </button>
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="grid grid-cols-3 gap-2 p-3 md:p-4 border-b border-[#6205D5]/20">
+        {/* Filters - Mobile Optimized */}
+        <div className="grid grid-cols-3 gap-2 p-4 border-b border-[#6205D5]/20 bg-[#1a0628]/50">
           <button
             onClick={() => setFilter('all')}
-            className={`px-2 md:px-4 py-2 rounded-lg font-semibold transition-colors text-xs md:text-sm ${
+            className={`px-3 py-2.5 rounded-lg font-semibold transition-all text-xs sm:text-sm active:scale-95 ${
               filter === 'all'
-                ? 'bg-[#6205D5] text-white'
-                : 'bg-[#1a0628] text-gray-400 hover:bg-[#6205D5]/20'
+                ? 'bg-[#6205D5] text-white shadow-lg shadow-[#6205D5]/30'
+                : 'bg-[#26074d] text-gray-300 hover:bg-[#6205D5]/20'
             }`}
           >
-            <span className="hidden md:inline">Todas </span>({credentials.length})
+            <div className="font-semibold">Todas</div>
+            <div className="text-[10px] sm:text-xs mt-0.5 opacity-75">({credentials.length})</div>
           </button>
           <button
             onClick={() => setFilter('active')}
-            className={`px-2 md:px-4 py-2 rounded-lg font-semibold transition-colors text-xs md:text-sm ${
+            className={`px-3 py-2.5 rounded-lg font-semibold transition-all text-xs sm:text-sm active:scale-95 ${
               filter === 'active'
-                ? 'bg-green-600 text-white'
-                : 'bg-[#1a0628] text-gray-400 hover:bg-green-600/20'
+                ? 'bg-green-600 text-white shadow-lg shadow-green-600/30'
+                : 'bg-[#26074d] text-gray-300 hover:bg-green-600/20'
             }`}
           >
-            <span className="hidden md:inline">Ativas </span>({credentials.filter(c => c.is_active && !purchaseStorage.isCredentialExpired(c)).length})
+            <div className="font-semibold">Ativas</div>
+            <div className="text-[10px] sm:text-xs mt-0.5 opacity-75">({credentials.filter(c => c.is_active && !purchaseStorage.isCredentialExpired(c)).length})</div>
           </button>
           <button
             onClick={() => setFilter('expired')}
-            className={`px-2 md:px-4 py-2 rounded-lg font-semibold transition-colors text-xs md:text-sm ${
+            className={`px-3 py-2.5 rounded-lg font-semibold transition-all text-xs sm:text-sm active:scale-95 ${
               filter === 'expired'
-                ? 'bg-red-600 text-white'
-                : 'bg-[#1a0628] text-gray-400 hover:bg-red-600/20'
+                ? 'bg-red-600 text-white shadow-lg shadow-red-600/30'
+                : 'bg-[#26074d] text-gray-300 hover:bg-red-600/20'
             }`}
           >
-            <span className="hidden md:inline">Expiradas </span>({credentials.filter(c => purchaseStorage.isCredentialExpired(c)).length})
+            <div className="font-semibold">Expiradas</div>
+            <div className="text-[10px] sm:text-xs mt-0.5 opacity-75">({credentials.filter(c => purchaseStorage.isCredentialExpired(c)).length})</div>
           </button>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-3">
+        {/* Content - Mobile Optimized */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
           {error && (
             <div className="bg-red-900/30 border border-red-600 p-4 rounded-lg text-red-300">
               {error}
@@ -266,171 +276,171 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
             return (
               <div
                 key={credential.id}
-                className={`bg-gradient-to-br p-3 md:p-4 rounded-lg border-2 transition-all ${
+                className={`rounded-xl border-2 backdrop-blur-sm transition-all overflow-hidden shadow-lg hover:shadow-xl ${
                   credential.is_default
-                    ? 'from-[#6205D5]/20 to-[#4B0082]/20 border-[#6205D5]'
+                    ? 'bg-gradient-to-br from-[#6205D5]/25 to-[#4B0082]/15 border-[#6205D5]/60'
                     : expired
-                    ? 'from-red-900/10 to-red-800/10 border-red-600/30'
-                    : 'from-[#1a0628] to-[#2a1038] border-[#6205D5]/20'
+                    ? 'bg-gradient-to-br from-red-900/15 to-red-800/10 border-red-600/40'
+                    : 'bg-gradient-to-br from-[#26074d]/50 to-[#1a0628]/50 border-[#6205D5]/30 hover:border-[#6205D5]/50'
                 }`}
               >
-                <div className="flex items-start justify-between mb-2 md:mb-3 gap-2">
-                  <div className="flex-1">
-                    {/* Label */}
-                    {isEditing ? (
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={editLabel}
-                          onChange={(e) => setEditLabel(e.target.value)}
-                          className="flex-1 px-3 py-1 bg-[#1a0628] border border-[#6205D5] rounded text-white"
-                          autoFocus
-                        />
-                        <button
-                          onClick={() => handleSaveEdit(credential.id)}
-                          className="p-2 bg-green-600 hover:bg-green-700 rounded"
-                        >
-                          <Check className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={handleCancelEdit}
-                          className="p-2 bg-gray-600 hover:bg-gray-700 rounded"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="text-base md:text-lg font-bold text-white break-all">
-                          {credential.label}
-                        </h3>
-                        {credential.is_default && (
-                          <Star className="w-4 h-4 md:w-5 md:h-5 text-yellow-400 fill-yellow-400 flex-shrink-0" />
-                        )}
-                        <button
-                          onClick={() => handleStartEdit(credential)}
-                          className="p-1 hover:bg-[#6205D5]/30 rounded flex-shrink-0"
-                        >
-                          <Edit2 className="w-3 h-3 md:w-4 md:h-4 text-gray-400" />
-                        </button>
-                      </div>
-                    )}
-
-                    {/* Type Badges */}
-                    <div className="flex items-center gap-2 mt-2 flex-wrap">
-                      {hasSSH && (
-                        <span className="px-2 py-0.5 md:py-1 rounded text-xs font-semibold bg-blue-600/30 text-blue-300">
-                          SSH
-                        </span>
-                      )}
-                      {hasV2Ray && (
-                        <span className="px-2 py-0.5 md:py-1 rounded text-xs font-semibold bg-purple-600/30 text-purple-300">
-                          V2RAY
-                        </span>
-                      )}
-                      
-                      {expired ? (
-                        <span className="flex items-center gap-1 px-2 py-0.5 md:py-1 bg-red-600/30 text-red-300 rounded text-xs font-semibold">
-                          <AlertTriangle className="w-3 h-3" />
-                          Expirada
-                        </span>
-                      ) : daysRemaining !== null && (
-                        <span className="flex items-center gap-1 px-2 py-0.5 md:py-1 bg-green-600/30 text-green-300 rounded text-xs font-semibold">
-                          <Clock className="w-3 h-3" />
-                          {daysRemaining}d
-                        </span>
-                      )}
-                      
-                      {credential.validation && (
-                        <span className="text-[10px] md:text-xs text-gray-500 truncate">
-                          Atualizado: {formatDate(credential.validation.last_checked!)}
-                        </span>
+                {/* Main Header */}
+                <div className="p-4 sm:p-5 pb-3">
+                  <div className="flex items-start justify-between gap-3 mb-4">
+                    {/* Label e Status */}
+                    <div className="flex-1 min-w-0">
+                      {isEditing ? (
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={editLabel}
+                            onChange={(e) => setEditLabel(e.target.value)}
+                            className="flex-1 px-3 py-2 bg-[#1a0628]/80 border-2 border-[#6205D5] rounded-lg text-white text-sm focus:outline-none focus:border-[#6205D5]"
+                            autoFocus
+                          />
+                          <button
+                            onClick={() => handleSaveEdit(credential.id)}
+                            className="p-2 bg-green-600 hover:bg-green-700 rounded-lg transition-colors active:scale-95"
+                          >
+                            <Check className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={handleCancelEdit}
+                            className="p-2 bg-gray-600 hover:bg-gray-700 rounded-lg transition-colors active:scale-95"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div>
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="text-lg sm:text-xl font-bold text-white truncate">
+                              {credential.label}
+                            </h3>
+                            {credential.is_default && (
+                              <div className="px-2 py-1 bg-yellow-500/20 border border-yellow-500/50 rounded-full flex items-center gap-1">
+                                <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                                <span className="text-xs text-yellow-300 font-semibold">Padrão</span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap gap-2 items-center">
+                            {hasSSH && (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-600/30 text-blue-300 border border-blue-600/40">
+                                🔐 SSH
+                              </span>
+                            )}
+                            {hasV2Ray && (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-600/30 text-purple-300 border border-purple-600/40">
+                                🌐 V2RAY
+                              </span>
+                            )}
+                            
+                            {expired ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-600/30 text-red-300 border border-red-600/40">
+                                <AlertTriangle className="w-3 h-3" />
+                                Expirada
+                              </span>
+                            ) : daysRemaining !== null && (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-600/30 text-green-300 border border-green-600/40">
+                                <Clock className="w-3 h-3" />
+                                {daysRemaining}d
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       )}
                     </div>
-                  </div>
 
-                  {/* Actions */}
-                  <div className="flex gap-1 md:gap-2 flex-shrink-0">
-                    {/* Botão Renovar - apenas se expirada e tem SSH */}
-                    {expired && hasSSH && (
-                      <button
-                        onClick={() => handleRenewCredential(credential)}
-                        className="p-2 bg-yellow-600/30 hover:bg-yellow-600/50 rounded transition-colors"
-                        title="Renovar credencial"
-                      >
-                        <RefreshCw className="w-4 h-4 text-yellow-400" />
-                      </button>
-                    )}
-                    
-                    <button
-                      onClick={() => handleApplyCredentials(credential)}
-                      className="p-2 bg-[#6205D5]/30 hover:bg-[#6205D5]/50 rounded transition-colors"
-                      title="Aplicar credenciais"
-                    >
-                      <Check className="w-4 h-4 text-[#6205D5]" />
-                    </button>
-                    <button
-                      onClick={() => handleValidate(credential.id)}
-                      disabled={isValidating}
-                      className="p-2 bg-green-600/20 hover:bg-green-600/40 rounded transition-colors disabled:opacity-50"
-                      title="Validar via CheckUser"
-                    >
-                      {isValidating ? (
-                        <RefreshCw className="w-4 h-4 text-green-400 animate-spin" />
-                      ) : (
-                        <CheckCircle className="w-4 h-4 text-green-400" />
+                    {/* Quick Actions - Icon Buttons */}
+                    <div className="flex gap-1.5 flex-shrink-0">
+                      {expired && hasSSH && (
+                        <button
+                          onClick={() => handleRenewCredential(credential)}
+                          className="p-2.5 bg-yellow-600/20 hover:bg-yellow-600/40 rounded-lg transition-colors active:scale-95"
+                          title="Renovar"
+                        >
+                          <RefreshCw className="w-4 h-4 text-yellow-400" />
+                        </button>
                       )}
-                    </button>
-                    {!credential.is_default && (
+                      
                       <button
-                        onClick={() => handleSetDefault(credential.id)}
-                        className="p-2 bg-[#6205D5]/20 hover:bg-[#6205D5]/40 rounded transition-colors"
+                        onClick={() => handleApplyCredentials(credential)}
+                        className="p-2.5 bg-[#6205D5]/30 hover:bg-[#6205D5]/50 rounded-lg transition-colors active:scale-95"
                         title="Definir como padrão"
                       >
-                        <Star className="w-4 h-4 text-gray-400" />
+                        <Check className="w-4 h-4 text-[#6205D5]" />
                       </button>
-                    )}
-                    <button
-                      onClick={() => handleRemove(credential)}
-                      className="p-2 bg-red-600/20 hover:bg-red-600/40 rounded transition-colors"
-                      title="Remover"
-                    >
-                      <Trash2 className="w-4 h-4 text-red-400" />
-                    </button>
+                      
+                      <button
+                        onClick={() => handleValidate(credential.id)}
+                        disabled={isValidating}
+                        className="p-2.5 bg-green-600/20 hover:bg-green-600/40 rounded-lg transition-colors disabled:opacity-50 active:scale-95"
+                        title="Validar"
+                      >
+                        {isValidating ? (
+                          <RefreshCw className="w-4 h-4 text-green-400 animate-spin" />
+                        ) : (
+                          <CheckCircle className="w-4 h-4 text-green-400" />
+                        )}
+                      </button>
+                      
+                      {!credential.is_default && (
+                        <button
+                          onClick={() => handleSetDefault(credential.id)}
+                          className="p-2.5 bg-[#6205D5]/20 hover:bg-[#6205D5]/40 rounded-lg transition-colors active:scale-95"
+                          title="Favoricar"
+                        >
+                          <Star className="w-4 h-4 text-gray-400" />
+                        </button>
+                      )}
+                      
+                      <button
+                        onClick={() => handleRemove(credential)}
+                        className="p-2.5 bg-red-600/20 hover:bg-red-600/40 rounded-lg transition-colors active:scale-95"
+                        title="Remover"
+                      >
+                        <Trash2 className="w-4 h-4 text-red-400" />
+                      </button>
+                    </div>
                   </div>
                 </div>
 
-                {/* Credentials Info */}
-                <div className="space-y-2 bg-black/30 p-2 md:p-3 rounded text-sm">
+                {/* Credentials Info - Collapsible Section */}
+                <div className="border-t border-[#6205D5]/20 bg-black/20 p-4 sm:p-5 space-y-4 sm:space-y-5 text-sm">
                   {/* SSH Credentials */}
                   {hasSSH && (
-                    <div className="space-y-2 pb-2 border-b border-[#6205D5]/20">
-                      <div className="flex items-center gap-2 text-blue-400 font-semibold text-sm">
+                    <div className="bg-blue-900/20 p-3 rounded-lg border border-blue-600/30">
+                      <h4 className="flex items-center gap-2 text-blue-300 font-semibold text-sm mb-3">
                         <Shield className="w-4 h-4" />
-                        <span>SSH</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-400 text-sm">Usuário:</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-white font-mono text-sm">{credential.ssh!.username}</span>
-                          <button
-                            onClick={() => handleCopyToClipboard(credential.ssh!.username, 'Usuário SSH')}
-                            className="p-1 hover:bg-[#6205D5]/30 rounded"
-                          >
-                            <Copy className="w-3 h-3" />
-                          </button>
+                        SSH Credentials
+                      </h4>
+                      <div className="space-y-2.5 text-sm">
+                        <div>
+                          <label className="text-gray-400 text-xs font-medium">Usuário</label>
+                          <div className="flex items-center justify-between mt-1.5 p-2.5 bg-black/30 rounded-lg">
+                            <span className="text-white font-mono text-sm truncate flex-1">{credential.ssh!.username}</span>
+                            <button
+                              onClick={() => handleCopyToClipboard(credential.ssh!.username, 'Usuário SSH')}
+                              className="ml-2 p-2 hover:bg-[#6205D5]/30 rounded-lg transition-colors active:scale-95 flex-shrink-0"
+                              title="Copiar usuário"
+                            >
+                              <Copy className="w-4 h-4 text-blue-300" />
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-400 text-sm">Senha:</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-white font-mono text-sm">••••••••</span>
-                          <button
-                            onClick={() => handleCopyToClipboard(credential.ssh!.password, 'Senha SSH')}
-                            className="p-1 hover:bg-[#6205D5]/30 rounded"
-                          >
-                            <Copy className="w-3 h-3" />
-                          </button>
+                        <div>
+                          <label className="text-gray-400 text-xs font-medium">Senha</label>
+                          <div className="flex items-center justify-between mt-1.5 p-2.5 bg-black/30 rounded-lg">
+                            <span className="text-white font-mono text-sm">••••••••</span>
+                            <button
+                              onClick={() => handleCopyToClipboard(credential.ssh!.password, 'Senha SSH')}
+                              className="ml-2 p-2 hover:bg-[#6205D5]/30 rounded-lg transition-colors active:scale-95 flex-shrink-0"
+                              title="Copiar senha"
+                            >
+                              <Copy className="w-4 h-4 text-blue-300" />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -438,54 +448,59 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
 
                   {/* V2Ray Credentials */}
                   {hasV2Ray && (
-                    <div className="space-y-2 pt-2">
-                      <div className="flex items-center gap-2 text-purple-400 font-semibold text-sm">
+                    <div className="bg-purple-900/20 p-3 rounded-lg border border-purple-600/30">
+                      <h4 className="flex items-center gap-2 text-purple-300 font-semibold text-sm mb-3">
                         <Shield className="w-4 h-4" />
-                        <span>V2Ray</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-400 text-sm">UUID:</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-white font-mono text-xs">{credential.v2ray!.uuid.substring(0, 20)}...</span>
+                        V2Ray Credentials
+                      </h4>
+                      <div>
+                        <label className="text-gray-400 text-xs font-medium">UUID</label>
+                        <div className="flex items-center justify-between mt-1.5 p-2.5 bg-black/30 rounded-lg">
+                          <span className="text-white font-mono text-xs truncate flex-1">{credential.v2ray!.uuid}</span>
                           <button
                             onClick={() => handleCopyToClipboard(credential.v2ray!.uuid, 'UUID V2Ray')}
-                            className="p-1 hover:bg-[#6205D5]/30 rounded"
+                            className="ml-2 p-2 hover:bg-[#6205D5]/30 rounded-lg transition-colors active:scale-95 flex-shrink-0"
+                            title="Copiar UUID"
                           >
-                            <Copy className="w-3 h-3" />
+                            <Copy className="w-4 h-4 text-purple-300" />
                           </button>
                         </div>
                       </div>
                     </div>
                   )}
 
-                  {/* Validation Data (cache) */}
+                  {/* Validation Data */}
                   {credential.validation && (
-                    <div className="mt-3 pt-3 border-t border-[#6205D5]/20 space-y-1">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-400">Limite:</span>
-                        <span className="text-white">{credential.validation.limit || 'N/A'}</span>
-                      </div>
-                      {credential.validation.count_connections !== undefined && (
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-400">Conexões:</span>
-                          <span className="text-white">{credential.validation.count_connections}</span>
+                    <div className="bg-[#6205D5]/10 p-3 rounded-lg border border-[#6205D5]/30">
+                      <h4 className="text-[#b0a8ff] font-semibold text-sm mb-3">Status de Validade</h4>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-400">Limite:</span>
+                          <span className="text-white font-medium">{credential.validation.limit || 'N/A'}</span>
                         </div>
-                      )}
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-400">Expira em:</span>
-                        <span className="text-white">{formatDate(credential.validation.expiration_date!)}</span>
+                        {credential.validation.count_connections !== undefined && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-400">Conexões ativas:</span>
+                            <span className="text-white font-medium">{credential.validation.count_connections}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-400">Expira em:</span>
+                          <span className="text-white font-medium">{formatDate(credential.validation.expiration_date!)}</span>
+                        </div>
                       </div>
                     </div>
                   )}
 
                   {/* Servers */}
                   {credential.servers && credential.servers.length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-[#6205D5]/20">
-                      <div className="text-gray-400 text-sm mb-2">Servidores ({credential.servers.length}):</div>
-                      <div className="space-y-1 max-h-32 overflow-y-auto">
+                    <div className="bg-green-900/10 p-3 rounded-lg border border-green-600/30">
+                      <h4 className="text-green-300 font-semibold text-sm mb-3">📍 Servidores ({credential.servers.length})</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto">
                         {credential.servers.map((server, idx) => (
-                          <div key={idx} className="text-xs text-gray-300 font-mono">
-                            {server.name} - {server.host}:{server.port}
+                          <div key={idx} className="p-2 bg-black/30 rounded-lg text-xs">
+                            <div className="font-medium text-green-300 truncate">{server.name}</div>
+                            <div className="text-gray-400 font-mono text-[11px] truncate">{server.host}:{server.port}</div>
                           </div>
                         ))}
                       </div>
@@ -498,12 +513,12 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-[#6205D5]/30 flex justify-end">
+        <div className="p-4 sm:p-5 border-t border-[#6205D5]/30 bg-gradient-to-r from-[#1a0628]/80 to-[#26074d]/80 flex gap-3">
           <button
             onClick={onClose}
-            className="px-6 py-2 bg-[#6205D5] hover:bg-[#4B0082] rounded-lg font-semibold transition-colors"
+            className="flex-1 sm:flex-initial px-6 py-3 sm:py-2.5 bg-[#26074d] hover:bg-[#26074d]/80 border-2 border-[#6205D5]/30 hover:border-[#6205D5]/60 text-white rounded-lg font-semibold transition-all active:scale-95"
           >
-            Fechar
+            ✕ Fechar
           </button>
         </div>
       </div>
