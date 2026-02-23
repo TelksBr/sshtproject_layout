@@ -430,3 +430,42 @@ export function openExternalUrl(uri: string): unknown {
   }
   return call('DtStartWebViewActivity', 'execute', [uri]);
 }
+
+// Validação de credenciais setadas
+export interface CredentialVerification {
+  isValid: boolean;
+  username?: boolean;
+  password?: boolean;
+  uuid?: boolean;
+}
+
+/**
+ * Valida se as credenciais foram realmente setadas no DTunnel
+ */
+export function verifyCredentialsSetted(
+  expectedUsername?: string,
+  expectedPassword?: string,
+  expectedUUID?: string
+): CredentialVerification {
+  const result: CredentialVerification = { isValid: true };
+
+  if (expectedUsername !== undefined && expectedUsername !== '') {
+    const actualUsername = getUsername();
+    result.username = actualUsername === expectedUsername;
+    if (!result.username) result.isValid = false;
+  }
+
+  if (expectedPassword !== undefined && expectedPassword !== '') {
+    const actualPassword = getPassword();
+    result.password = actualPassword === expectedPassword;
+    if (!result.password) result.isValid = false;
+  }
+
+  if (expectedUUID !== undefined && expectedUUID !== '') {
+    const actualUUID = getUUID();
+    result.uuid = actualUUID === expectedUUID;
+    if (!result.uuid) result.isValid = false;
+  }
+
+  return result;
+}

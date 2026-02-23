@@ -7,7 +7,7 @@ import { useToast } from '../../hooks/useToast';
 import { SavedCredential, purchaseStorage } from '../../utils/purchaseStorageManager';
 import { copyToClipboard } from '../../utils/nativeClipboard';
 import { getSdk } from '../../utils/sdkInstance';
-import { setUsername, setPassword, setUUID } from '../../utils/appFunctions';
+import { setUsername, setPassword, setUUID, verifyCredentialsSetted } from '../../utils/appFunctions';
 import { emit } from '../../utils/dtunnelEventBridge';
 import { 
   Key, 
@@ -112,7 +112,7 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
       const credential = credentials.find(c => c.id === id);
       if (!credential) return;
 
-      // ✅ SEMPRE carregar credencial nas funções nativas do app ANTES de marcar como padrão
+      // ✅ Carregar credencial nas funções nativas do app
       try {
         // Configurar SSH se disponível
         if (credential.ssh) {
@@ -130,7 +130,20 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
         return;
       }
 
-      // Depois definir como padrão no storage
+      // ✅ Validar se a credencial foi REALMENTE setada no DTunnel
+      const verification = verifyCredentialsSetted(
+        credential.ssh?.username,
+        credential.ssh?.password,
+        credential.v2ray?.uuid
+      );
+
+      if (!verification.isValid) {
+        console.error('❌ Credencial não foi setada corretamente no DTunnel:', verification);
+        showToast('Erro: Credencial não foi setada no DTunnel. Tente novamente.', 'error');
+        return;
+      }
+
+      // Só então definir como padrão no storage (após confirmação do DTunnel)
       const success = setDefault(id);
       if (!success) {
         showToast('Erro ao definir credencial como padrão', 'error');
