@@ -6,6 +6,7 @@ import { useCredentialsManager } from '../../hooks/useCredentialsManager';
 import { useToast } from '../../hooks/useToast';
 import { SavedCredential, purchaseStorage } from '../../utils/purchaseStorageManager';
 import { copyToClipboard } from '../../utils/nativeClipboard';
+import { getSdk } from '../../utils/sdkInstance';
 import { 
   Key, 
   Star, 
@@ -105,7 +106,44 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
 
   // Handler para definir como padrão
   const handleSetDefault = (id: string) => {
-    setDefault(id);
+    try {
+      const credential = credentials.find(c => c.id === id);
+      if (!credential) return;
+
+      // Definir como padrão no storage
+      const success = setDefault(id);
+      if (!success) {
+        showToast('Erro ao definir credencial como padrão', 'error');
+        return;
+      }
+
+      // Aplicar credencial no app via SDK
+      const sdk = getSdk();
+      if (sdk?.app?.setConnectionInfo) {
+        const info: any = {
+          uuid: null,
+          username: null,
+          password: null
+        };
+
+        // Configurar SSH se disponível
+        if (credential.ssh) {
+          info.username = credential.ssh.username;
+          info.password = credential.ssh.password;
+        }
+
+        // Configurar V2Ray se disponível
+        if (credential.v2ray) {
+          info.uuid = credential.v2ray.uuid;
+        }
+
+        sdk.app.setConnectionInfo(info);
+      }
+
+      showToast(`✅ "${credential.label}" definida como padrão e carregada!`, 'success');
+    } catch (error) {
+      showToast('Erro ao carregar credencial', 'error');
+    }
   };
 
   // Handler para remover
@@ -145,22 +183,6 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
     return purchaseStorage.getDaysUntilExpiration(credential);
   };
 
-  // Aplicar credenciais na aplicação
-  const handleApplyCredentials = (credential: SavedCredential) => {
-    try {
-      // ✅ Credenciais foram salvas e podem ser acessadas via purchaseStorage
-      // O SDK (DTunnel) acessa automaticamente as credenciais salvas
-      
-      showToast('Credencial selecionada como padrão!', 'success');
-      
-      // Definir como padrão automaticamente
-      if (!credential.is_default) {
-        setDefault(credential.id);
-      }
-    } catch (error) {
-      showToast('Erro ao aplicar credenciais', 'error');
-    }
-  };
 
   // Abrir modal de renovação
   const handleRenewCredential = (credential: SavedCredential) => {
@@ -353,52 +375,51 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
                     </div>
 
                     {/* Quick Actions - Icon Buttons */}
-                    <div className="flex gap-1.5 flex-shrink-0">
-                      {expired && hasSSH && (
+                    <div className="flex gap-1.5 flex-shrink-0 flex-wrap justify-end">
+                      {/* Set as Default Button */}
+                      {!credential.is_default && (
                         <button
-                          onClick={() => handleRenewCredential(credential)}
-                          className="p-2.5 bg-yellow-600/20 hover:bg-yellow-600/40 rounded-lg transition-colors active:scale-95"
-                          title="Renovar"
+                          onClick={() => handleSetDefault(credential.id)}
+                          className="flex items-center gap-1.5 px-3 py-2 bg-[#6205D5]/20 hover:bg-[#6205D5]/40 rounded-lg transition-colors active:scale-95 text-xs font-semibold"
+                          title="Definir como padrão"
                         >
-                          <RefreshCw className="w-4 h-4 text-yellow-400" />
+                          <Star className="w-4 h-4 text-[#6205D5]" />
+                          <span className="hidden sm:inline">Padrão</span>
                         </button>
                       )}
                       
-                      <button
-                        onClick={() => handleApplyCredentials(credential)}
-                        className="p-2.5 bg-[#6205D5]/30 hover:bg-[#6205D5]/50 rounded-lg transition-colors active:scale-95"
-                        title="Definir como padrão"
-                      >
-                        <Check className="w-4 h-4 text-[#6205D5]" />
-                      </button>
-                      
+                      {/* Validate Button */}
                       <button
                         onClick={() => handleValidate(credential.id)}
                         disabled={isValidating}
-                        className="p-2.5 bg-green-600/20 hover:bg-green-600/40 rounded-lg transition-colors disabled:opacity-50 active:scale-95"
-                        title="Validar"
+                        className="flex items-center gap-1.5 px-3 py-2 bg-green-600/20 hover:bg-green-600/40 rounded-lg transition-colors disabled:opacity-50 active:scale-95 text-xs font-semibold"
+                        title="Validar credenciais"
                       >
                         {isValidating ? (
                           <RefreshCw className="w-4 h-4 text-green-400 animate-spin" />
                         ) : (
                           <CheckCircle className="w-4 h-4 text-green-400" />
                         )}
+                        <span className="hidden sm:inline">Validar</span>
                       </button>
                       
-                      {!credential.is_default && (
+                      {/* Renew Button - only if expired and has SSH */}
+                      {expired && hasSSH && (
                         <button
-                          onClick={() => handleSetDefault(credential.id)}
-                          className="p-2.5 bg-[#6205D5]/20 hover:bg-[#6205D5]/40 rounded-lg transition-colors active:scale-95"
-                          title="Favoricar"
+                          onClick={() => handleRenewCredential(credential)}
+                          className="flex items-center gap-1.5 px-3 py-2 bg-yellow-600/20 hover:bg-yellow-600/40 rounded-lg transition-colors active:scale-95 text-xs font-semibold"
+                          title="Renovar credencial"
                         >
-                          <Star className="w-4 h-4 text-gray-400" />
+                          <RefreshCw className="w-4 h-4 text-yellow-400" />
+                          <span className="hidden sm:inline">Renovar</span>
                         </button>
                       )}
                       
+                      {/* Delete Button */}
                       <button
                         onClick={() => handleRemove(credential)}
                         className="p-2.5 bg-red-600/20 hover:bg-red-600/40 rounded-lg transition-colors active:scale-95"
-                        title="Remover"
+                        title="Remover credencial"
                       >
                         <Trash2 className="w-4 h-4 text-red-400" />
                       </button>
