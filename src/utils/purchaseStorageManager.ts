@@ -58,10 +58,11 @@ export interface SavedCredential {
 // STORAGE MANAGER
 // =============================
 
-const STORAGE_PREFIX = '@sshproject:';
-const PENDING_PURCHASES_KEY = `${STORAGE_PREFIX}pending_purchases`;
-const SAVED_CREDENTIALS_KEY = `${STORAGE_PREFIX}saved_credentials`;
-const LAST_CHECK_KEY = `${STORAGE_PREFIX}last_check`;
+// ✅ Usar saveData/loadData do nativeStorage que já adiciona o prefixo
+// Aqui apenas o nome da chave sem prefixo
+const PENDING_PURCHASES_KEY = 'pending_purchases';
+const SAVED_CREDENTIALS_KEY = 'saved_credentials';
+const LAST_CHECK_KEY = 'last_check';
 
 class PurchaseStorageManager {
   // =============================
@@ -279,7 +280,7 @@ class PurchaseStorageManager {
       newCred.label = label;
       
       saved.push(newCred);
-      localStorage.setItem(SAVED_CREDENTIALS_KEY, JSON.stringify(saved));
+      saveData(SAVED_CREDENTIALS_KEY, saved);
       return id;
     } catch (error) {
       return '';
@@ -307,7 +308,7 @@ class PurchaseStorageManager {
       }
 
       saved.push(newCred);
-      localStorage.setItem(SAVED_CREDENTIALS_KEY, JSON.stringify(saved));
+      saveData(SAVED_CREDENTIALS_KEY, saved);
       return id;
     } catch (error) {
       return '';
@@ -326,10 +327,9 @@ class PurchaseStorageManager {
 
       Object.assign(target, updates);
       
-      localStorage.setItem(SAVED_CREDENTIALS_KEY, JSON.stringify(credentials));
+      saveData(SAVED_CREDENTIALS_KEY, credentials);
       return true;
     } catch (error) {
-
       return false;
     }
   }
@@ -367,7 +367,7 @@ class PurchaseStorageManager {
   /**
    * Verifica se credencial já existe pelo payment_id
    */
-  hasCredentialByPaymentId(paymentId: string): boolean {
+  hasCredentialByPaymentId(paymentId: string | number): boolean {
     const credentials = this.getSavedCredentials();
     return credentials.some(c => c.payment_id === String(paymentId));
   }
@@ -395,10 +395,9 @@ class PurchaseStorageManager {
         c.is_default = c.id === id;
       });
 
-      localStorage.setItem(SAVED_CREDENTIALS_KEY, JSON.stringify(credentials));
+      saveData(SAVED_CREDENTIALS_KEY, credentials);
       return true;
     } catch (error) {
-
       return false;
     }
   }
@@ -414,7 +413,7 @@ class PurchaseStorageManager {
       if (!target) return false;
 
       target.label = label;
-      localStorage.setItem(SAVED_CREDENTIALS_KEY, JSON.stringify(credentials));
+      saveData(SAVED_CREDENTIALS_KEY, credentials);
       return true;
     } catch (error) {
 
@@ -486,7 +485,7 @@ class PurchaseStorageManager {
         last_checked: new Date().toISOString()
       };
       
-      localStorage.setItem(SAVED_CREDENTIALS_KEY, JSON.stringify(credentials));
+      saveData(SAVED_CREDENTIALS_KEY, credentials);
       return true;
     } catch (error) {
       return false;
