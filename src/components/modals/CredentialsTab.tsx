@@ -6,6 +6,7 @@ import { useCredentialsManager } from '../../hooks/useCredentialsManager';
 import { useToast } from '../../hooks/useToast';
 import { SavedCredential, purchaseStorage } from '../../utils/purchaseStorageManager';
 import { callVoid } from '../../utils/dtunnelBridge';
+import { copyToClipboard } from '../../utils/nativeClipboard';
 import { 
   Key, 
   Star, 
@@ -128,12 +129,12 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
     setConfirmDelete({ show: false, id: '', label: '' });
   };
 
-  // Copiar para clipboard
-  const copyToClipboard = async (text: string, type: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
+  // Copiar para clipboard via SDK/browser nativo
+  const handleCopyToClipboard = async (text: string, type: string) => {
+    const success = await copyToClipboard(text);
+    if (success) {
       showToast(`${type} copiado!`, 'success', 2000);
-    } catch (err) {
+    } else {
       showToast('Erro ao copiar para área de transferência', 'error');
     }
   };
@@ -422,7 +423,7 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
                         <div className="flex items-center gap-2">
                           <span className="text-white font-mono text-sm">{credential.ssh!.username}</span>
                           <button
-                            onClick={() => copyToClipboard(credential.ssh!.username, 'Usuário SSH')}
+                            onClick={() => handleCopyToClipboard(credential.ssh!.username, 'Usuário SSH')}
                             className="p-1 hover:bg-[#6205D5]/30 rounded"
                           >
                             <Copy className="w-3 h-3" />
@@ -434,7 +435,7 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
                         <div className="flex items-center gap-2">
                           <span className="text-white font-mono text-sm">••••••••</span>
                           <button
-                            onClick={() => copyToClipboard(credential.ssh!.password, 'Senha SSH')}
+                            onClick={() => handleCopyToClipboard(credential.ssh!.password, 'Senha SSH')}
                             className="p-1 hover:bg-[#6205D5]/30 rounded"
                           >
                             <Copy className="w-3 h-3" />
@@ -456,7 +457,7 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
                         <div className="flex items-center gap-2">
                           <span className="text-white font-mono text-xs">{credential.v2ray!.uuid.substring(0, 20)}...</span>
                           <button
-                            onClick={() => copyToClipboard(credential.v2ray!.uuid, 'UUID V2Ray')}
+                            onClick={() => handleCopyToClipboard(credential.v2ray!.uuid, 'UUID V2Ray')}
                             className="p-1 hover:bg-[#6205D5]/30 rounded"
                           >
                             <Copy className="w-3 h-3" />
@@ -563,9 +564,10 @@ function AddCredentialModal({ onClose, onAdd }: AddCredentialModalProps) {
   const [sshPassword, setSshPassword] = useState('');
   const [v2rayUuid, setV2rayUuid] = useState('');
   const [useSSH, setUseSSH] = useState(true);
-  const [useV2Ray, setUseV2Ray] = useState(true);
+  const [useV2Ray, setUseV2Ray] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!useSSH && !useV2Ray) {
@@ -582,6 +584,8 @@ function AddCredentialModal({ onClose, onAdd }: AddCredentialModalProps) {
       showToast('Preencha o UUID V2Ray', 'warning');
       return;
     }
+
+    setIsSubmitting(true);
 
     const credential: Omit<SavedCredential, 'id' | 'created_at'> = {
       label: label || 'Credencial Manual',
@@ -603,104 +607,211 @@ function AddCredentialModal({ onClose, onAdd }: AddCredentialModalProps) {
     }
 
     onAdd(credential);
+    setIsSubmitting(false);
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60] p-4">
-      <div className="bg-gradient-to-br from-[#1a0628] to-[#2a1038] rounded-lg border-2 border-[#6205D5]/30 p-4 md:p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <h3 className="text-lg md:text-xl font-bold text-white mb-3 md:mb-4">Adicionar Credencial</h3>
-        
-        <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4">
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60] p-4 backdrop-blur-sm">
+      <div className="bg-gradient-to-br from-[#26074d]/98 to-[#100322]/98 rounded-xl sm:rounded-2xl border-2 border-[#6205D5]/30 p-4 sm:p-6 max-w-sm w-full max-h-[90vh] overflow-y-auto shadow-2xl shadow-[#6205D5]/20">
+        {/* Cabeçalho */}
+        <div className="mb-5 sm:mb-6">
+          <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-white mb-1">
+            ➕ Adicionar Credencial
+          </h2>
+          <p className="text-xs sm:text-sm text-gray-400">
+            Adicione manualmente suas credenciais SSH ou V2Ray
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+          {/* Label/Nome */}
           <div>
-            <label className="block text-xs md:text-sm text-gray-400 mb-1">Nome/Label:</label>
+            <label className="block text-xs sm:text-sm font-semibold text-gray-300 mb-2">
+              📝 Nome/Label
+            </label>
             <input
               type="text"
               value={label}
               onChange={(e) => setLabel(e.target.value)}
-              placeholder="Ex: Minha VPN Principal"
-              className="w-full px-3 py-2 bg-[#1a0628] border border-[#6205D5]/50 rounded text-white text-sm"
+              placeholder="Ex: VPN Principal"
+              className="
+                w-full px-3 sm:px-4 py-2.5 sm:py-3
+                bg-[#1a0533]/50 border-2 border-[#6205D5]/30
+                rounded-lg sm:rounded-xl
+                text-white text-sm sm:text-base
+                placeholder-gray-500/70
+                focus:outline-none focus:border-[#6205D5]/70 focus:bg-[#1a0533]/70
+                transition-all
+              "
             />
           </div>
 
-          {/* SSH Toggle */}
-          <div className="flex items-center gap-1.5">
-            <input
-              type="checkbox"
-              id="useSSH"
-              checked={useSSH}
-              onChange={(e) => setUseSSH(e.target.checked)}
-              className="w-3.5 h-3.5 accent-[#6205D5]"
-            />
-            <label htmlFor="useSSH" className="text-white text-xs cursor-pointer">Incluir SSH</label>
+          {/* SSH Card */}
+          <div className={`
+            p-3 sm:p-4 rounded-lg sm:rounded-xl
+            border-2 transition-all duration-200
+            ${useSSH 
+              ? 'bg-blue-900/20 border-blue-600/40' 
+              : 'bg-[#1a0533]/30 border-gray-700/30 opacity-60'
+            }
+          `}>
+            <div className="flex items-center gap-3 mb-3 sm:mb-4 cursor-pointer" onClick={() => setUseSSH(!useSSH)}>
+              <input
+                type="checkbox"
+                id="useSSH"
+                checked={useSSH}
+                onChange={(e) => setUseSSH(e.target.checked)}
+                className="w-5 h-5 accent-blue-500 cursor-pointer"
+              />
+              <label htmlFor="useSSH" className="flex items-center gap-2 cursor-pointer flex-1">
+                <span className="text-lg">🔐</span>
+                <span className="font-semibold text-white text-sm sm:text-base">SSH</span>
+                {useSSH && <span className="text-[10px] sm:text-xs bg-blue-600/50 px-2 py-0.5 rounded-full text-blue-200">ATIVO</span>}
+              </label>
+            </div>
+
+            {useSSH && (
+              <div className="space-y-3 sm:space-y-3.5">
+                <div>
+                  <label className="block text-xs sm:text-sm text-gray-400 mb-1.5">
+                    Usuário:
+                  </label>
+                  <input
+                    type="text"
+                    value={sshUsername}
+                    onChange={(e) => setSshUsername(e.target.value)}
+                    placeholder="seu_usuario"
+                    className="
+                      w-full px-3 sm:px-3.5 py-2 sm:py-2.5
+                      bg-[#1a0533] border-2 border-[#6205D5]/30
+                      rounded-lg text-white text-sm sm:text-base
+                      focus:outline-none focus:border-[#6205D5]/70
+                      transition-all
+                    "
+                    required={useSSH}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs sm:text-sm text-gray-400 mb-1.5">
+                    Senha:
+                  </label>
+                  <input
+                    type="password"
+                    value={sshPassword}
+                    onChange={(e) => setSshPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="
+                      w-full px-3 sm:px-3.5 py-2 sm:py-2.5
+                      bg-[#1a0533] border-2 border-[#6205D5]/30
+                      rounded-lg text-white text-sm sm:text-base
+                      focus:outline-none focus:border-[#6205D5]/70
+                      transition-all
+                    "
+                    required={useSSH}
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
-          {useSSH && (
-            <>
+          {/* V2Ray Card */}
+          <div className={`
+            p-3 sm:p-4 rounded-lg sm:rounded-xl
+            border-2 transition-all duration-200
+            ${useV2Ray 
+              ? 'bg-purple-900/20 border-purple-600/40' 
+              : 'bg-[#1a0533]/30 border-gray-700/30 opacity-60'
+            }
+          `}>
+            <div className="flex items-center gap-3 mb-3 sm:mb-4 cursor-pointer" onClick={() => setUseV2Ray(!useV2Ray)}>
+              <input
+                type="checkbox"
+                id="useV2Ray"
+                checked={useV2Ray}
+                onChange={(e) => setUseV2Ray(e.target.checked)}
+                className="w-5 h-5 accent-purple-500 cursor-pointer"
+              />
+              <label htmlFor="useV2Ray" className="flex items-center gap-2 cursor-pointer flex-1">
+                <span className="text-lg">🌐</span>
+                <span className="font-semibold text-white text-sm sm:text-base">V2Ray</span>
+                {useV2Ray && <span className="text-[10px] sm:text-xs bg-purple-600/50 px-2 py-0.5 rounded-full text-purple-200">ATIVO</span>}
+              </label>
+            </div>
+
+            {useV2Ray && (
               <div>
-                <label className="block text-xs md:text-sm text-gray-400 mb-1">Usuário SSH:</label>
+                <label className="block text-xs sm:text-sm text-gray-400 mb-1.5">
+                  UUID:
+                </label>
                 <input
                   type="text"
-                  value={sshUsername}
-                  onChange={(e) => setSshUsername(e.target.value)}
-                  placeholder="usuario123"
-                  className="w-full px-3 py-2 bg-[#1a0628] border border-[#6205D5]/50 rounded text-white text-sm"
-                  required={useSSH}
+                  value={v2rayUuid}
+                  onChange={(e) => setV2rayUuid(e.target.value)}
+                  placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                  className="
+                    w-full px-3 sm:px-3.5 py-2 sm:py-2.5
+                    bg-[#1a0533] border-2 border-[#6205D5]/30
+                    rounded-lg text-white text-[11px] sm:text-xs font-mono
+                    focus:outline-none focus:border-[#6205D5]/70
+                    transition-all
+                  "
+                  required={useV2Ray}
                 />
               </div>
-
-              <div>
-                <label className="block text-xs md:text-sm text-gray-400 mb-1">Senha SSH:</label>
-                <input
-                  type="password"
-                  value={sshPassword}
-                  onChange={(e) => setSshPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full px-3 py-2 bg-[#1a0628] border border-[#6205D5]/50 rounded text-white text-sm"
-                  required={useSSH}
-                />
-              </div>
-            </>
-          )}
-
-          {/* V2Ray Toggle */}
-          <div className="flex items-center gap-1.5">
-            <input
-              type="checkbox"
-              id="useV2Ray"
-              checked={useV2Ray}
-              onChange={(e) => setUseV2Ray(e.target.checked)}
-              className="w-3.5 h-3.5 accent-[#6205D5]"
-            />
-            <label htmlFor="useV2Ray" className="text-white text-xs cursor-pointer">Incluir V2Ray</label>
+            )}
           </div>
 
-          {useV2Ray && (
-            <div>
-              <label className="block text-xs md:text-sm text-gray-400 mb-1">UUID V2Ray:</label>
-              <input
-                type="text"
-                value={v2rayUuid}
-                onChange={(e) => setV2rayUuid(e.target.value)}
-                placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-                className="w-full px-3 py-2 bg-[#1a0628] border border-[#6205D5]/50 rounded text-white font-mono text-xs md:text-sm"
-                required={useV2Ray}
-              />
+          {/* Aviso */}
+          {!useSSH && !useV2Ray && (
+            <div className="p-2.5 sm:p-3 bg-yellow-900/30 border-2 border-yellow-600/40 rounded-lg">
+              <p className="text-[11px] sm:text-xs text-yellow-300/90">
+                ⚠️ Selecione ao menos SSH ou V2Ray para continuar
+              </p>
             </div>
           )}
 
-          <div className="flex gap-2 md:gap-3 pt-3 md:pt-4">
-            <button
-              type="submit"
-              className="flex-1 py-2.5 bg-[#6205D5] hover:bg-[#4B0082] rounded-lg font-semibold transition-colors text-sm md:text-base"
-            >
-              Adicionar
-            </button>
+          {/* Botões */}
+          <div className="flex gap-2.5 sm:gap-3 pt-2 sm:pt-3">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2.5 bg-gray-700 hover:bg-gray-600 rounded-lg font-semibold transition-colors text-sm md:text-base"
+              disabled={isSubmitting}
+              className="
+                flex-1 min-h-[44px] sm:min-h-[48px]
+                px-3 sm:px-4
+                bg-[#26074d]/80 hover:bg-[#26074d] border-2 border-[#6205D5]/30 hover:border-[#6205D5]/60
+                text-white text-sm sm:text-base font-semibold
+                rounded-lg sm:rounded-xl transition-all active:scale-95
+                disabled:opacity-50 disabled:cursor-not-allowed
+              "
             >
-              Cancelar
+              ✕ Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting || (!useSSH && !useV2Ray)}
+              className="
+                flex-1 min-h-[44px] sm:min-h-[48px]
+                px-3 sm:px-4
+                bg-gradient-to-r from-[#6205D5] to-[#7a19eb] hover:from-[#7a19eb] hover:to-[#6205D5]
+                text-white text-sm sm:text-base font-semibold
+                rounded-lg sm:rounded-xl transition-all active:scale-95
+                disabled:opacity-50 disabled:cursor-not-allowed
+                flex items-center justify-center gap-2
+              "
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span className="hidden sm:inline">Adicionando...</span>
+                </>
+              ) : (
+                <>
+                  <span>✅</span>
+                  <span>Adicionar</span>
+                </>
+              )}
             </button>
           </div>
         </form>

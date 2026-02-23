@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { purchaseMonitor, PurchaseMonitorCallbacks } from '../utils/backgroundPurchaseMonitor';
 import { purchaseStorage, PendingPurchase } from '../utils/purchaseStorageManager';
+import { paymentNotificationManager } from '../utils/paymentNotificationManager';
 import { CredentialsResponse } from '../types/sales';
 
 export interface BackgroundMonitorHook {
@@ -80,10 +81,17 @@ export function useBackgroundMonitor(options?: BackgroundMonitorOptions): Backgr
       // Callbacks padrão
       const callbacks: PurchaseMonitorCallbacks = {
         onPurchaseCompleted: (purchase, credentials) => {
-          // Mostrar notificação se suportado
+          // Mostrar notificação popup
+          paymentNotificationManager.notifyPaymentApproved(
+            purchase.order_id,
+            purchase.amount,
+            purchase.plan_name
+          );
+          
+          // Mostrar notificação nativa se suportado
           if ('Notification' in window && Notification.permission === 'granted') {
             new Notification('🎉 Compra Aprovada!', {
-              body: `Sua compra foi aprovada! Suas credenciais estão prontas.`,
+              body: `${purchase.plan_name || 'Sua compra'} foi aprovada! Credenciais prontas.`,
               icon: '/logo.png',
               tag: purchase.order_id
             });

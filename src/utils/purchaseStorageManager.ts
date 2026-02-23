@@ -1,4 +1,5 @@
 import { CredentialsResponse } from '../types/sales';
+import { loadData, saveData, removeData } from './nativeStorage';
 
 // =============================
 // TIPOS
@@ -82,7 +83,7 @@ class PurchaseStorageManager {
         status: purchase.status || 'pending'
       });
 
-      localStorage.setItem(PENDING_PURCHASES_KEY, JSON.stringify(filtered));
+      saveData(PENDING_PURCHASES_KEY, filtered);
     } catch (error) {
       // Error handling
     }
@@ -93,10 +94,10 @@ class PurchaseStorageManager {
    */
   getPendingPurchases(): PendingPurchase[] {
     try {
-      const data = localStorage.getItem(PENDING_PURCHASES_KEY);
+      const data = loadData<PendingPurchase[]>(PENDING_PURCHASES_KEY);
       if (!data) return [];
       
-      const purchases: PendingPurchase[] = JSON.parse(data);
+      const purchases: PendingPurchase[] = data ?? [];
       
       // Filtrar compras expiradas (mais de 24h)
       const now = new Date().getTime();
@@ -119,7 +120,7 @@ class PurchaseStorageManager {
 
       // Salvar lista filtrada
       if (filtered.length !== purchases.length) {
-        localStorage.setItem(PENDING_PURCHASES_KEY, JSON.stringify(filtered));
+        saveData(PENDING_PURCHASES_KEY, filtered);
       }
 
       return filtered;
@@ -140,7 +141,7 @@ class PurchaseStorageManager {
       const updated = purchases.map(p => 
         p.order_id === order_id ? { ...p, status } : p
       );
-      localStorage.setItem(PENDING_PURCHASES_KEY, JSON.stringify(updated));
+      saveData(PENDING_PURCHASES_KEY, updated);
     } catch (error) {
       // Error handling
     }
@@ -153,7 +154,7 @@ class PurchaseStorageManager {
     try {
       const purchases = this.getPendingPurchases();
       const filtered = purchases.filter(p => p.order_id !== order_id);
-      localStorage.setItem(PENDING_PURCHASES_KEY, JSON.stringify(filtered));
+      saveData(PENDING_PURCHASES_KEY, filtered);
     } catch (error) {
       // Error handling
     }
@@ -164,7 +165,7 @@ class PurchaseStorageManager {
    */
   clearPendingPurchases(): void {
     try {
-      localStorage.removeItem(PENDING_PURCHASES_KEY);
+      removeData(PENDING_PURCHASES_KEY);
     } catch (error) {
       // Error handling
     }
@@ -338,10 +339,8 @@ class PurchaseStorageManager {
    */
   getSavedCredentials(): SavedCredential[] {
     try {
-      const data = localStorage.getItem(SAVED_CREDENTIALS_KEY);
-      if (!data) return [];
-      
-      const credentials: SavedCredential[] = JSON.parse(data);
+      const credentials = loadData<SavedCredential[]>(SAVED_CREDENTIALS_KEY);
+      if (!credentials) return [];
       
       // Filtrar credenciais expiradas (opcional - manter para histórico)
       return credentials.sort((a, b) => {
@@ -433,7 +432,7 @@ class PurchaseStorageManager {
       
       if (filtered.length === credentials.length) return false;
 
-      localStorage.setItem(SAVED_CREDENTIALS_KEY, JSON.stringify(filtered));
+        saveData(SAVED_CREDENTIALS_KEY, filtered);
       return true;
     } catch (error) {
       return false;
@@ -445,7 +444,7 @@ class PurchaseStorageManager {
    */
   clearAllCredentials(): void {
     try {
-      localStorage.removeItem(SAVED_CREDENTIALS_KEY);
+      removeData(SAVED_CREDENTIALS_KEY);
     } catch (error) {
       // Error handling
     }
@@ -503,7 +502,7 @@ class PurchaseStorageManager {
    */
   setLastCheck(): void {
     try {
-      localStorage.setItem(LAST_CHECK_KEY, new Date().toISOString());
+      saveData(LAST_CHECK_KEY, new Date().toISOString());
     } catch (error) {
       // Error handling
     }
@@ -514,7 +513,7 @@ class PurchaseStorageManager {
    */
   getLastCheck(): string | null {
     try {
-      return localStorage.getItem(LAST_CHECK_KEY);
+      return loadData<string>(LAST_CHECK_KEY);
     } catch (error) {
       return null;
     }

@@ -85,40 +85,34 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
   }, []);
 
   // Escuta eventos de mudança de configuração
-  useEffect(() => {
-    const handleConfigChanged = () => {
-      // Busca a config ativa quando o evento disparar
-      const config = getActiveConfig();
-      if (config) {
-        setMode(config.mode || '');
-        const authObj = config.auth || {};
-        // Sempre cria um novo objeto auth para garantir re-render
-        const newAuth: ConfigAuth = {
-          username: authObj.username || undefined,
-          password: authObj.password || undefined,
-          v2ray_uuid: authObj.v2ray_uuid || undefined,
-        };
-        setAuth(newAuth);
-        setFormError(null); // Limpa erros quando trocar de config
+  const handleConfigChanged = useCallback(() => {
+    const config = getActiveConfig();
+    if (config) {
+      setMode(config.mode || '');
+      const authObj = config.auth || {};
+      const newAuth: ConfigAuth = {
+        username: authObj.username || undefined,
+        password: authObj.password || undefined,
+        v2ray_uuid: authObj.v2ray_uuid || undefined,
+      };
+      setAuth(newAuth);
+      setFormError(null);
 
-        // Carrega valores dos inputs das funções nativas
-        let loadedUsername = getUsername() || '';
-        let loadedPassword = getPassword() || '';
-        if ((config.mode || '').toLowerCase().startsWith('hysteria') && loadedPassword.includes(':')) {
-          const [user, pass] = loadedPassword.split(':');
-          setUsername(user || '');
-          setPassword(pass || '');
-        } else {
-          setUsername(loadedUsername);
-          setPassword(loadedPassword);
-        }
-        setUuid(getUUID() || '');
+      let loadedUsername = getUsername() || '';
+      let loadedPassword = getPassword() || '';
+      if ((config.mode || '').toLowerCase().startsWith('hysteria') && loadedPassword.includes(':')) {
+        const [user, pass] = loadedPassword.split(':');
+        setUsername(user || '');
+        setPassword(pass || '');
+      } else {
+        setUsername(loadedUsername);
+        setPassword(loadedPassword);
       }
-    };
-
-    // Escuta novo config via SDK
-    useDTunnelEvent('newDefaultConfig', handleConfigChanged);
+      setUuid(getUUID() || '');
+    }
   }, []);
+
+  useDTunnelEvent('newDefaultConfig', handleConfigChanged);
 
   // Escuta eventos para atualização de erros baseados no estado VPN
   useEffect(() => {

@@ -1,4 +1,8 @@
-// Ponte de eventos: registra listeners no SDK e reemite para o app
+/**
+ * Ponte de eventos: registra listeners no SDK e reemite para o app.
+ * Usado para evitar dependência do React Context do dtunnel-sdk/react,
+ * que pode falhar quando há múltiplas instâncias do React (bundling).
+ */
 
 type Listener = (payload?: unknown) => void;
 
@@ -14,13 +18,6 @@ export function on(eventName: string, listener: Listener): () => void {
   return () => off(eventName, listener);
 }
 
-export function once(eventName: string, listener: Listener): () => void {
-  const wrapper = (payload?: unknown) => {
-    try { listener(payload); } finally { off(eventName, wrapper); }
-  };
-  return on(eventName, wrapper);
-}
-
 export function off(eventName: string, listener?: Listener): void {
   if (!listener) {
     listeners.delete(eventName);
@@ -32,53 +29,53 @@ export function off(eventName: string, listener?: Listener): void {
   if (set.size === 0) listeners.delete(eventName);
 }
 
-export function emit(eventName: string, payload?: unknown): void {
+function emit(eventName: string, payload?: unknown): void {
   const set = listeners.get(eventName);
   if (!set) return;
   for (const l of Array.from(set)) {
-    try { l(payload); } catch (e) { /* swallow */ }
+    try {
+      l(payload);
+    } catch {
+      /* swallow */
+    }
   }
 }
 
-// Lista de eventos semanticos conforme docs
 const SDK_EVENTS = [
   'vpnState', 'vpnStartedSuccess', 'vpnStoppedSuccess', 'newLog', 'newDefaultConfig',
   'checkUserStarted', 'checkUserResult', 'checkUserError', 'messageError',
   'showSuccessToast', 'showErrorToast', 'notification'
 ];
 
-export function registerSdkForEvents(sdk: any) {
+export function registerSdkForEvents(sdk: { on?: (ev: string, fn: (e: unknown) => void) => (() => void) | void }): void {
   if (!sdk || typeof sdk.on !== 'function') return;
 
-  // Registrar eventos semanticos
   for (const ev of SDK_EVENTS) {
     try {
-      sdk.on(ev, (payload: unknown) => {
-        emit(ev, payload);
+      sdk.on(ev, (event: { payload?: unknown }) => {
+        emit(ev, event?.payload ?? event);
       });
-    } catch (e) {
-      // ignore
+    } catch {
+      /* ignore */
     }
   }
 
-  // Eventos genericos
   try {
-    sdk.on('nativeEvent', (event: any) => {
-      // reemit nativeEvent under same name and also under specific callback if provided
+    sdk.on('nativeEvent', (event: { callbackName?: string; payload?: unknown }) => {
       emit('nativeEvent', event);
-      if (event && event.callbackName) {
+      if (event?.callbackName) {
         emit(`native:${event.callbackName}`, event.payload);
       }
     });
-  } catch (e) {}
+  } catch {
+    /* ignore */
+  }
 
   try {
-    sdk.on('error', (err: any) => {
-      emit('error', err);
+    sdk.on('error', (event: { error?: unknown }) => {
+      emit('error', event?.error ?? event);
     });
-  } catch (e) {}
+  } catch {
+    /* ignore */
+  }
 }
-
-export default {
-  on, off, once, emit, registerSdkForEvents
-};

@@ -95,20 +95,16 @@ export function useVpnConnection() {
     }
   }, []);
 
-  useEffect(() => {
-    // Verifica estado inicial apenas uma vez
+  const handleStateChange = useCallback(() => {
     checkConnection();
-    
-    // Usa eventos para atualizar o estado em vez de polling
-    const handleStateChange = () => {
-      checkConnection();
-    };
+  }, [checkConnection]);
 
-    // Registra eventos via SDK event bridge
-    useDTunnelEvent('vpnState', handleStateChange);
-    useDTunnelEvent('vpnStartedSuccess', handleStateChange);
-    useDTunnelEvent('vpnStoppedSuccess', handleStateChange);
-    
+  useDTunnelEvent('vpnState', handleStateChange);
+  useDTunnelEvent('vpnStartedSuccess', handleStateChange);
+  useDTunnelEvent('vpnStoppedSuccess', handleStateChange);
+
+  useEffect(() => {
+    checkConnection();
   }, [checkConnection]);
 
   return {

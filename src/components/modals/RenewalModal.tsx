@@ -3,7 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { checkRenewalUser, getPlans, purchaseRenewal } from '../../utils/salesUtils';
 import usePaymentPolling from '../../hooks/usePaymentPolling';
 import QRCode from 'qrcode';
-import { Modal } from './Modal';
+import { navigateToUrl } from '../../utils/nativeNavigation';
+import { copyToClipboard } from '../../utils/nativeClipboard';
 import { RefreshCw, CheckCircle, XCircle, DollarSign } from '../../utils/icons';
 
 
@@ -297,7 +298,7 @@ const RenewalModal: React.FC<RenewalModalProps> = ({ onClose, initialUsername })
               </div>
             </div>
             <button
-              onClick={() => navigator.clipboard.writeText(paymentData.qr_code)}
+              onClick={() => copyToClipboard(paymentData.qr_code)}
               className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white rounded-lg transition-all font-semibold shadow-lg transform hover:scale-105"
             >
               📋 Copiar Código PIX
@@ -315,7 +316,7 @@ const RenewalModal: React.FC<RenewalModalProps> = ({ onClose, initialUsername })
               <a href={paymentData.ticket_url} target="_blank" rel="noopener noreferrer" className="text-blue-300 underline break-all">{paymentData.ticket_url}</a>
             </div>
             <button
-              onClick={() => window.open(paymentData.ticket_url, '_blank')}
+              onClick={() => navigateToUrl(paymentData.ticket_url)}
               className="w-full py-3 px-4 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white rounded-lg transition-all font-semibold shadow-lg transform hover:scale-105"
             >
               🌐 Abrir Site do Mercado Pago

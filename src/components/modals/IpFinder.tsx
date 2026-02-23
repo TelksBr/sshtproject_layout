@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Modal } from './Modal';
 import { Search, Save, Play, Trash2 } from '../../utils/icons';
-import { getStorageItem, setStorageItem } from '../../utils/storageUtils';
+import { loadData, getStorageKeys, saveData, removeData } from '../../utils/nativeStorage';
 import { toggleAirplaneMode, getLocalIP } from '../../utils/appFunctions';
 
 interface IpFinderProps {
@@ -17,10 +17,10 @@ export function IpFinder({ onClose }: IpFinderProps) {
   const stopSearchRef = useRef(false);
 
   useEffect(() => {
-    const keys = Object.keys(localStorage).filter(key => key.startsWith('@sshproject:list-'));
+    const keys = getStorageKeys().filter(key => key.startsWith('list-'));
     const lists = keys.map(key => ({
-      name: key.replace('@sshproject:', ''),
-      value: getStorageItem<string>(key.replace('@sshproject:', '')) || ''
+      name: key.replace('list-', ''),
+      value: loadData<string>(key) || ''
     }));
     setSavedLists(lists);
   }, []);
@@ -123,7 +123,7 @@ export function IpFinder({ onClose }: IpFinderProps) {
 
   const saveIpList = () => {
     const listName = `list-${new Date().getTime()}`;
-    setStorageItem(listName, ipRange);
+    saveData(listName, ipRange);
     setSavedLists(prevLists => [...prevLists, { name: listName, value: ipRange }]);
     setLogs(prevLogs => [...prevLogs, `Lista salva como ${listName}`]);
   };
@@ -134,7 +134,7 @@ export function IpFinder({ onClose }: IpFinderProps) {
   };
 
   const deleteIpList = (listName: string) => {
-    localStorage.removeItem(`@sshproject:${listName}`);
+    removeData(listName);
     setSavedLists(prevLists => prevLists.filter(list => list.name !== listName));
     setLogs(prevLogs => [...prevLogs, `Lista ${listName} apagada.`]);
   };

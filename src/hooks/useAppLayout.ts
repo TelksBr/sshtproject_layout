@@ -1,14 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getStatusbarHeight, getNavbarHeight } from '../utils/appFunctions';
+import { getStatusBarHeight, getNavBarHeight, onOrientationChange } from '../utils/nativeLayout';
 import { useThrottle } from '../utils/performanceUtils';
 
 export function useAppLayout() {
   const [containerStyle, setContainerStyle] = useState({});
   
-  // Função para calcular layout
+  // Função para calcular layout via SDK nativeLayout abstraction
   const calculateLayout = useCallback(() => {
-    const statusBarHeight = getStatusbarHeight();
-    const navBarHeight = getNavbarHeight();
+    const statusBarHeight = getStatusBarHeight();
+    const navBarHeight = getNavBarHeight();
     setContainerStyle({
       padding: `${statusBarHeight + 8}px 8px ${navBarHeight + 8}px 8px`
     });
@@ -21,17 +21,13 @@ export function useAppLayout() {
     // Calcular layout inicial
     calculateLayout();
     
-    // Escutar eventos de resize com throttle
-    const handleResize = () => {
+    // Escutar eventos de orientação via SDK abstraction
+    const unsubscribe = onOrientationChange(() => {
       throttledResize();
-    };
-    
-    window.addEventListener('resize', handleResize);
-    window.addEventListener('orientationchange', handleResize);
+    });
     
     return () => {
-      window.removeEventListener('resize', handleResize);
-      window.removeEventListener('orientationchange', handleResize);
+      unsubscribe();
     };
   }, [calculateLayout, throttledResize]);
   

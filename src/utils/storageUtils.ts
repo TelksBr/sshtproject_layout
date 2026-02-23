@@ -1,25 +1,26 @@
+import { loadData, saveData, removeData } from './nativeStorage';
+
 // Utilitário para logo dinâmica
 const LOGO_KEY = 'app-logo-base64';
 
 export function getAppLogo(): string | null {
-  return getStorageItem<string>(LOGO_KEY);
+  return loadData<string>(LOGO_KEY);
 }
 
 export function setAppLogo(base64: string): void {
-  setStorageItem(LOGO_KEY, base64);
+  saveData(LOGO_KEY, base64);
 }
 
-const STORAGE_PREFIX = '@sshproject:';
-
+// Wrapper functions mantidas para backward compatibility
+// Agora delegam para nativeStorage (que usa SDK quando disponível, senão localStorage)
 export function getStorageItem<T>(key: string): T | null {
-  try {
-    const item = localStorage.getItem(`${STORAGE_PREFIX}${key}`);
-    return item ? JSON.parse(item) : null;
-  } catch {
-    return null;
-  }
+  return loadData<T>(key);
 }
 
 export function setStorageItem(key: string, value: any): void {
-  localStorage.setItem(`${STORAGE_PREFIX}${key}`, JSON.stringify(value));
+  saveData(key, value);
+}
+
+export function removeStorageItem(key: string): void {
+  removeData(key);
 }

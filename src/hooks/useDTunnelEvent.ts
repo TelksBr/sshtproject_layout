@@ -1,15 +1,29 @@
-import { useEffect, useRef } from 'react';
-import dtEventBridge from '../utils/dtunnelEventBridge';
+/**
+ * Hook para eventos do DTunnel SDK.
+ * Usa dtunnelEventBridge para evitar dependência do React Context do pacote
+ * (que pode falhar com múltiplas instâncias do React no bundle).
+ */
 
-export function useDTunnelEvent(eventName: string, handler: (payload?: unknown) => void) {
+import { useEffect, useRef } from 'react';
+import { on } from '../utils/dtunnelEventBridge';
+
+export function useDTunnelEvent(eventName: string, handler: (payload?: unknown) => void): void {
   const ref = useRef(handler);
-  useEffect(() => { ref.current = handler; }, [handler]);
+  useEffect(() => {
+    ref.current = handler;
+  }, [handler]);
 
   useEffect(() => {
-    const unsub = dtEventBridge.on(eventName, (payload) => {
-      try { ref.current(payload); } catch (e) { /* swallow */ }
+    const unsub = on(eventName, (payload) => {
+      try {
+        ref.current(payload);
+      } catch {
+        /* swallow */
+      }
     });
-    return () => { if (typeof unsub === 'function') unsub(); };
+    return () => {
+      if (typeof unsub === 'function') unsub();
+    };
   }, [eventName]);
 }
 

@@ -1,5 +1,6 @@
 import { getCredentials } from './salesUtils';
 import { purchaseStorage, PendingPurchase } from './purchaseStorageManager';
+import { paymentLogger } from './paymentLogger';
 import { CredentialsResponse } from '../types/sales';
 
 // =============================
@@ -24,17 +25,24 @@ class BackgroundPurchaseMonitor {
   private checkInterval: number = 15000; // 15 segundos
   private maxConsecutiveErrors: number = 3;
   private errorCount: Map<string, number> = new Map();
+  private retryCount: Map<string, number> = new Map();
+  private maxRetries: number = 5;
+  private baseRetryDelay: number = 2000; // 2 segundos
+  private retryDelayMap: Map<string, number> = new Map();
 
   /**
    * Inicia o monitoramento de compras pendentes
    */
   start(callbacks?: PurchaseMonitorCallbacks): void {
     if (this.isMonitoring) {
+      paymentLogger.debug('Monitor já está em execução');
       return;
     }
 
     this.callbacks = callbacks || {};
     this.isMonitoring = true;
+
+    paymentLogger.info('Iniciando monitor de compras pendentes');
 
     // Verificar imediatamente
     this.checkPendingPurchases();
@@ -55,6 +63,8 @@ class BackgroundPurchaseMonitor {
     }
     this.isMonitoring = false;
     this.errorCount.clear();
+    this.retryCount.clear();
+    this.retryDelayMap.clear();
   }
 
   /**
@@ -71,8 +81,11 @@ class BackgroundPurchaseMonitor {
     const purchases = purchaseStorage.getPendingPurchases();
 
     if (purchases.length === 0) {
+      paymentLogger.debug('Nenhuma compra pendente para verificar');
       return;
     }
+
+    paymentLogger.info(`Verificando ${purchases.length} compra(s) pendente(s)`);
 
     // Verificar cada compra em paralelo
     const promises = purchases.map(purchase => this.checkSinglePurchase(purchase));
@@ -83,7 +96,7 @@ class BackgroundPurchaseMonitor {
   }
 
   /**
-   * Verifica uma única compra
+   * Verifica uma única compra com retry com exponential backoff
    */
   private async checkSinglePurchase(purchase: PendingPurchase): Promise<void> {
     try {
@@ -101,8 +114,8 @@ class BackgroundPurchaseMonitor {
         purchaseStorage.updatePurchaseStatus(purchase.order_id, 'monitoring');
       }
 
-      // Buscar credenciais
-      const credentials = await getCredentials(purchase.payment_id);
+      // Buscar credenciais com retry
+      const credentials = await this.getCredentialsWithRetry(purchase.payment_id, purchase.order_id);
 
       // Verificar se está completa
       if (credentials.status === 'completed') {
@@ -114,6 +127,7 @@ class BackgroundPurchaseMonitor {
         if (hasCredentials) {
           this.handleCompletedPurchase(purchase, credentials);
           this.resetErrorCount(purchase.order_id);
+          this.retryCount.delete(purchase.order_id);
           return;
         }
       }
@@ -133,12 +147,48 @@ class BackgroundPurchaseMonitor {
   }
 
   /**
+   * Busca credenciais com retry com exponential backoff
+   */
+  private async getCredentialsWithRetry(paymentId: string, orderId: string, attempt: number = 0): Promise<any> {
+    try {
+      return await getCredentials(paymentId);
+    } catch (error) {
+      const currentAttempt = this.retryCount.get(orderId) || 0;
+      
+      if (currentAttempt < this.maxRetries) {
+        // Calcular delay com exponential backoff
+        const delay = this.baseRetryDelay * Math.pow(2, currentAttempt);
+        const jitter = Math.random() * 1000; // Jitter aleatório até 1s
+        const totalDelay = delay + jitter;
+
+        this.retryCount.set(orderId, currentAttempt + 1);
+        this.retryDelayMap.set(orderId, totalDelay);
+
+        // Aguardar antes de tentar novamente
+        await new Promise(resolve => setTimeout(resolve, totalDelay));
+
+        return this.getCredentialsWithRetry(paymentId, orderId, attempt + 1);
+      }
+      
+      // Se atingiu max retries, lançar erro
+      throw error;
+    }
+  }
+
+  /**
    * Trata compra completada
    */
   private handleCompletedPurchase(
     purchase: PendingPurchase, 
     credentials: CredentialsResponse
   ): void {
+    paymentLogger.info(
+      `Compra aprovada! Salvando credenciais...`,
+      { credentials: !!credentials },
+      purchase.order_id,
+      purchase.payment_id
+    );
+
     // Atualizar status
     purchaseStorage.updatePurchaseStatus(purchase.order_id, 'completed');
 
@@ -147,11 +197,24 @@ class BackgroundPurchaseMonitor {
       ? `Compra ${purchase.plan_name}` 
       : 'Compra Recente';
     
-    purchaseStorage.saveCredentials(credentials, label);
+    const credentialId = purchaseStorage.saveCredentials(credentials, label);
+    
+    paymentLogger.info(
+      `Credencial salva com sucesso`,
+      { credentialId },
+      purchase.order_id,
+      purchase.payment_id
+    );
 
     // Remover da lista de pendentes após um delay
     setTimeout(() => {
       purchaseStorage.removePendingPurchase(purchase.order_id);
+      paymentLogger.info(
+        `Compra removida da lista de pendentes`,
+        {},
+        purchase.order_id,
+        purchase.payment_id
+      );
     }, 5000);
 
     // Chamar callback
@@ -205,8 +268,22 @@ class BackgroundPurchaseMonitor {
 
     this.errorCount.set(purchase.order_id, newErrorCount);
 
+    paymentLogger.warn(
+      `Erro ao verificar compra (tentativa ${newErrorCount}/${this.maxConsecutiveErrors})`,
+      { error: error.message },
+      purchase.order_id,
+      purchase.payment_id
+    );
+
     // Se atingiu o máximo de erros consecutivos, remove da lista
     if (newErrorCount >= this.maxConsecutiveErrors) {
+      paymentLogger.error(
+        `Máximo de erros atingido. Removendo compra do monitoramento`,
+        { errorCount: newErrorCount },
+        purchase.order_id,
+        purchase.payment_id
+      );
+
       purchaseStorage.removePendingPurchase(purchase.order_id);
       this.errorCount.delete(purchase.order_id);
     }
@@ -252,12 +329,22 @@ class BackgroundPurchaseMonitor {
     pendingCount: number;
     checkInterval: number;
     lastCheck: string | null;
+    retryStats?: Map<string, { retries: number; delay: number }>;
   } {
+    const retryStats = new Map();
+    for (const [orderId, retries] of this.retryCount.entries()) {
+      retryStats.set(orderId, {
+        retries,
+        delay: this.retryDelayMap.get(orderId) || 0
+      });
+    }
+
     return {
       isRunning: this.isMonitoring,
       pendingCount: purchaseStorage.getPendingPurchases().length,
       checkInterval: this.checkInterval,
-      lastCheck: purchaseStorage.getLastCheck()
+      lastCheck: purchaseStorage.getLastCheck(),
+      retryStats
     };
   }
 

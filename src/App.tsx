@@ -1,8 +1,7 @@
-import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from 'react';
 import Header from './components/Header';
 import ServerSelector from './components/ServerSelector';
 import ConnectionForm from './components/ConnectionForm';
-import NetworkStats from './components/NetworkStats';
 import { Sidebar } from './components/Sidebar';
 import { AnimatedLogo } from './components/AnimatedLogo';
 import { ToastContainer } from './components/Toast';
@@ -16,6 +15,8 @@ import { useAppLayout } from './hooks/useAppLayout';
 import { useModalRenderer } from './hooks/useModalRenderer';
 import { useGlobalPolling } from './hooks/useGlobalPolling';
 import { useBackgroundMonitor } from './hooks/useBackgroundMonitor';
+import { usePurchaseNotifications } from './hooks/usePurchaseNotifications';
+import PaymentApprovedNotification from './components/modals/PaymentApprovedNotification';
 
 export type ModalType = 'buy' | 'recovery' | 'tutorials' | 'support' | 'speedtest' | 'terms' | 'privacy' | 'checkuser' | 'cleandata' | 'hotspot' | 'services' | 'ipfinder' | 'faq' | 'testgenerate' | 'renewal' | 'credentials' | null;
 
@@ -25,6 +26,9 @@ function App() {
   
   // 🚀 OTIMIZAÇÃO: Hook global que substitui todos os pollings
   const { vpnState, localIP } = useGlobalPolling();
+  
+  // 🔔 NOTIFICAÇÕES: Hook para notificações de pagamento
+  const { notifications, dismissNotification } = usePurchaseNotifications();
   
   // 💾 MONITOR: Hook para monitorar compras pendentes em background
   useBackgroundMonitor({
@@ -46,9 +50,19 @@ function App() {
   // Estado para logo dinâmica
   const [logo, setLogo] = useState<string | null>(null);
 
-  // Callbacks memoizados para evitar re-renders desnecessários
-  const handleMenuClick = useCallback(() => setShowMenu(true), []);
-  const handleMenuClose = useCallback(() => setShowMenu(false), []);
+  // Cooldown para evitar reabertura acidental ao fechar no WebView (clique no X)
+  const menuCloseTimeRef = useRef(0);
+  const MENU_CLOSE_COOLDOWN_MS = 500;
+
+  const handleMenuClick = useCallback(() => {
+    if (Date.now() - menuCloseTimeRef.current < MENU_CLOSE_COOLDOWN_MS) return;
+    setShowMenu(true);
+  }, []);
+
+  const handleMenuClose = useCallback(() => {
+    menuCloseTimeRef.current = Date.now();
+    setShowMenu(false);
+  }, []);
   const handleNavigate = useCallback((modal: ModalType) => {
     setCurrentModal(modal);
     setShowMenu(false);
@@ -140,22 +154,27 @@ function App() {
 
               <ServerSelector />
               <ConnectionForm vpnState={vpnState} />
-
-              {/* NetworkStats no rodapé mobile, oculto no desktop (aparece na sidebar) */}
-              <div className="lg:hidden mt-2">
-                <NetworkStats />
-              </div>
-            </div>
-
-            {/* Coluna lateral - NetworkStats (só desktop lg+) */}
-            <div className="hidden lg:block lg:w-80 lg:flex-shrink-0 lg:sticky lg:top-6">
-              <NetworkStats />
             </div>
           </div>
         </section>
 
         {getModal(currentModal, setCurrentModal)}
         <ToastContainer />
+        
+        {/* Notificações de pagamento aprovado */}
+        <div className="fixed top-0 right-0 left-0 pointer-events-none z-[999]">
+          {notifications.map((notification) => (
+            <div key={notification.order_id} className="pointer-events-auto">
+              <PaymentApprovedNotification
+                amount={notification.amount}
+                planName={notification.plan_name}
+                orderId={notification.order_id}
+                onDismiss={dismissNotification}
+                autoClose={5000}
+              />
+            </div>
+          ))}
+        </div>
       </main>
     </ActiveConfigProvider>
   );

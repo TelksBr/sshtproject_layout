@@ -1,33 +1,26 @@
-// Wrapper leve para acessar o DTunnel SDK quando disponível
-// e fazer fallback para a bridge via `window.Dt...` quando necessario.
+/**
+ * Wrapper para chamadas à bridge nativa.
+ * ✅ Usa APENAS SDK DTunnel (sem fallback para window.Dt*)
+ * ✅ Fallback para browser APIs seguros (navigator.clipboard, localStorage, etc)
+ */
+
+import { getSdk } from './sdkInstance';
 
 type CallArgs = unknown[] | undefined;
 
-let sdkInstance: any = null;
-
-export function registerSdkInstance(instance: any) {
-  sdkInstance = instance;
-}
-
 export function call(objectName: string, methodName: string, args?: CallArgs): unknown | null {
   try {
-    if (sdkInstance && typeof sdkInstance.call === 'function') {
-      return sdkInstance.call(objectName, methodName, args);
+    const sdk = getSdk();
+    if (sdk && typeof sdk.call === 'function') {
+      return sdk.call(objectName, methodName, args);
     }
-  } catch {
-    // ignore and fallback
+  } catch (error) {
+    console.warn(`⚠️ Erro ao chamar SDK: ${objectName}.${methodName}`, error);
   }
 
-  const target = (window as any)[objectName];
-  if (!target) return null;
-  const fn = target[methodName];
-  if (typeof fn === 'function') {
-    try {
-      return fn.apply(target, args || []);
-    } catch {
-      return null;
-    }
-  }
+  // ❌ REMOVIDO: Fallback para window.Dt*
+  // Agora retorna null ou use fallback browser específico
+  console.error(`❌ API ${objectName}.${methodName} não disponível no SDK e window.Dt* foi removido`);
   return null;
 }
 
@@ -46,20 +39,21 @@ export function callJson<T = unknown>(objectName: string, methodName: string, ar
 
 export function callVoid(objectName: string, methodName: string, args?: CallArgs): void {
   try {
-    if (sdkInstance && typeof sdkInstance.callVoid === 'function') {
-      sdkInstance.callVoid(objectName, methodName, args);
+    const sdk = getSdk();
+    if (sdk && typeof sdk.callVoid === 'function') {
+      sdk.callVoid(objectName, methodName, args);
       return;
     }
-  } catch {
-    // ignore
+  } catch (error) {
+    console.warn(`⚠️ Erro ao chamar SDK: ${objectName}.${methodName}`, error);
   }
-  // best-effort fallback
-  call(objectName, methodName, args);
+
+  // ❌ REMOVIDO: Fallback para window.Dt*
+  console.error(`❌ API ${objectName}.${methodName} não disponível no SDK e window.Dt* foi removido`);
 }
 
-export default {
-  registerSdkInstance,
-  call,
-  callJson,
-  callVoid,
+export default { 
+  call, 
+  callJson, 
+  callVoid
 };

@@ -1,10 +1,20 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import DTunnelSDK from 'dtunnel-sdk';
 import App from './App.tsx';
 import { ToastProvider } from './hooks/useToast';
 import './index.css';
-import { registerSdkInstance } from './utils/dtunnelBridge';
+import { registerSdkInstance } from './utils/sdkInstance';
 import { registerSdkForEvents } from './utils/dtunnelEventBridge';
+
+// ✅ Usa APENAS SDK DTunnel (sem fallback para window.Dt*)
+const sdk = new DTunnelSDK({
+  strict: false,
+  autoRegisterNativeEvents: true,
+  logger: { error: () => {} },
+});
+registerSdkInstance(sdk);
+registerSdkForEvents(sdk);
 
 // Desabilitar comportamentos de WebView Android
 document.addEventListener('DOMContentLoaded', function() {
@@ -101,19 +111,3 @@ createRoot(document.getElementById('root')!).render(
     </ToastProvider>
   </StrictMode>
 );
-
-// Tenta importar o SDK em tempo de execução e registrar no wrapper.
-(async function tryRegisterSdk() {
-  try {
-    const mod = await import('dtunnel-sdk');
-    const DTunnelSDK = (mod && (mod.default ?? mod)) as any;
-    if (typeof DTunnelSDK === 'function') {
-      const sdk = new DTunnelSDK({ strict: false, autoRegisterNativeEvents: true });
-      registerSdkInstance(sdk);
-      // registrar ponte de eventos para reemitir dentro do app
-      try { registerSdkForEvents(sdk); } catch (e) { }
-    }
-  } catch (e) {
-    // se não existir o pacote, usamos fallback via window (já suportado pelo wrapper)
-  }
-})();

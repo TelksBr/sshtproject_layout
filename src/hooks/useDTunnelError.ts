@@ -1,15 +1,23 @@
 import { useEffect, useRef } from 'react';
-import dtEventBridge from '../utils/dtunnelEventBridge';
+import { on } from '../utils/dtunnelEventBridge';
 
-export function useDTunnelError(handler: (err?: any) => void) {
+export function useDTunnelError(handler: (err?: unknown) => void): void {
   const ref = useRef(handler);
-  useEffect(() => { ref.current = handler; }, [handler]);
+  useEffect(() => {
+    ref.current = handler;
+  }, [handler]);
 
   useEffect(() => {
-    const unsub = dtEventBridge.on('error', (payload) => {
-      try { ref.current(payload); } catch (e) { /* swallow */ }
+    const unsub = on('error', (payload) => {
+      try {
+        ref.current(payload);
+      } catch {
+        /* swallow */
+      }
     });
-    return () => { if (typeof unsub === 'function') unsub(); };
+    return () => {
+      if (typeof unsub === 'function') unsub();
+    };
   }, []);
 }
 

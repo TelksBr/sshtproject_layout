@@ -7,6 +7,8 @@ import { generateQRCodeDataURL, isValidPixCode } from '../../utils/qrCodeGenerat
 import usePaymentPolling from '../../hooks/usePaymentPolling';
 import { purchaseStorage, PendingPurchase } from '../../utils/purchaseStorageManager';
 import { ShoppingCart } from '../../utils/icons';
+import { copyToClipboard } from '../../utils/nativeClipboard';
+import { navigateToUrl, reloadApp } from '../../utils/nativeNavigation';
 
 interface PurchaseModalProps {
   onClose: () => void;
@@ -202,54 +204,14 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
     };
   }, [resetPolling]);
 
-  function copyToClipboard(text: string, type: string = 'texto') {
-
-    // Função robusta para copiar - compatível com todos os navegadores
-    const copyText = async () => {
-      // Tentar primeiro com navigator.clipboard (moderno)
-      if (navigator.clipboard && window.isSecureContext) {
-        try {
-          await navigator.clipboard.writeText(text);
-          return true;
-        } catch (err) {
-        }
-      } else {
-      }
-      
-      // Fallback para navegadores mais antigos ou contextos não-seguros
-      try {
-        const textArea = document.createElement('textarea');
-        textArea.value = text;
-        textArea.style.position = 'fixed';
-        textArea.style.left = '-999999px';
-        textArea.style.top = '-999999px';
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        const successful = document.execCommand('copy');
-        document.body.removeChild(textArea);
-        
-        if (successful) {
-        } else {
-        }
-        
-        return successful;
-      } catch (err) {
-        return false;
-      }
-    };
-
-    copyText().then((success) => {
+  function handleCopyToClipboard(text: string, type: string = 'texto') {
+    // Função para copiar via SDK ou APIs nativas do browser
+    copyToClipboard(text).then((success) => {
       if (success) {
-        // Feedback visual de sucesso
-        const originalError = error;
-        setError('');
+        setError(`✅ ${type} copiado com sucesso!`);
         setTimeout(() => {
-          setError(`✅ ${type} copiado com sucesso!`);
-          setTimeout(() => {
-            setError(originalError);
-          }, 2000);
-        }, 100);
+          setError('');
+        }, 2000);
       } else {
         setError(`❌ Erro ao copiar ${type}. Tente selecionar e copiar manualmente.`);
         setTimeout(() => setError(''), 3000);
@@ -262,52 +224,98 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
     switch (currentStep) {
       case 'plans':
         return (
-          <div className="space-y-4 lg:space-y-6">
+          <div className="w-full space-y-3 sm:space-y-4">
+            {/* Cabeçalho */}
             <div className="text-center">
-              <h3 className="text-lg lg:text-xl 2xl:text-2xl font-semibold text-white mb-2">Escolha seu Plano</h3>
-              <p className="text-sm lg:text-base 2xl:text-lg text-gray-300">Selecione o plano que melhor atende suas necessidades</p>
+              <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-white mb-0.5 sm:mb-1">
+                Escolha seu Plano
+              </h3>
+              <p className="text-xs sm:text-sm text-gray-400">
+                Selecione a opção que melhor se adequa a você
+              </p>
             </div>
 
+            {/* Lista de planos */}
             {isLoading ? (
-              <div className="flex justify-center py-6 sm:py-8">
-                <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-blue-500"></div>
+              <div className="flex justify-center py-8 sm:py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#6205D5] border-t-transparent"></div>
               </div>
             ) : (
-              <div className="grid gap-2 sm:gap-3 md:gap-4 max-h-60 sm:max-h-80 md:max-h-96 overflow-y-auto px-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-4 w-full">
                 {plans.map((plan) => (
-                  <div
+                  <button
                     key={plan.id}
+                    type="button"
                     onClick={() => handlePlanSelect(plan)}
-                    className="p-3 sm:p-4 border border-gray-600 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-gray-800/50 transition-all"
+                    className="
+                      group relative
+                      w-full text-left
+                      p-3 sm:p-4
+                      rounded-lg sm:rounded-xl
+                      border-2 border-[#6205D5]/30 hover:border-[#6205D5]/70
+                      bg-[#1a0533]/80 hover:bg-[#26074d]/95
+                      active:scale-95 hover:scale-105
+                      transition-all duration-200
+                      touch-manipulation
+                      overflow-hidden
+                      min-h-[140px] sm:min-h-[160px]
+                      flex flex-col
+                    "
                   >
-                    <div className="flex justify-between items-start gap-2">
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold text-white text-sm sm:text-base truncate">{plan.name}</h4>
-                        <p className="text-xs sm:text-sm text-gray-300 mt-1 line-clamp-2">{plan.description}</p>
-                        <div className="flex flex-wrap gap-1 sm:gap-2 mt-1 sm:mt-2">
-                          {plan.protocols && plan.protocols.length > 0 ? (
-                            plan.protocols.map((protocol) => (
-                              <span key={protocol} className="px-2 py-1 bg-blue-600 text-xs rounded">
-                                {protocol.toUpperCase()}
-                              </span>
-                            ))
-                          ) : (
-                            <span className="px-2 py-1 bg-gray-600 text-xs rounded">
-                              SSH/V2RAY
-                            </span>
-                          )}
-                        </div>
+                    {/* Gradiente de fundo ao passar */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#6205D5]/0 to-[#6205D5]/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                    
+                    {/* Conteúdo */}
+                    <div className="relative z-10 flex flex-col h-full">
+                      {/* Nome e descrição */}
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-white text-sm sm:text-base line-clamp-2">
+                          {plan.name}
+                        </h4>
+                        <p className="text-xs sm:text-sm text-gray-400 mt-1 line-clamp-2">
+                          {plan.description}
+                        </p>
                       </div>
-                      <div className="text-right flex-shrink-0">
-                        <div className="text-base sm:text-lg font-bold text-green-400">
-                          {formatPrice(plan.price)}
+
+                      {/* Protocolo */}
+                      <div className="flex flex-wrap gap-1 mt-2 mb-2">
+                        {plan.protocols && plan.protocols.length > 0 ? (
+                          plan.protocols.slice(0, 2).map((protocol) => (
+                            <span
+                              key={protocol}
+                              className="
+                                px-1.5 py-0.5 sm:px-2 sm:py-1
+                                bg-[#6205D5]/50 text-[#b0a8ff]
+                                text-[10px] sm:text-xs font-medium
+                                rounded-md
+                              "
+                            >
+                              {protocol.toUpperCase()}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="px-1.5 py-0.5 sm:px-2 sm:py-1 bg-[#6205D5]/50 text-[#b0a8ff] text-[10px] sm:text-xs font-medium rounded-md">
+                            SSH/V2RAY
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Preço e duração */}
+                      <div className="flex items-baseline justify-between border-t border-[#6205D5]/20 pt-2 mt-auto">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] sm:text-xs text-gray-500 font-medium">
+                            Por {(plan.duration_days || plan.validate || 30)}d
+                          </span>
+                          <span className="text-lg sm:text-xl lg:text-2xl font-bold text-green-400">
+                            {formatPrice(plan.price)}
+                          </span>
                         </div>
-                        <div className="text-xs sm:text-sm text-gray-400">
-                          {plan.duration_days || plan.validate || 30}d
+                        <div className="text-2xl sm:text-3xl group-hover:scale-110 transition-transform">
+                          →
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             )}
@@ -316,27 +324,41 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
 
       case 'email':
         return (
-          <div className="space-y-4 lg:space-y-6">
+          <div className="w-full space-y-3 sm:space-y-4">
+            {/* Cabeçalho */}
             <div className="text-center">
-              <h3 className="text-lg lg:text-xl 2xl:text-2xl font-semibold text-white mb-2">Seus Dados</h3>
-              <p className="text-sm lg:text-base 2xl:text-lg text-gray-300">Preencha seus dados para receber as credenciais</p>
+              <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-white mb-0.5 sm:mb-1">
+                Seus Dados
+              </h3>
+              <p className="text-xs sm:text-sm text-gray-400">
+                Preencha para receber as credenciais
+              </p>
             </div>
 
+            {/* Nome */}
             <div>
-              <label className="block text-sm lg:text-base 2xl:text-lg font-medium text-gray-300 mb-2">
-                Nome
+              <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1.5 sm:mb-2">
+                Nome completo
               </label>
               <input
                 type="text"
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
-                className="w-full min-h-[44px] lg:min-h-[48px] 2xl:min-h-[56px] px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm lg:text-base 2xl:text-lg focus:outline-none focus:border-blue-500"
-                placeholder="Seu nome"
+                className="
+                  w-full min-h-[44px] sm:min-h-[48px]
+                  px-3 sm:px-4 py-2
+                  bg-[#1a0533]/50 border-2 border-[#6205D5]/30
+                  rounded-lg text-white text-sm sm:text-base
+                  focus:outline-none focus:border-[#6205D5]/70 focus:bg-[#1a0533]/70
+                  transition-all placeholder-gray-500
+                "
+                placeholder="João Silva"
               />
             </div>
 
+            {/* Email */}
             <div>
-              <label className="block text-sm lg:text-base 2xl:text-lg font-medium text-gray-300 mb-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1.5 sm:mb-2">
                 Email
               </label>
               <input
@@ -344,24 +366,43 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleEmailSubmit()}
-                className="w-full min-h-[44px] lg:min-h-[48px] 2xl:min-h-[56px] px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm lg:text-base 2xl:text-lg focus:outline-none focus:border-blue-500"
+                className="
+                  w-full min-h-[44px] sm:min-h-[48px]
+                  px-3 sm:px-4 py-2
+                  bg-[#1a0533]/50 border-2 border-[#6205D5]/30
+                  rounded-lg text-white text-sm sm:text-base
+                  focus:outline-none focus:border-[#6205D5]/70 focus:bg-[#1a0533]/70
+                  transition-all placeholder-gray-500
+                "
                 placeholder="seu@email.com"
               />
               {emailError && (
-                <p className="text-red-400 text-sm lg:text-base mt-2">{emailError}</p>
+                <p className="text-red-400 text-xs sm:text-sm mt-1.5 font-medium">{emailError}</p>
               )}
             </div>
 
-            <div className="flex gap-3">
+            {/* Botões */}
+            <div className="flex gap-2 sm:gap-3 pt-1 sm:pt-2">
               <button
                 onClick={() => setCurrentStep('plans')}
-                className="flex-1 min-h-[44px] lg:min-h-[48px] 2xl:min-h-[56px] px-4 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors text-sm lg:text-base 2xl:text-lg"
+                className="
+                  flex-1 min-h-[44px] sm:min-h-[48px]
+                  px-3 sm:px-4
+                  bg-[#26074d]/80 hover:bg-[#26074d] border-2 border-[#6205D5]/30 hover:border-[#6205D5]/60
+                  text-white text-sm sm:text-base font-medium
+                  rounded-lg transition-all active:scale-95
+                "
               >
                 Voltar
               </button>
               <button
                 onClick={handleEmailSubmit}
-                className="flex-1 min-h-[44px] lg:min-h-[48px] 2xl:min-h-[56px] px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors text-sm lg:text-base 2xl:text-lg"
+                className="
+                  flex-1 min-h-[44px] sm:min-h-[48px]
+                  px-3 sm:px-4
+                  bg-[#6205D5] hover:bg-[#7a19eb] text-white text-sm sm:text-base font-medium
+                  rounded-lg transition-all active:scale-95
+                "
               >
                 Continuar
               </button>
@@ -371,58 +412,87 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
 
       case 'confirm':
         return (
-          <div className="space-y-4">
+          <div className="w-full space-y-3 sm:space-y-4">
+            {/* Cabeçalho */}
             <div className="text-center">
-              <h3 className="text-xl font-semibold text-white mb-2">Confirmar Compra</h3>
-              <p className="text-gray-300">Revise os dados antes de finalizar</p>
+              <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-white mb-0.5 sm:mb-1">
+                Confirmar Compra
+              </h3>
+              <p className="text-xs sm:text-sm text-gray-400">
+                Revise os dados antes de finalizar
+              </p>
             </div>
 
+            {/* Resumo do plano */}
             {selectedPlan && (
-              <div className="bg-gray-800 p-4 rounded-lg">
-                <h4 className="font-semibold text-white mb-2">{selectedPlan.name}</h4>
-                <div className="space-y-1 text-sm">
+              <div className="bg-[#1a0533]/50 border-2 border-[#6205D5]/30 p-3 sm:p-4 rounded-lg space-y-2 sm:space-y-3">
+                <h4 className="font-semibold text-white text-sm sm:text-base">{selectedPlan.name}</h4>
+                <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-300">Preço:</span>
+                    <span className="text-gray-400">Preço:</span>
                     <span className="text-green-400 font-semibold">{formatPrice(selectedPlan.price)}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-300">Duração:</span>
-                    <span className="text-white">{selectedPlan.duration_days || selectedPlan.validate || 30} dias</span>
+                  <div className="border-t border-[#6205D5]/20 pt-1.5 sm:pt-2 mt-1.5 sm:mt-2">
+                    <div className="grid grid-cols-2 gap-2 text-[10px] sm:text-xs">
+                      <div>
+                        <span className="text-gray-500">Duração:</span>
+                        <div className="text-white font-medium">{selectedPlan.duration_days || selectedPlan.validate || 30}d</div>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Protocolo:</span>
+                        <div className="text-white font-medium">
+                          {selectedPlan.protocols && selectedPlan.protocols.length > 0 
+                            ? selectedPlan.protocols[0].toUpperCase()
+                            : 'SSH/V2RAY'}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-300">Nome:</span>
-                    <span className="text-white">{customerName}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-300">Email:</span>
-                    <span className="text-white">{email}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-300">Protocolos:</span>
-                    <span className="text-white">
-                      {selectedPlan.protocols && selectedPlan.protocols.length > 0 
-                        ? selectedPlan.protocols.join(', ') 
-                        : 'SSH/V2RAY'}
-                    </span>
+                  
+                  <div className="border-t border-[#6205D5]/20 pt-1.5 sm:pt-2 mt-1.5 sm:mt-2 space-y-1.5">
+                    <div className="flex justify-between">
+                      <span className="text-gray-500 text-[10px] sm:text-xs">Nome:</span>
+                      <span className="text-white text-xs sm:text-sm font-medium truncate">{customerName}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500 text-[10px] sm:text-xs">Email:</span>
+                      <span className="text-white text-xs sm:text-sm font-medium truncate">{email}</span>
+                    </div>
                   </div>
                 </div>
               </div>
             )}
 
-            <div className="flex gap-3">
+            {/* Botões */}
+            <div className="flex gap-2 sm:gap-3 pt-1 sm:pt-2">
               <button
                 onClick={() => setCurrentStep('email')}
-                className="flex-1 py-2 px-4 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors"
+                className="
+                  flex-1 min-h-[44px] sm:min-h-[48px]
+                  px-3 sm:px-4
+                  bg-[#26074d]/80 hover:bg-[#26074d] border-2 border-[#6205D5]/30 hover:border-[#6205D5]/60
+                  text-white text-sm sm:text-base font-medium
+                  rounded-lg transition-all active:scale-95
+                "
               >
                 Voltar
               </button>
               <button
                 onClick={handlePurchaseConfirm}
                 disabled={isLoading}
-                className="flex-1 py-2 px-4 bg-green-600 hover:bg-green-500 disabled:bg-gray-500 text-white rounded-lg transition-colors flex items-center justify-center"
+                className="
+                  flex-1 min-h-[44px] sm:min-h-[48px]
+                  px-3 sm:px-4
+                  bg-green-600 hover:bg-green-500 disabled:bg-gray-600 disabled:opacity-50
+                  text-white text-sm sm:text-base font-medium
+                  rounded-lg transition-all active:scale-95 flex items-center justify-center gap-2
+                "
               >
                 {isLoading ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                    <span className="hidden sm:inline">Processando...</span>
+                  </>
                 ) : (
                   'Finalizar Compra'
                 )}
@@ -433,33 +503,38 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
 
       case 'payment':
         return (
-          <div className="space-y-4">
+          <div className="w-full space-y-3 sm:space-y-4">
+            {/* Cabeçalho */}
             <div className="text-center">
-              <h3 className="text-xl font-semibold text-white mb-2">Pagamento PIX</h3>
-              <p className="text-gray-300">Complete o pagamento para receber suas credenciais</p>
+              <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-white mb-0.5 sm:mb-1">
+                Pagamento PIX
+              </h3>
+              <p className="text-xs sm:text-sm text-gray-400">
+                Complete o pagamento para ativar
+              </p>
             </div>
 
             {purchaseData && (
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {/* Valor do pagamento */}
-                <div className="bg-green-900/30 border border-green-600 p-3 rounded-lg text-center">
-                  <div className="text-green-300 text-sm">Valor a pagar:</div>
-                  <div className="text-green-400 text-2xl font-bold">
+                <div className="bg-green-900/30 border-2 border-green-600/50 p-2.5 sm:p-3 rounded-lg text-center">
+                  <div className="text-green-300/80 text-xs sm:text-sm">Valor a pagar:</div>
+                  <div className="text-green-400 text-xl sm:text-2xl lg:text-3xl font-bold">
                     {formatPrice(purchaseData.amount)}
                   </div>
                 </div>
 
                 {/* QR Code Visual Gerado Dinamicamente */}
                 {generatedQRCode ? (
-                  <div className="bg-gradient-to-br from-blue-900 to-blue-800 p-4 lg:p-6 2xl:p-8 rounded-lg border border-blue-600">
+                  <div className="bg-gradient-to-br from-blue-900/50 to-blue-800/50 p-3 sm:p-4 rounded-lg border-2 border-blue-600/30">
                     <div className="text-center">
-                      <p className="text-white mb-4 lg:mb-6 font-semibold text-base lg:text-lg 2xl:text-xl">📱 Escaneie o QR Code PIX</p>
+                      <p className="text-white mb-2 sm:mb-3 font-semibold text-xs sm:text-sm">📱 Escaneie o QR Code PIX</p>
                       
-                      <div className="bg-white p-4 lg:p-6 2xl:p-8 rounded-xl inline-block mb-4 lg:mb-6 shadow-lg">
+                      <div className="bg-white p-2.5 sm:p-3 rounded-lg inline-block mb-2 sm:mb-3 shadow-lg">
                         <img 
                           src={generatedQRCode}
                           alt="QR Code PIX"
-                          className="w-[min(80vw,256px)] h-[min(80vw,256px)] lg:w-64 lg:h-64 2xl:w-80 2xl:h-80 mx-auto block"
+                          className="w-[min(70vw,200px)] sm:w-[min(60vw,240px)] h-[min(70vw,200px)] sm:h-[min(60vw,240px)] mx-auto block"
                           onLoad={() => {
                             // QR Code carregado
                           }}
@@ -469,42 +544,42 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
                         />
                       </div>
 
-                      <div className="text-sm lg:text-base 2xl:text-lg text-blue-100 bg-blue-800/50 p-3 lg:p-4 rounded-lg">
-                        💡 <strong>Dica:</strong> Abra seu app de banco e escaneie o código acima
+                      <div className="text-xs sm:text-sm text-blue-100 bg-blue-900/50 p-2 sm:p-2.5 rounded">
+                        💡 Abra seu banco e escaneie
                       </div>
                     </div>
                   </div>
                 ) : qrCodeError ? (
-                  <div className="bg-gradient-to-br from-red-900 to-red-800 p-6 rounded-lg border border-red-600">
-                    <div className="text-center">
-                      <p className="text-white mb-4 font-semibold text-lg">❌ Erro no QR Code</p>
+                  <div className="bg-gradient-to-br from-red-900/50 to-red-800/50 p-3 sm:p-4 rounded-lg border-2 border-red-600/30">
+                    <div className="text-center space-y-2">
+                      <p className="text-white font-semibold text-xs sm:text-sm">❌ Erro ao gerar QR Code</p>
                       
-                      <div className="bg-red-950 p-4 rounded-lg border border-red-700 mb-4">
-                        <div className="text-red-300 text-sm">{qrCodeError}</div>
+                      <div className="bg-red-950/50 p-2 sm:p-2.5 rounded border border-red-700/30">
+                        <div className="text-red-300 text-xs line-clamp-2">{qrCodeError}</div>
                       </div>
 
-                      <div className="text-sm text-red-100 bg-red-800/50 p-3 rounded-lg">
-                        💡 <strong>Use o código PIX abaixo:</strong> Copie e cole no seu app
+                      <div className="text-xs text-red-200 bg-red-900/30 p-2 rounded">
+                        💡 Use o código PIX abaixo
                       </div>
                     </div>
                   </div>
                 ) : (purchaseData.qr_code || purchaseData.ticket_url) ? (
-                  <div className="bg-gradient-to-br from-blue-900 to-blue-800 p-6 rounded-lg border border-blue-600">
+                  <div className="bg-gradient-to-br from-blue-900/50 to-blue-800/50 p-3 sm:p-4 rounded-lg border-2 border-blue-600/30">
                     <div className="text-center">
-                      <p className="text-white mb-4 font-semibold text-lg">📱 QR Code PIX</p>
+                      <p className="text-white mb-2 sm:mb-3 font-semibold text-xs sm:text-sm">📱 Gerando QR Code PIX</p>
                       
-                      <div className="bg-white p-6 rounded-xl inline-block mb-4 shadow-lg">
-                        <div className="w-56 h-56 flex items-center justify-center bg-gray-100 text-gray-800 text-sm p-4 rounded">
+                      <div className="bg-white p-2.5 sm:p-3 rounded inline-block mb-2 sm:mb-3 shadow-lg">
+                        <div className="w-40 h-40 sm:w-48 sm:h-48 flex items-center justify-center bg-gray-100 text-gray-600 text-xs p-2 rounded">
                           <div className="text-center">
-                            <div className="text-4xl mb-3 animate-spin">⚙️</div>
-                            <div className="font-semibold">Gerando QR Code</div>
-                            <div className="text-xs mt-2 text-gray-600">Aguarde...</div>
+                            <div className="text-2xl mb-1 animate-spin">⚙️</div>
+                            <div className="font-semibold text-[10px] sm:text-xs">Gerando</div>
+                            <div className="text-[9px] mt-1 text-gray-500">Aguarde...</div>
                           </div>
                         </div>
                       </div>
 
-                      <div className="text-sm text-blue-100 bg-blue-800/50 p-3 rounded-lg">
-                        💡 <strong>Aguarde:</strong> O QR Code está sendo gerado
+                      <div className="text-xs text-blue-200 bg-blue-900/30 p-2 rounded">
+                        ⏳ Processando sua solicitação
                       </div>
                     </div>
                   </div>
@@ -512,23 +587,21 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
 
                 {/* SEPARADOR VISUAL */}
                 {purchaseData.qr_code && purchaseData.ticket_url && (
-                  <div className="flex items-center gap-4 my-6">
-                    <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-600 to-gray-600"></div>
-                    <span className="text-gray-400 font-semibold bg-gray-800 px-4 py-2 rounded-full text-sm">
-                      OU
-                    </span>
-                    <div className="flex-1 h-px bg-gradient-to-l from-transparent via-gray-600 to-gray-600"></div>
+                  <div className="flex items-center gap-2 my-2 sm:my-3">
+                    <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#6205D5]/30 to-transparent"></div>
+                    <span className="text-gray-400 font-semibold text-xs sm:text-sm px-2">OU</span>
+                    <div className="flex-1 h-px bg-gradient-to-l from-transparent via-[#6205D5]/30 to-transparent"></div>
                   </div>
                 )}
 
-                {/* Código PIX Copia e Cola - Melhorado */}
+                {/* Código PIX Copia e Cola */}
                 {purchaseData.qr_code && (
-                  <div className="bg-gradient-to-br from-gray-800 to-gray-900 p-6 rounded-lg border border-gray-600">
-                    <p className="text-white mb-4 font-semibold text-lg">💳 Código PIX Copia e Cola</p>
+                  <div className="bg-gradient-to-br from-[#1a3a1a]/50 to-[#0a2a0a]/50 p-2.5 sm:p-3 rounded-lg border-2 border-green-600/30">
+                    <p className="text-white mb-2 font-semibold text-xs sm:text-sm">💳 PIX Copia e Cola</p>
                     
-                    <div className="bg-gray-950 p-4 rounded-lg border border-gray-700 mb-4">
-                      <div className="text-xs text-gray-400 mb-2 uppercase tracking-wider">Código PIX:</div>
-                      <div className="font-mono text-sm text-green-400 break-all leading-relaxed bg-gray-900 p-3 rounded border-l-4 border-green-500">
+                    <div className="bg-[#0a0a0a] p-2 sm:p-2.5 rounded border border-[#6205D5]/20 mb-2">
+                      <div className="text-[10px] sm:text-xs text-gray-500 mb-1 uppercase tracking-wider">Código:</div>
+                      <div className="font-mono text-[10px] sm:text-xs text-green-400 break-all leading-relaxed bg-[#0a0a0a] p-2 rounded border-l-2 border-green-500 max-h-16 overflow-auto custom-scrollbar">
                         {purchaseData.qr_code}
                       </div>
                     </div>
@@ -540,164 +613,164 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
                           setError('Código PIX não disponível. Tente atualizar a página.');
                           return;
                         }
-                        copyToClipboard(pixCode, 'Código PIX');
+                        handleCopyToClipboard(pixCode, 'Código PIX');
                       }}
-                      className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white rounded-lg transition-all font-semibold shadow-lg transform hover:scale-105"
+                      className="
+                        w-full min-h-[44px] sm:min-h-[48px]
+                        px-3 sm:px-4
+                        bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400
+                        text-white text-sm sm:text-base font-medium
+                        rounded-lg transition-all active:scale-95
+                      "
                     >
-                      📋 Copiar Código PIX
+                      📋 Copiar Código
                     </button>
-                    
-                    <div className="text-sm text-gray-400 mt-3 bg-gray-800/50 p-3 rounded-lg">
-                      💡 <strong>Como usar:</strong> Copie o código acima e cole no seu app de banco na opção "PIX Copia e Cola"
-                    </div>
                   </div>
                 )}
 
-                {/* Link de Pagamento Alternativo do Mercado Pago */}
+                {/* Link de Pagamento Alternativo */}
                 {purchaseData.ticket_url && (
-                  <div className="bg-gradient-to-br from-orange-900 to-orange-800 p-6 rounded-lg border border-orange-600">
-                    <p className="text-white mb-4 font-semibold text-lg">🔗 Pagar pelo Site do Mercado Pago</p>
+                  <div className="bg-gradient-to-br from-[#3a2400]/50 to-[#1a1200]/50 p-2.5 sm:p-3 rounded-lg border-2 border-orange-600/30">
+                    <p className="text-white mb-2 font-semibold text-xs sm:text-sm">🔗 Mercado Pago</p>
                     
-                    <div className="bg-orange-950 p-4 rounded-lg border border-orange-700 mb-4">
-                      <div className="text-xs text-orange-400 mb-2 uppercase tracking-wider">Link de Pagamento:</div>
-                      <div className="font-mono text-sm text-orange-300 break-all leading-relaxed bg-orange-900 p-3 rounded border-l-4 border-orange-500">
-                        {purchaseData.ticket_url}
+                    <div className="bg-[#0a0a0a] p-2 sm:p-2.5 rounded border border-[#6205D5]/20 mb-2">
+                      <div className="text-[10px] sm:text-xs text-gray-500 mb-1 uppercase tracking-wider">Link:</div>
+                      <div className="font-mono text-[10px] sm:text-xs text-orange-300 break-all leading-relaxed bg-[#0a0a0a] p-2 rounded border-l-2 border-orange-500 max-h-12 overflow-hidden">
+                        {purchaseData.ticket_url.substring(0, 50)}...
                       </div>
                     </div>
 
                     <button
                       onClick={() => {
-                        window.open(purchaseData.ticket_url, '_blank');
+                        navigateToUrl(purchaseData.ticket_url);
                       }}
-                      className="w-full py-3 px-4 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white rounded-lg transition-all font-semibold shadow-lg transform hover:scale-105"
+                      className="
+                        w-full min-h-[44px] sm:min-h-[48px]
+                        px-3 sm:px-4
+                        bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400
+                        text-white text-sm sm:text-base font-medium
+                        rounded-lg transition-all active:scale-95
+                      "
                     >
-                      🌐 Abrir Site do Mercado Pago
+                      🌐 Abrir Mercado Pago
                     </button>
-                    
-                    <div className="text-sm text-orange-100 mt-3 bg-orange-800/50 p-3 rounded-lg">
-                      💡 <strong>Alternativa:</strong> Se preferir, clique acima para pagar diretamente no site do Mercado Pago
-                    </div>
                   </div>
                 )}
 
-                {/* Informações do pagamento sempre presentes */}
-                <div className="bg-gray-800 p-4 rounded-lg">
-                  <div className="space-y-2">
-                    <p className="text-white">
-                      <span className="font-semibold">💰 Valor:</span> {formatPrice(purchaseData.amount)}
-                    </p>
-                    <p className="text-white">
-                      <span className="font-semibold">🆔 Payment ID:</span> {purchaseData.payment_id}
-                    </p>
-                    <p className="text-white">
-                      <span className="font-semibold">⏱️ Tempo limite:</span> {purchaseData.expires_in || 15} minutos
-                    </p>
+                {/* Informações do pagamento */}
+                <div className="bg-[#1a0533]/50 border-2 border-[#6205D5]/30 p-2.5 sm:p-3 rounded-lg text-xs sm:text-sm space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">💰 Valor:</span>
+                    <span className="text-green-400 font-semibold">{formatPrice(purchaseData.amount)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">🆔 ID:</span>
+                    <span className="text-white font-mono text-[9px] sm:text-xs truncate">{purchaseData.payment_id}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">⏱️ Limite:</span>
+                    <span className="text-white font-semibold">{purchaseData.expires_in || 15}m</span>
                   </div>
                 </div>
 
-                {/* Informações opcionais - só mostrar se existirem */}
+                {/* Informações opcionais */}
                 {purchaseData.username && (
-                  <div className="bg-gray-800 p-4 rounded-lg">
-                    <p className="text-white mb-2">
-                      <span className="font-semibold">👤 Usuário:</span> {purchaseData.username}
+                  <div className="bg-[#1a0533]/50 border-2 border-[#6205D5]/30 p-2.5 sm:p-3 rounded-lg">
+                    <p className="text-white text-xs sm:text-sm">
+                      <span className="text-gray-400">👤 Usuário:</span>
+                      <span className="font-mono ml-1 text-green-400">{purchaseData.username}</span>
                     </p>
                   </div>
                 )}
 
-                {/* Expiração atual se disponível */}
-                {purchaseData.current_expiration && (
-                  <div className="bg-gray-800 p-4 rounded-lg">
-                    <p className="text-white mb-2">
-                      <span className="font-semibold">⏰ Expira em:</span> {formatDate(purchaseData.current_expiration)}
-                    </p>
-                  </div>
-                )}
-
-                {/* Status do polling otimizado */}
-                <div className="bg-gray-800 p-3 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-gray-300 font-semibold">Status do Pagamento:</span>
-                    <div className="flex items-center gap-2">
+                {/* Status do polling */}
+                <div className="bg-[#1a0533]/50 border-2 border-[#6205D5]/30 p-2.5 sm:p-3 rounded-lg">
+                  <div className="flex items-center justify-between mb-1 sm:mb-2">
+                    <span className="text-gray-400 text-xs sm:text-sm font-semibold">Status:</span>
+                    <div className="flex items-center gap-1.5 sm:gap-2">
                       {isPolling && (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                        <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-2 border-[#6205D5] border-t-transparent"></div>
                       )}
-                      <span className={`font-semibold ${
-                        !credentials ? 'text-yellow-400' : 
-                        'text-green-400'
+                      <span className={`font-semibold text-xs sm:text-sm ${
+                        !credentials ? 'text-yellow-400' : 'text-green-400'
                       }`}>
-                        {!credentials ? '⏳ Aguardando pagamento...' : 
-                         '✅ Pagamento aprovado!'}
+                        {!credentials ? '⏳ Aguardando...' : '✅ Aprovado!'}
                       </span>
                     </div>
                   </div>
-                  <div className="text-xs text-gray-400">
-                    Verificação automática {attempts}/{maxAttempts} • A cada 5 segundos
-                  </div>
-                  <div className="text-xs text-blue-300 mt-1">
-                    💡 Após o pagamento, as credenciais aparecerão automaticamente
+                  <div className="text-[10px] sm:text-xs text-gray-500">
+                    {attempts}/{maxAttempts} • a cada 5s
                   </div>
                 </div>
 
                 {pollingError && (
-                  <div className="bg-red-900/30 border border-red-600 p-3 rounded-lg">
-                    <p className="text-red-300 text-sm">❌ {pollingError}</p>
+                  <div className="bg-red-900/30 border-2 border-red-600/30 p-2 sm:p-2.5 rounded-lg">
+                    <p className="text-red-300 text-xs sm:text-sm">❌ {pollingError}</p>
                   </div>
                 )}
 
-                {/* Instruções de pagamento */}
-                <div className="bg-blue-900/30 border border-blue-600 p-3 rounded-lg">
-                  <div className="text-blue-300 text-sm">
-                    <div className="font-semibold mb-2">📋 Como pagar:</div>
-                    <div className="space-y-1 text-xs">
-                      <div>1. 📱 Abra seu app do banco</div>
-                      <div>2. 🔍 Procure por "PIX" ou "Pagar com QR Code"</div>
-                      <div>3. 📷 Escaneie o QR Code ou cole o código PIX</div>
-                      <div>4. ✅ Confirme o pagamento</div>
-                      <div>5. ⚡ Aguarde alguns segundos para aprovação automática</div>
+                {/* Instruções compactas */}
+                <div className="bg-blue-900/30 border-2 border-blue-600/30 p-2.5 sm:p-3 rounded-lg">
+                  <div className="text-blue-200 text-xs sm:text-sm space-y-0.5 sm:space-y-1">
+                    <div className="font-semibold">📋 Como pagar:</div>
+                    <div className="text-[10px] sm:text-xs text-blue-300/80 space-y-0.5">
+                      <div>1️⃣ Abra seu banco</div>
+                      <div>2️⃣ Procure PIX/QR Code</div>
+                      <div>3️⃣ Escaneie ou copie</div>
                     </div>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Credenciais já disponíveis - Preview */}
+            {/* Credenciais recebidas */}
             {credentials && (
-              <div className="bg-green-900/30 border border-green-600 p-3 rounded-lg">
-                <div className="text-green-300 text-sm mb-2">✅ Credenciais recebidas!</div>
-                <div className="text-xs text-green-400">
-                  Status: {credentials.status}
+              <div className="bg-green-900/30 border-2 border-green-600/30 p-2.5 sm:p-3 rounded-lg">
+                <div className="text-green-300 text-xs sm:text-sm mb-1">✅ Credenciais ativadas!</div>
+                <div className="text-[10px] sm:text-xs text-green-400/80 space-y-0.5">
+                  <div>Status: {credentials.status}</div>
+                  {credentials.ssh_credentials && (
+                    <div>SSH: {credentials.ssh_credentials.username}</div>
+                  )}
+                  {credentials.v2ray_credentials && (
+                    <div>V2Ray: {credentials.v2ray_credentials.uuid.substring(0, 8)}...</div>
+                  )}
                 </div>
-                {credentials.ssh_credentials && (
-                  <div className="text-xs text-green-400">
-                    SSH: {credentials.ssh_credentials.username}
-                  </div>
-                )}
-                {credentials.v2ray_credentials && (
-                  <div className="text-xs text-green-400">
-                    V2Ray: {credentials.v2ray_credentials.uuid.substring(0, 8)}...
-                  </div>
-                )}
               </div>
             )}
 
-            <div className="flex gap-3">
+            {/* Botões de ação */}
+            <div className="flex gap-2 sm:gap-3 pt-1 sm:pt-2">
               <button
                 onClick={() => setCurrentStep('plans')}
-                className="flex-1 py-2 px-4 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors"
+                className="
+                  flex-1 min-h-[44px] sm:min-h-[48px]
+                  px-3 sm:px-4
+                  bg-[#26074d]/80 hover:bg-[#26074d] border-2 border-[#6205D5]/30 hover:border-[#6205D5]/60
+                  text-white text-sm sm:text-base font-medium
+                  rounded-lg transition-all active:scale-95
+                "
               >
-                ← Cancelar
+                ← Voltar
               </button>
               <button
                 onClick={() => {
-                  // Reativar polling se parou por algum motivo
                   if (!isPolling && currentStep === 'payment') {
-                    window.location.reload(); // Solução simples para reativar
+                    reloadApp();
                   }
                 }}
                 disabled={isPolling}
-                className="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-300 text-white rounded-lg transition-colors"
+                className="
+                  flex-1 min-h-[44px] sm:min-h-[48px]
+                  px-3 sm:px-4
+                  bg-[#6205D5] hover:bg-[#7a19eb] disabled:bg-[#6205D5]/50 disabled:opacity-60
+                  text-white text-sm sm:text-base font-medium
+                  rounded-lg transition-all active:scale-95 flex items-center justify-center gap-1.5 sm:gap-2
+                "
               >
-                🔄 {isPolling ? 'Verificando...' : 'Verificar Novamente'}
+                <span>🔄</span>
+                <span className="hidden sm:inline">{isPolling ? 'Verificando...' : 'Verificar'}</span>
+                <span className="sm:hidden">{isPolling ? '...' : 'OK'}</span>
               </button>
             </div>
           </div>
@@ -705,231 +778,217 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
 
       case 'success':
         return (
-          <div className="space-y-4">
+          <div className="w-full space-y-3 sm:space-y-4">
+            {/* Cabeçalho de sucesso */}
             <div className="text-center">
-              <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-green-600/80 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-3">
+                <svg className="w-6 h-6 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold text-white mb-2">Pagamento Aprovado!</h3>
-              <p className="text-gray-300">Suas credenciais estão prontas</p>
+              <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-white mb-0.5 sm:mb-1">
+                Pagamento Aprovado!
+              </h3>
+              <p className="text-xs sm:text-sm text-gray-400">
+                Suas credenciais estão prontas
+              </p>
             </div>
 
             {credentials && (
-              <div className="space-y-4">
-                {/* Informações do Plano */}
+              <div className="space-y-2.5 sm:space-y-3">
+                {/* Plano */}
                 {credentials.plan && (
-                  <div className="bg-green-900/30 border border-green-600 p-4 rounded-lg">
-                    <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
-                      <span>📦 Plano Adquirido</span>
-                      <span className="px-2 py-1 bg-green-600 text-xs rounded">ATIVO</span>
+                  <div className="bg-green-900/20 border-2 border-green-600/30 p-2.5 sm:p-3 rounded-lg">
+                    <h4 className="font-semibold text-white text-xs sm:text-sm mb-1.5 flex items-center gap-1">
+                      <span>📦</span>
+                      <span>Plano</span>
+                      <span className="px-1.5 py-0.5 bg-green-600/50 text-[10px] rounded">ATIVO</span>
                     </h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-300">Plano:</span>
-                        <span className="text-white font-semibold">{credentials.plan.name}</span>
+                    <div className="space-y-1 text-[10px] sm:text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Plano:</span>
+                        <span className="text-white font-medium">{credentials.plan.name}</span>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-300">Preço:</span>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Preço:</span>
                         <span className="text-green-400 font-semibold">{formatPrice(credentials.plan.price)}</span>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-300">Validade:</span>
-                        <span className="text-white">{credentials.plan.validate_days} dias</span>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Validade:</span>
+                        <span className="text-white">{credentials.plan.validate_days}d</span>
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* Credenciais SSH */}
+                {/* SSH */}
                 {credentials.ssh_credentials && (
-                  <div className="bg-gray-800 p-4 rounded-lg">
-                    <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
-                      <span>🔐 Credenciais SSH</span>
-                      <span className="px-2 py-1 bg-blue-600 text-xs rounded">SSH</span>
+                  <div className="bg-blue-900/20 border-2 border-blue-600/30 p-2.5 sm:p-3 rounded-lg">
+                    <h4 className="font-semibold text-white text-xs sm:text-sm mb-1.5 flex items-center gap-1">
+                      <span>🔐</span>
+                      <span>SSH</span>
+                      <span className="px-1.5 py-0.5 bg-blue-600/50 text-[10px] rounded">ATIVO</span>
                     </h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-300">Usuário:</span>
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-white">{credentials.ssh_credentials?.username || 'N/A'}</span>
+                    <div className="space-y-1 text-[10px] sm:text-xs">
+                      <div className="flex justify-between items-start gap-1">
+                        <span className="text-gray-400 flex-shrink-0">User:</span>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <span className="font-mono text-white text-[9px] sm:text-xs truncate">{credentials.ssh_credentials?.username || 'N/A'}</span>
                           <button
-                            onClick={() => copyToClipboard(credentials.ssh_credentials?.username || '', 'Usuário SSH')}
-                            className="text-blue-400 hover:text-blue-300"
+                            onClick={() => handleCopyToClipboard(credentials.ssh_credentials?.username || '', 'Usuário SSH')}
+                            className="text-blue-300 hover:text-blue-200 flex-shrink-0"
+                            title="Copiar"
                           >
                             📋
                           </button>
                         </div>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-300">Senha:</span>
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-white">{credentials.ssh_credentials?.password || 'N/A'}</span>
+                      <div className="flex justify-between items-start gap-1">
+                        <span className="text-gray-400 flex-shrink-0">Pass:</span>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <span className="font-mono text-white text-[9px] sm:text-xs truncate">{credentials.ssh_credentials?.password || 'N/A'}</span>
                           <button
-                            onClick={() => copyToClipboard(credentials.ssh_credentials?.password || '', 'Senha SSH')}
-                            className="text-blue-400 hover:text-blue-300"
+                            onClick={() => handleCopyToClipboard(credentials.ssh_credentials?.password || '', 'Senha SSH')}
+                            className="text-blue-300 hover:text-blue-200 flex-shrink-0"
+                            title="Copiar"
                           >
                             📋
                           </button>
                         </div>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-300">Limite de Conexões:</span>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Conexões:</span>
                         <span className="text-yellow-400">{credentials.ssh_credentials?.limit || 'N/A'}</span>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-300">Expira em:</span>
-                        <span className="text-orange-400">{credentials.ssh_credentials?.expiration_date ? formatDate(credentials.ssh_credentials.expiration_date) : 'N/A'}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-300">Criado em:</span>
-                        <span className="text-gray-400">{credentials.ssh_credentials?.created_at ? formatDate(credentials.ssh_credentials.created_at) : 'N/A'}</span>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Expira:</span>
+                        <span className="text-orange-300">{credentials.ssh_credentials?.expiration_date ? formatDate(credentials.ssh_credentials.expiration_date) : 'N/A'}</span>
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* Credenciais V2Ray */}
+                {/* V2RAY */}
                 {credentials.v2ray_credentials && (
-                  <div className="bg-gray-800 p-4 rounded-lg">
-                    <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
-                      <span>🌐 Credenciais V2Ray</span>
-                      <span className="px-2 py-1 bg-purple-600 text-xs rounded">V2RAY</span>
+                  <div className="bg-purple-900/20 border-2 border-purple-600/30 p-2.5 sm:p-3 rounded-lg">
+                    <h4 className="font-semibold text-white text-xs sm:text-sm mb-1.5 flex items-center gap-1">
+                      <span>🌐</span>
+                      <span>V2Ray</span>
+                      <span className="px-1.5 py-0.5 bg-purple-600/50 text-[10px] rounded">ATIVO</span>
                     </h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-300">UUID:</span>
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-white text-xs break-all">{credentials.v2ray_credentials?.uuid || 'N/A'}</span>
+                    <div className="space-y-1 text-[10px] sm:text-xs">
+                      <div className="flex justify-between items-start gap-1">
+                        <span className="text-gray-400 flex-shrink-0">UUID:</span>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <span className="font-mono text-white text-[8px] sm:text-[9px] truncate">{credentials.v2ray_credentials?.uuid?.substring(0, 16) || 'N/A'}...</span>
                           <button
-                            onClick={() => copyToClipboard(credentials.v2ray_credentials?.uuid || '', 'UUID V2Ray')}
-                            className="text-blue-400 hover:text-blue-300 flex-shrink-0"
+                            onClick={() => handleCopyToClipboard(credentials.v2ray_credentials?.uuid || '', 'UUID V2Ray')}
+                            className="text-purple-300 hover:text-purple-200 flex-shrink-0"
+                            title="Copiar UUID completo"
                           >
                             📋
                           </button>
                         </div>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-300">Limite de Conexões:</span>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Conexões:</span>
                         <span className="text-yellow-400">{credentials.v2ray_credentials?.limit || 'N/A'}</span>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-300">Expira em:</span>
-                        <span className="text-orange-400">{credentials.v2ray_credentials?.expiration_date ? formatDate(credentials.v2ray_credentials.expiration_date) : 'N/A'}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-300">Criado em:</span>
-                        <span className="text-gray-400">{credentials.v2ray_credentials?.created_at ? formatDate(credentials.v2ray_credentials.created_at) : 'N/A'}</span>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Expira:</span>
+                        <span className="text-orange-300">{credentials.v2ray_credentials?.expiration_date ? formatDate(credentials.v2ray_credentials.expiration_date) : 'N/A'}</span>
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* Credenciais Legadas (fallback para compatibilidade) */}
+                {/* SSH Legado */}
                 {credentials.ssh && !credentials.ssh_credentials && (
-                  <div className="bg-gray-800 p-4 rounded-lg">
-                    <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
-                      <span>🔐 SSH (Formato Legado)</span>
-                      <span className="px-2 py-1 bg-blue-600 text-xs rounded">SSH</span>
+                  <div className="bg-blue-900/20 border-2 border-blue-600/30 p-2.5 sm:p-3 rounded-lg">
+                    <h4 className="font-semibold text-white text-xs sm:text-sm mb-1.5 flex items-center gap-1">
+                      <span>🔐</span>
+                      <span>SSH Legado</span>
                     </h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-300">Host:</span>
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-white">{credentials.ssh?.host || 'N/A'}</span>
-                          <button
-                            onClick={() => copyToClipboard(credentials.ssh?.host || '', 'Host SSH')}
-                            className="text-blue-400 hover:text-blue-300"
-                          >
-                            📋
-                          </button>
+                    <div className="space-y-1 text-[10px] sm:text-xs">
+                      {credentials.ssh?.host && (
+                        <div className="flex justify-between items-start gap-1">
+                          <span className="text-gray-400">Host:</span>
+                          <div className="flex items-center gap-1">
+                            <span className="font-mono text-white text-[9px] truncate">{credentials.ssh.host}</span>
+                            <button onClick={() => handleCopyToClipboard(credentials.ssh?.host || '', 'Host')} className="text-blue-300 hover:text-blue-200">📋</button>
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-300">Porta:</span>
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-white">{credentials.ssh?.port || 'N/A'}</span>
-                          <button
-                            onClick={() => copyToClipboard(credentials.ssh?.port?.toString() || '', 'Porta SSH')}
-                            className="text-blue-400 hover:text-blue-300"
-                          >
-                            📋
-                          </button>
+                      )}
+                      {credentials.ssh?.port && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Porta:</span>
+                          <span className="font-mono text-white">{credentials.ssh.port}</span>
                         </div>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-300">Usuário:</span>
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-white">{credentials.ssh?.username || 'N/A'}</span>
-                          <button
-                            onClick={() => copyToClipboard(credentials.ssh?.username || '', 'Usuário SSH')}
-                            className="text-blue-400 hover:text-blue-300"
-                          >
-                            📋
-                          </button>
+                      )}
+                      {credentials.ssh?.username && (
+                        <div className="flex justify-between items-start gap-1">
+                          <span className="text-gray-400">User:</span>
+                          <div className="flex items-center gap-1">
+                            <span className="font-mono text-white text-[9px] truncate">{credentials.ssh.username}</span>
+                            <button onClick={() => handleCopyToClipboard(credentials.ssh?.username || '', 'User')} className="text-blue-300 hover:text-blue-200">📋</button>
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-300">Senha:</span>
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-white">{credentials.ssh?.password || 'N/A'}</span>
-                          <button
-                            onClick={() => copyToClipboard(credentials.ssh?.password || '', 'Senha SSH')}
-                            className="text-blue-400 hover:text-blue-300"
-                          >
-                            📋
-                          </button>
+                      )}
+                      {credentials.ssh?.password && (
+                        <div className="flex justify-between items-start gap-1">
+                          <span className="text-gray-400">Pass:</span>
+                          <div className="flex items-center gap-1">
+                            <span className="font-mono text-white text-[9px] truncate">{credentials.ssh.password}</span>
+                            <button onClick={() => handleCopyToClipboard(credentials.ssh?.password || '', 'Pass')} className="text-blue-300 hover:text-blue-200">📋</button>
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-300">Expira:</span>
-                        <span className="text-orange-400">{credentials.ssh?.expires_at ? formatDate(credentials.ssh.expires_at) : 'N/A'}</span>
-                      </div>
+                      )}
                     </div>
                   </div>
                 )}
 
+                {/* V2Ray Legado */}
                 {credentials.v2ray && !credentials.v2ray_credentials && (
-                  <div className="bg-gray-800 p-4 rounded-lg">
-                    <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
-                      <span>🌐 V2Ray (Formato Legado)</span>
-                      <span className="px-2 py-1 bg-purple-600 text-xs rounded">V2RAY</span>
+                  <div className="bg-purple-900/20 border-2 border-purple-600/30 p-2.5 sm:p-3 rounded-lg">
+                    <h4 className="font-semibold text-white text-xs sm:text-sm mb-1.5 flex items-center gap-1">
+                      <span>🌐</span>
+                      <span>V2Ray Legado</span>
                     </h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-300">UUID:</span>
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-white text-xs">{credentials.v2ray?.uuid || 'N/A'}</span>
-                          <button
-                            onClick={() => copyToClipboard(credentials.v2ray?.uuid || '', 'UUID V2Ray')}
-                            className="text-blue-400 hover:text-blue-300"
-                          >
-                            📋
-                          </button>
+                    <div className="space-y-1 text-[10px] sm:text-xs">
+                      {credentials.v2ray?.uuid && (
+                        <div className="flex justify-between items-start gap-1">
+                          <span className="text-gray-400">UUID:</span>
+                          <div className="flex items-center gap-1">
+                            <span className="font-mono text-white text-[8px] truncate">{credentials.v2ray.uuid.substring(0, 16)}...</span>
+                            <button onClick={() => handleCopyToClipboard(credentials.v2ray?.uuid || '', 'UUID')} className="text-purple-300 hover:text-purple-200">📋</button>
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-300">Expira:</span>
-                        <span className="text-orange-400">{credentials.v2ray?.expires_at ? formatDate(credentials.v2ray.expires_at) : 'N/A'}</span>
-                      </div>
+                      )}
                     </div>
                   </div>
                 )}
 
-                <div className="bg-blue-900/30 border border-blue-600 p-3 rounded-lg">
-                  <p className="text-blue-300 text-sm text-center">
-                    ✉️ As credenciais também foram enviadas para seu email: <strong>{email}</strong>
+                {/* Email */}
+                <div className="bg-blue-900/20 border-2 border-blue-600/30 p-2.5 sm:p-3 rounded-lg text-center">
+                  <p className="text-blue-200 text-[10px] sm:text-xs">
+                    ✉️ Credenciais enviadas para:<br/>
+                    <strong className="text-white truncate">{email}</strong>
                   </p>
                 </div>
               </div>
             )}
 
+            {/* Botão Concluir */}
             <button
               onClick={handleClose}
-              className="w-full py-2 px-4 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors"
+              className="
+                w-full min-h-[44px] sm:min-h-[48px]
+                px-3 sm:px-4
+                bg-green-600 hover:bg-green-500 text-white text-sm sm:text-base font-medium
+                rounded-lg transition-all active:scale-95
+              "
             >
-              Concluir
+              ✅ Concluir
             </button>
           </div>
         );
@@ -939,28 +998,29 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
     }
   }
 
+  const steps = ['plans', 'email', 'confirm', 'payment', 'success'] as const;
+  const currentStepIndex = steps.indexOf(currentStep);
+
   return (
     <Modal onClose={handleClose} title="Comprar Plano" icon={ShoppingCart}>
-      <div className="p-6">
-        {/* Indicador de progresso */}
-        <div className="flex items-center justify-center mb-6">
-          <div className="flex items-center">
-            {['plans', 'email', 'confirm', 'payment', 'success'].map((step, index) => (
+      <div className="p-2 sm:p-4 lg:p-6">
+        {/* Indicador de progresso - compacto no mobile */}
+        <div className="flex items-center justify-center mb-4 sm:mb-6">
+          <div className="flex items-center gap-1 sm:gap-0">
+            {steps.map((step, index) => (
               <Fragment key={step}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium transition-colors ${
                   currentStep === step 
-                    ? 'bg-blue-600 text-white' 
-                    : index < ['plans', 'email', 'confirm', 'payment', 'success'].indexOf(currentStep)
-                    ? 'bg-green-600 text-white'
-                    : 'bg-gray-600 text-gray-300'
+                    ? 'bg-[#6205D5] text-white ring-2 ring-[#6205D5]/50' 
+                    : index < currentStepIndex
+                    ? 'bg-green-600/80 text-white'
+                    : 'bg-[#26074d] text-gray-400 border border-[#6205D5]/20'
                 }`}>
                   {index + 1}
                 </div>
                 {index < 4 && (
-                  <div className={`w-8 h-0.5 ${
-                    index < ['plans', 'email', 'confirm', 'payment', 'success'].indexOf(currentStep)
-                      ? 'bg-green-600'
-                      : 'bg-gray-600'
+                  <div className={`hidden sm:block w-6 lg:w-8 h-0.5 mx-0.5 ${
+                    index < currentStepIndex ? 'bg-green-600' : 'bg-[#26074d]'
                   }`} />
                 )}
               </Fragment>
