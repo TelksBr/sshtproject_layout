@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, X } from '../../utils/icons';
+import { useNotificationPosition } from '../../hooks/useNotificationPosition';
 
 interface PaymentApprovedNotificationProps {
   amount: number;
@@ -18,6 +19,7 @@ export function PaymentApprovedNotification({
 }: PaymentApprovedNotificationProps) {
   const [isClosing, setIsClosing] = useState(false);
   const [progress, setProgress] = useState(100);
+  const { position } = useNotificationPosition();
 
   // Auto-close com progress bar
   useEffect(() => {
@@ -48,7 +50,7 @@ export function PaymentApprovedNotification({
   return (
     <div
       className={`
-        fixed top-4 right-4 z-[999]
+        fixed z-[999]
         max-w-sm sm:max-w-md
         bg-gradient-to-r from-green-900/95 to-green-800/95
         border-2 border-green-500/50
@@ -61,6 +63,10 @@ export function PaymentApprovedNotification({
           : 'opacity-100 translate-y-0 scale-100'
         }
       `}
+      style={{
+        top: `${position.top}px`,
+        right: `${position.right}px`
+      }}
     >
       {/* Barra de progresso */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-green-900/30">

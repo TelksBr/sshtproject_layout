@@ -1,8 +1,10 @@
 import { useToast } from '../hooks/useToast';
+import { useNotificationPosition } from '../hooks/useNotificationPosition';
 import { CheckCircle, XCircle, AlertTriangle, Info, X } from '../utils/icons';
 
 export function ToastContainer() {
   const { toasts, removeToast } = useToast();
+  const { position } = useNotificationPosition();
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -33,7 +35,13 @@ export function ToastContainer() {
   };
 
   return (
-    <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none">
+    <div 
+      className="fixed z-[9999] flex flex-col gap-2 pointer-events-none"
+      style={{
+        top: `${position.top}px`,
+        right: `${position.right}px`
+      }}
+    >
       {toasts.map((toast) => (
         <div
           key={toast.id}
