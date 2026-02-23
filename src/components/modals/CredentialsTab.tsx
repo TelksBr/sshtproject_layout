@@ -422,15 +422,19 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
                         <span className="hidden sm:inline">Validar</span>
                       </button>
                       
-                      {/* Renew Button - only if expired and has SSH */}
-                      {expired && hasSSH && (
+                      {/* Renew Button - if has SSH */}
+                      {hasSSH && (
                         <button
                           onClick={() => handleRenewCredential(credential)}
-                          className="flex items-center gap-1.5 px-3 py-2 bg-yellow-600/20 hover:bg-yellow-600/40 rounded-lg transition-colors active:scale-95 text-xs font-semibold"
-                          title="Renovar credencial"
+                          className={`flex items-center gap-1.5 px-3 py-2 rounded-lg transition-colors active:scale-95 text-xs font-semibold ${
+                            expired
+                              ? 'bg-red-600/30 hover:bg-red-600/50 text-red-300'
+                              : 'bg-blue-600/20 hover:bg-blue-600/40 text-blue-300'
+                          }`}
+                          title={expired ? 'Renovar credencial expirada' : 'Renovar credencial'}
                         >
-                          <RefreshCw className="w-4 h-4 text-yellow-400" />
-                          <span className="hidden sm:inline">Renovar</span>
+                          <RefreshCw className="w-4 h-4" />
+                          <span className="hidden sm:inline">{expired ? 'Renovar' : 'Renovar'}</span>
                         </button>
                       )}
                       
