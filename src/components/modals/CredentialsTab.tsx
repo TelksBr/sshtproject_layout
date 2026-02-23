@@ -197,26 +197,18 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
   };
 
   return (
-    <Modal onClose={onClose}>
+    <Modal onClose={onClose} title="Credenciais" icon={Key}>
       <div className="flex flex-col h-full max-h-[85vh] sm:max-h-[90vh] bg-gradient-to-b from-[#1a0628] to-[#26074d]">
-        {/* Header - Mobile Optimized */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-2 p-4 sm:p-5 border-b border-[#6205D5]/30 bg-gradient-to-r from-[#26074d]/80 to-[#1a0628]/80">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-[#6205D5]/20 rounded-lg">
-              <Key className="w-6 h-6 text-[#6205D5]" />
-            </div>
-            <div>
-              <h2 className="text-lg sm:text-xl font-bold text-white">Credenciais</h2>
-              <p className="text-xs text-gray-400 mt-0.5">Gerencie suas credenciais SSH e V2Ray</p>
-            </div>
-          </div>
+        {/* Subheader with actions */}
+        <div className="flex items-center justify-between gap-2 p-4 sm:p-5 border-b border-[#6205D5]/30 bg-gradient-to-r from-[#26074d]/50 to-transparent">
+          <p className="text-xs sm:text-sm text-gray-400">Gerencie suas credenciais SSH e V2Ray</p>
           <div className="flex gap-2">
             <button
               onClick={() => setShowAddModal(true)}
-              className="flex-1 sm:flex-initial flex items-center justify-center sm:justify-start gap-2 px-4 py-2.5 sm:py-2 bg-gradient-to-r from-[#6205D5] to-[#7a19eb] hover:from-[#7a19eb] hover:to-[#6205D5] text-white rounded-lg transition-all active:scale-95 font-semibold text-sm"
+              className="flex-1 sm:flex-initial flex items-center justify-center sm:justify-start gap-2 px-4 py-2.5 sm:py-2 bg-gradient-to-r from-[#6205D5] to-[#7a19eb] hover:from-[#7a19eb] hover:to-[#6205D5] text-white rounded-lg transition-all active:scale-95 font-semibold text-sm whitespace-nowrap"
             >
-              <Plus className="w-5 h-5" />
-              <span>Adicionar</span>
+              <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="hidden sm:inline">Adicionar</span>
             </button>
             <button
               onClick={refreshCredentials}
@@ -224,7 +216,7 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
               className="p-2.5 rounded-lg bg-[#6205D5]/20 hover:bg-[#6205D5]/30 transition-colors disabled:opacity-50 active:scale-95"
               title="Atualizar"
             >
-              <RefreshCw className={`w-5 h-5 text-white ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-4 h-4 sm:w-5 sm:h-5 text-white ${loading ? 'animate-spin' : ''}`} />
             </button>
           </div>
         </div>
