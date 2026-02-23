@@ -8,6 +8,7 @@ import { SavedCredential, purchaseStorage } from '../../utils/purchaseStorageMan
 import { copyToClipboard } from '../../utils/nativeClipboard';
 import { getSdk } from '../../utils/sdkInstance';
 import { setUsername, setPassword, setUUID } from '../../utils/appFunctions';
+import { emit } from '../../utils/dtunnelEventBridge';
 import { 
   Key, 
   Star, 
@@ -135,6 +136,9 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
         showToast('Erro ao definir credencial como padrão', 'error');
         return;
       }
+
+      // ✅ Emitir evento para atualizar formulário
+      emit('newDefaultConfig', {});
 
       showToast(`✅ "${credential.label}" setada e carregada!`, 'success');
     } catch (error) {

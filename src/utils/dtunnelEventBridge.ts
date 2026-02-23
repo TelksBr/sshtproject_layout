@@ -29,7 +29,7 @@ export function off(eventName: string, listener?: Listener): void {
   if (set.size === 0) listeners.delete(eventName);
 }
 
-function emit(eventName: string, payload?: unknown): void {
+export function emit(eventName: string, payload?: unknown): void {
   const set = listeners.get(eventName);
   if (!set) return;
   for (const l of Array.from(set)) {
