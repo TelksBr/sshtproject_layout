@@ -161,31 +161,6 @@ export function ServersModal({ onClose }: ServersModalProps) {
     });
   };
 
-  // Função para buscar um servidor com retry
-  const fetchWithRetry = async (url: string, retries = 3): Promise<Response> => {
-    for (let i = 0; i < retries; i++) {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-        const response = await fetch(url, {
-          method: 'GET',
-          headers: {
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache'
-          },
-          signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-        if (response.ok) return response;
-        if (i === retries - 1) throw new Error(`Failed after ${retries} retries`);
-        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
-      } catch (error) {
-        if (i === retries - 1) throw error;
-      }
-    }
-    throw new Error('Fetch failed');
-  };
-
   // Função para buscar dados de um servidor específico
   const fetchServer = async (config: ServerConfig) => {
     const urlOnlines = `http://${config.host}:${config.port}/onlines`;
@@ -372,7 +347,16 @@ export function ServersModal({ onClose }: ServersModalProps) {
 
         {/* Cabeçalho fixo com refresh */}
         <div className="flex items-center justify-between mb-2 sticky top-0 z-10 bg-[#18122B] rounded-t-lg p-2 md:p-0">
-          <span className="font-semibold text-base md:text-lg text-white">Status dos Servidores</span>
+          <div className="flex items-center gap-4">
+            <span className="font-semibold text-base md:text-lg text-white">Status dos Servidores</span>
+            {!loading && servers.length > 0 && (
+              <div className="text-xs md:text-sm text-[#b0a8ff]/70 flex gap-3">
+                <span>SSH: <span className="text-white font-semibold">{totals.ssh}</span></span>
+                <span>V2Ray: <span className="text-white font-semibold">{totals.v2ray}</span></span>
+                <span className="text-[#b0a8ff]">Total: <span className="text-[#00ff88] font-semibold">{totals.total}</span></span>
+              </div>
+            )}
+          </div>
           <button
             onClick={handleRefresh}
             disabled={refreshing || serverConfigs.length === 0}

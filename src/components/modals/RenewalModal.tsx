@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { Modal } from './Modal';
 import { checkRenewalUser, getPlans, purchaseRenewal } from '../../utils/salesUtils';
 import usePaymentPolling from '../../hooks/usePaymentPolling';
 import QRCode from 'qrcode';
