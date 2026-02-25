@@ -1,5 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { X, type LucideIcon } from '../../utils/icons';
+import { useSafeModalHeight } from '../../hooks/useViewportHeight';
+import { ensureModalRoot } from '../../utils/createPortal';
 
 interface ModalProps {
   children: React.ReactNode;
@@ -12,6 +15,12 @@ interface ModalProps {
 export function Modal({ children, onClose, allowClose = true, title, icon: Icon }: ModalProps) {
   const [isClosing, setIsClosing] = useState(false);
   const [isOpening, setIsOpening] = useState(true);
+  const safeHeight = useSafeModalHeight(0.85);
+  
+  // Memoizar para evitar re-renders desnecessários
+  const modalStyle = useMemo(() => ({
+    maxHeight: `${safeHeight}px`
+  }), [safeHeight]);
 
   useEffect(() => {
     setIsOpening(false);
@@ -22,35 +31,33 @@ export function Modal({ children, onClose, allowClose = true, title, icon: Icon 
     setTimeout(onClose, 200);
   };
 
-  return (
+  return createPortal(
     <div 
       className={`
-        fixed inset-0 z-[100] flex items-end sm:items-center justify-center
-        p-0 sm:p-3 md:p-4
+        fixed inset-0 z-50 flex items-center justify-center
+        p-2 sm:p-3 md:p-4
         bg-black/60 backdrop-blur-sm
-        transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
-        ${isOpening ? 'opacity-0' : 'opacity-100'}
-        ${isClosing ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}
+        transition-opacity duration-300 ease-out
+        ${isOpening ? 'opacity-0 pointer-events-none' : 'opacity-100'}
+        ${isClosing ? 'opacity-0 pointer-events-none' : 'opacity-100'}
       `}
       onClick={(e) => allowClose && e.target === e.currentTarget && handleClose()}
     >
       <div 
         className={`
-          relative w-full z-[101]
-          max-w-[100vw] sm:max-w-md md:max-w-2xl lg:max-w-3xl xl:max-w-5xl 2xl:max-w-6xl
-          sm:rounded-xl
-          rounded-t-2xl
-          bg-gradient-to-br from-[#26074d]/98 to-[#100322]/98
+          relative w-full
+          max-w-[95vw] sm:max-w-md md:max-w-2xl lg:max-w-3xl xl:max-w-5xl 2xl:max-w-6xl
+          bg-gradient-to-br from-[#26074d]/95 to-[#100322]/95
+          rounded-lg sm:rounded-xl
           shadow-2xl shadow-black/20
           border border-[#6205D5]/20
-          transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
-          ${isOpening ? 'scale-95 opacity-0 translate-y-4' : 'scale-100 opacity-100 translate-y-0'}
-          ${isClosing ? 'scale-95 opacity-0 translate-y-4' : 'scale-100 opacity-100 translate-y-0'}
-          max-h-[92vh] sm:max-h-[88vh] md:max-h-[90vh]
-          landscape:max-h-[88vh]
+          transition-opacity duration-300 ease-out
+          ${isOpening ? 'opacity-0' : 'opacity-100'}
+          ${isClosing ? 'opacity-0' : 'opacity-100'}
+          landscape:max-h-[70vh]
           flex flex-col backdrop-blur-xl
         `}
-        onClick={(e) => e.stopPropagation()}
+        style={modalStyle}
       >
         {/* Header fixo */}
         <div className="flex items-center justify-between p-3 sm:p-4 border-b border-[#6205D5]/20">
@@ -78,7 +85,7 @@ export function Modal({ children, onClose, allowClose = true, title, icon: Icon 
         </div>
         
         {/* Conteúdo com scroll */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-5 lg:p-6 2xl:p-8 min-h-0">
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 lg:p-6 2xl:p-8">
           {children}
         </div>
 
@@ -102,6 +109,7 @@ export function Modal({ children, onClose, allowClose = true, title, icon: Icon 
           }
         `}</style>
       </div>
-    </div>
+    </div>,
+    ensureModalRoot()
   );
 }
