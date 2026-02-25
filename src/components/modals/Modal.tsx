@@ -19,7 +19,9 @@ export function Modal({ children, onClose, allowClose = true, title, icon: Icon 
   
   // Memoizar para evitar re-renders desnecessários
   const modalStyle = useMemo(() => ({
-    maxHeight: `${safeHeight}px`
+    maxHeight: `${Math.max(safeHeight, 300)}px`,
+    display: 'flex',
+    flexDirection: 'column' as const
   }), [safeHeight]);
 
   useEffect(() => {
@@ -38,8 +40,9 @@ export function Modal({ children, onClose, allowClose = true, title, icon: Icon 
         p-2 sm:p-3 md:p-4
         bg-black/60 backdrop-blur-sm
         transition-opacity duration-300 ease-out
-        ${isOpening ? 'opacity-0 pointer-events-none' : 'opacity-100'}
-        ${isClosing ? 'opacity-0 pointer-events-none' : 'opacity-100'}
+        pointer-events-auto
+        ${isOpening ? 'opacity-0' : 'opacity-100'}
+        ${isClosing ? 'opacity-0' : 'opacity-100'}
       `}
       onClick={(e) => allowClose && e.target === e.currentTarget && handleClose()}
     >
@@ -52,12 +55,13 @@ export function Modal({ children, onClose, allowClose = true, title, icon: Icon 
           shadow-2xl shadow-black/20
           border border-[#6205D5]/20
           transition-opacity duration-300 ease-out
+          pointer-events-auto
           ${isOpening ? 'opacity-0' : 'opacity-100'}
           ${isClosing ? 'opacity-0' : 'opacity-100'}
-          landscape:max-h-[70vh]
-          flex flex-col backdrop-blur-xl
+          overflow-hidden backdrop-blur-xl
         `}
         style={modalStyle}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Header fixo */}
         <div className="flex items-center justify-between p-3 sm:p-4 border-b border-[#6205D5]/20">

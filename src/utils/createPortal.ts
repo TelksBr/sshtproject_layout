@@ -36,7 +36,7 @@ export function ensureModalRoot(): HTMLElement {
   modalRoot.style.height = '100%';
   modalRoot.style.padding = 'env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)';
   modalRoot.style.zIndex = '9999';
-  modalRoot.style.pointerEvents = 'none'; // Permite cliques passarem (cada modal controla isso)
+  modalRoot.style.pointerEvents = 'auto'; // Permitir cliques normalmente dentro do portal
   
   // Inserir antes do fechamento da body
   document.body.appendChild(modalRoot);

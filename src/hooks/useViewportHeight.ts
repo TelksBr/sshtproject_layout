@@ -12,36 +12,40 @@ import { useState, useEffect } from 'react';
  */
 export function useViewportHeight(): number {
   const [height, setHeight] = useState(() => {
-    // No Android, usar visualViewport quando disponível
-    if (typeof window !== 'undefined' && window.visualViewport) {
-      return window.visualViewport.height;
+    // Iniciação: preferir visualViewport quando disponível
+    if (typeof window !== 'undefined') {
+      const visualHeight = window.visualViewport?.height;
+      if (visualHeight && visualHeight > 0) {
+        return visualHeight;
+      }
     }
-    return window.innerHeight;
+    // Fallback para innerHeight
+    return typeof window !== 'undefined' ? window.innerHeight : 800;
   });
 
   useEffect(() => {
     const updateHeight = () => {
       // Preferir visualViewport (mais preciso em Android)
-      if (window.visualViewport) {
-        setHeight(window.visualViewport.height);
-      } else {
-        setHeight(window.innerHeight);
+      const newHeight = window.visualViewport?.height ?? window.innerHeight;
+      if (newHeight && newHeight > 0) {
+        setHeight(newHeight);
       }
     };
 
-    // Atualizar inicial
+    // Atualizar immediately
     updateHeight();
 
     // Listeners para mudanças de viewport
-    window.addEventListener('resize', updateHeight);
+    const handleResize = () => updateHeight();
+    window.addEventListener('resize', handleResize);
     if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', updateHeight);
+      window.visualViewport.addEventListener('resize', handleResize);
     }
 
     return () => {
-      window.removeEventListener('resize', updateHeight);
+      window.removeEventListener('resize', handleResize);
       if (window.visualViewport) {
-        window.visualViewport.removeEventListener('resize', updateHeight);
+        window.visualViewport.removeEventListener('resize', handleResize);
       }
     };
   }, []);
@@ -94,6 +98,7 @@ export function useSafeModalHeight(percentageOfViewport: number = 0.85): number 
 
   // Garantir mínimo de 300px para modal usável
   const calculatedHeight = Math.max(viewportHeight * percentage, 300);
-
-  return calculatedHeight;
+  
+  // Garantir que sempre retorna um número positivo válido
+  return isFinite(calculatedHeight) && calculatedHeight > 0 ? calculatedHeight : 500;
 }
