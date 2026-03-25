@@ -1,6 +1,6 @@
 import { useState, useEffect, Fragment } from 'react';
 import { Modal } from './Modal';
-import { Plan, PaymentStep, PurchaseRequest, PurchaseResponse, CredentialsResponse } from '../../types/sales';
+import { Plan, PaymentStep, PurchaseRequest, OrderResponse, CredentialsResponse } from '../../types/sales';
 import { getPlans, createPurchase, formatPrice, formatDate } from '../../utils/salesUtils';
 import { validateEmail } from '../../utils/emailValidation';
 import { generateQRCodeDataURL, isValidPixCode } from '../../utils/qrCodeGenerator';
@@ -26,7 +26,7 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
   const [error, setError] = useState('');
   
   // Estados do processo de pagamento
-  const [purchaseData, setPurchaseData] = useState<PurchaseResponse | null>(null);
+  const [purchaseData, setPurchaseData] = useState<OrderResponse | null>(null);
   const [credentials, setCredentials] = useState<CredentialsResponse | null>(null);
   const [generatedQRCode, setGeneratedQRCode] = useState<string | null>(null);
   const [qrCodeError, setQrCodeError] = useState<string | null>(null);
@@ -43,8 +43,8 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
 
   // Sincronizar credenciais do hook com estado local
   useEffect(() => {
-    // Só processa se realmente tiver credenciais E status completed
-    if (hookCredentials && hookCredentials.status === 'completed') {
+    // Só processa se realmente tiver credenciais E status completed/approved
+    if (hookCredentials && (hookCredentials.status === 'completed' || hookCredentials.status === 'approved')) {
       setCredentials(hookCredentials);
       
       // 💾 Salvar credenciais quando modal está aberto
@@ -72,7 +72,13 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
       if (!purchaseData?.qr_code && !purchaseData?.ticket_url) return;
 
       try {
-        // Preferir qr_code se disponível, senão usar ticket_url
+        // Usar qr_code_base64 da API se disponível (já vem pronto)
+        if (purchaseData.qr_code_base64) {
+          setGeneratedQRCode(purchaseData.qr_code_base64);
+          return;
+        }
+
+        // Fallback: gerar QR Code localmente
         const pixCode = purchaseData.qr_code || purchaseData.ticket_url;
 
         if (!pixCode) {
@@ -155,8 +161,8 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
       
       // 💾 Salvar compra pendente no localStorage
       const pendingPurchase: PendingPurchase = {
-        order_id: response.order_id || response.invoice_id,
-        payment_id: response.payment_id,
+        order_id: response.order_id,
+        payment_id: String(response.payment_id),
         amount: response.amount,
         created_at: new Date().toISOString(),
         expires_at: response.expires_in 
@@ -898,72 +904,6 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
                         <span className="text-gray-400">Expira:</span>
                         <span className="text-orange-300">{credentials.v2ray_credentials?.expiration_date ? formatDate(credentials.v2ray_credentials.expiration_date) : 'N/A'}</span>
                       </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* SSH Legado */}
-                {credentials.ssh && !credentials.ssh_credentials && (
-                  <div className="bg-blue-900/20 border-2 border-blue-600/30 p-2.5 sm:p-3 rounded-lg">
-                    <h4 className="font-semibold text-white text-xs sm:text-sm mb-1.5 flex items-center gap-1">
-                      <span>🔐</span>
-                      <span>SSH Legado</span>
-                    </h4>
-                    <div className="space-y-1 text-[10px] sm:text-xs">
-                      {credentials.ssh?.host && (
-                        <div className="flex justify-between items-start gap-1">
-                          <span className="text-gray-400">Host:</span>
-                          <div className="flex items-center gap-1">
-                            <span className="font-mono text-white text-[9px] truncate">{credentials.ssh.host}</span>
-                            <button onClick={() => handleCopyToClipboard(credentials.ssh?.host || '', 'Host')} className="text-blue-300 hover:text-blue-200">📋</button>
-                          </div>
-                        </div>
-                      )}
-                      {credentials.ssh?.port && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-400">Porta:</span>
-                          <span className="font-mono text-white">{credentials.ssh.port}</span>
-                        </div>
-                      )}
-                      {credentials.ssh?.username && (
-                        <div className="flex justify-between items-start gap-1">
-                          <span className="text-gray-400">User:</span>
-                          <div className="flex items-center gap-1">
-                            <span className="font-mono text-white text-[9px] truncate">{credentials.ssh.username}</span>
-                            <button onClick={() => handleCopyToClipboard(credentials.ssh?.username || '', 'User')} className="text-blue-300 hover:text-blue-200">📋</button>
-                          </div>
-                        </div>
-                      )}
-                      {credentials.ssh?.password && (
-                        <div className="flex justify-between items-start gap-1">
-                          <span className="text-gray-400">Pass:</span>
-                          <div className="flex items-center gap-1">
-                            <span className="font-mono text-white text-[9px] truncate">{credentials.ssh.password}</span>
-                            <button onClick={() => handleCopyToClipboard(credentials.ssh?.password || '', 'Pass')} className="text-blue-300 hover:text-blue-200">📋</button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* V2Ray Legado */}
-                {credentials.v2ray && !credentials.v2ray_credentials && (
-                  <div className="bg-purple-900/20 border-2 border-purple-600/30 p-2.5 sm:p-3 rounded-lg">
-                    <h4 className="font-semibold text-white text-xs sm:text-sm mb-1.5 flex items-center gap-1">
-                      <span>🌐</span>
-                      <span>V2Ray Legado</span>
-                    </h4>
-                    <div className="space-y-1 text-[10px] sm:text-xs">
-                      {credentials.v2ray?.uuid && (
-                        <div className="flex justify-between items-start gap-1">
-                          <span className="text-gray-400">UUID:</span>
-                          <div className="flex items-center gap-1">
-                            <span className="font-mono text-white text-[8px] truncate">{credentials.v2ray.uuid.substring(0, 16)}...</span>
-                            <button onClick={() => handleCopyToClipboard(credentials.v2ray?.uuid || '', 'UUID')} className="text-purple-300 hover:text-purple-200">📋</button>
-                          </div>
-                        </div>
-                      )}
                     </div>
                   </div>
                 )}

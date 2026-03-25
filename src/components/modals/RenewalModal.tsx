@@ -15,18 +15,25 @@ interface RenewalModalProps {
 }
 
 type RenewalData = {
-  username: string;
+  user_type: 'ssh' | 'v2ray' | 'both';
   can_renew: boolean;
   current_expiration?: string;
   is_expired?: boolean;
   days_until_expiration?: number;
-  current_limit?: number;
+  ssh?: {
+    username: string;
+    limit: number;
+  };
+  v2ray?: {
+    uuid: string;
+    limit: number;
+  };
   [key: string]: any;
 };
 
 
 const RenewalModal: React.FC<RenewalModalProps> = ({ onClose, initialUsername }) => {
-  const [username, setUsername] = useState(initialUsername || '');
+  const [identifier, setIdentifier] = useState(initialUsername || '');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<RenewalData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -52,7 +59,7 @@ const RenewalModal: React.FC<RenewalModalProps> = ({ onClose, initialUsername })
 
   // Sincronizar credenciais do hook com estado local (igual PurchaseModal)
   useEffect(() => {
-    if (hookCredentials && hookCredentials.status === 'completed') {
+    if (hookCredentials && (hookCredentials.status === 'completed' || hookCredentials.status === 'approved')) {
       setCredentials(hookCredentials);
       if (currentStep === 'payment') {
         setCurrentStep('success');
@@ -81,13 +88,9 @@ const RenewalModal: React.FC<RenewalModalProps> = ({ onClose, initialUsername })
     setRenewResult(null);
     setSelectedPlan('');
     try {
-      const response = await checkRenewalUser(username);
+      const response = await checkRenewalUser(identifier);
       if (response.success && response.data) {
-        // Garante que username sempre existe usando o input do usuário
-        setResult({
-          ...response.data,
-          username: response.data.username || username
-        });
+        setResult(response.data as RenewalData);
       } else {
         setError(response.message || 'Não foi possível verificar o usuário.');
       }
@@ -108,12 +111,14 @@ const RenewalModal: React.FC<RenewalModalProps> = ({ onClose, initialUsername })
     setQrCodeError(null);
     setCredentials(null);
     try {
-      const response = await purchaseRenewal(result.username, selectedPlan);
+      const response = await purchaseRenewal(identifier, selectedPlan);
       if (response.success && response.data) {
         setPaymentData(response.data);
         setCurrentStep('payment');
-        // Gerar QR Code visual se possível
-        if (response.data.qr_code) {
+        // Usar qr_code_base64 da API se disponível, senão gerar dinamicamente
+        if (response.data.qr_code_base64) {
+          setQrCodeUrl(response.data.qr_code_base64);
+        } else if (response.data.qr_code) {
           try {
             const url = await generateQRCodeDataURL(response.data.qr_code, { size: 256, margin: 4 });
             setQrCodeUrl(url);
@@ -141,17 +146,17 @@ const RenewalModal: React.FC<RenewalModalProps> = ({ onClose, initialUsername })
         {!result && (
           <form onSubmit={handleSubmit} className="flex flex-col gap-6 p-4 animate-fade-in">
             <div className="flex flex-col gap-2">
-              <label htmlFor="renew-username" className="text-white font-semibold text-base flex items-center gap-2">
-                <RefreshCw className="w-5 h-5 text-[#b0a8ff]" /> Usuário para renovação:
+              <label htmlFor="renew-identifier" className="text-white font-semibold text-base flex items-center gap-2">
+                <RefreshCw className="w-5 h-5 text-[#b0a8ff]" /> Usuário ou UUID para renovação:
               </label>
               <input
-                id="renew-username"
+                id="renew-identifier"
                 type="text"
-                value={username}
-                onChange={e => setUsername(e.target.value)}
+                value={identifier}
+                onChange={e => setIdentifier(e.target.value)}
                 required
                 disabled={loading}
-                placeholder="Digite o usuário"
+                placeholder="Username SSH ou UUID V2Ray"
                 className="rounded-lg px-4 py-2 bg-[#1a0628] border-2 border-[#6205D5]/40 text-white focus:outline-none focus:ring-2 focus:ring-[#6205D5] shadow-sm transition-all"
                 style={{ width: '100%' }}
                 autoFocus
@@ -159,7 +164,7 @@ const RenewalModal: React.FC<RenewalModalProps> = ({ onClose, initialUsername })
             </div>
             <button
               type="submit"
-              disabled={loading || !username}
+              disabled={loading || !identifier}
               className="flex items-center justify-center gap-2 bg-gradient-to-r from-[#6205D5] to-[#4B0082] hover:from-[#4B0082] hover:to-[#6205D5] text-white font-bold py-2 px-6 rounded-lg shadow-lg transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {loading && <span className="loader mr-2"></span>}
@@ -180,7 +185,13 @@ const RenewalModal: React.FC<RenewalModalProps> = ({ onClose, initialUsername })
               <span className={`text-xl font-bold drop-shadow ${result.can_renew ? 'text-green-300' : 'text-red-300'}`}>{result.can_renew ? 'Usuário pode renovar!' : 'Usuário não pode renovar'}</span>
             </div>
             <div className="bg-[#1a0628]/80 rounded-lg p-4 border border-[#6205D5]/30 shadow-inner w-full max-w-md">
-              <div className="text-white text-base mb-2"><b>Usuário:</b> <span className="text-[#b0a8ff]">{result.username}</span></div>
+              <div className="text-white text-base mb-2"><b>Tipo:</b> <span className="text-[#b0a8ff]">{result.user_type === 'both' ? 'SSH + V2Ray' : result.user_type === 'ssh' ? 'SSH' : 'V2Ray'}</span></div>
+              {result.ssh && (
+                <div className="text-white text-base mb-2"><b>SSH:</b> <span className="text-[#b0a8ff]">{result.ssh.username}</span> <span className="text-gray-400 text-sm">(limite: {result.ssh.limit})</span></div>
+              )}
+              {result.v2ray && (
+                <div className="text-white text-base mb-2"><b>V2Ray:</b> <span className="text-[#b0a8ff] text-sm font-mono">{result.v2ray.uuid.substring(0, 16)}...</span> <span className="text-gray-400 text-sm">(limite: {result.v2ray.limit})</span></div>
+              )}
               {result.current_expiration && (
                 <div className="text-white text-base mb-2"><b>Expiração atual:</b> <span className="text-[#b0a8ff]">{new Date(result.current_expiration).toLocaleString()}</span></div>
               )}
@@ -189,9 +200,6 @@ const RenewalModal: React.FC<RenewalModalProps> = ({ onClose, initialUsername })
               )}
               {typeof result.days_until_expiration !== 'undefined' && (
                 <div className="text-white text-base mb-2"><b>Dias até expirar:</b> <span className="text-[#b0a8ff]">{result.days_until_expiration}</span></div>
-              )}
-              {typeof result.current_limit !== 'undefined' && (
-                <div className="text-white text-base mb-2"><b>Limite atual:</b> <span className="text-[#b0a8ff]">{result.current_limit}</span></div>
               )}
             </div>
             {result.can_renew && plans.length > 0 && (
@@ -246,6 +254,17 @@ const RenewalModal: React.FC<RenewalModalProps> = ({ onClose, initialUsername })
             {paymentData.amount ? paymentData.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : ''}
           </div>
         </div>
+        {/* Mensagens informativas de upgrade/downgrade */}
+        {paymentData.ssh_message && (
+          <div className="bg-blue-900/30 border border-blue-500 p-3 rounded-lg">
+            <p className="text-blue-200 text-sm">🔐 <strong>SSH:</strong> {paymentData.ssh_message}</p>
+          </div>
+        )}
+        {paymentData.v2ray_message && (
+          <div className="bg-purple-900/30 border border-purple-500 p-3 rounded-lg">
+            <p className="text-purple-200 text-sm">🌐 <strong>V2Ray:</strong> {paymentData.v2ray_message}</p>
+          </div>
+        )}
         {/* QR Code Visual Gerado Dinamicamente */}
         {qrCodeUrl ? (
           <div className="bg-gradient-to-br from-blue-900 to-blue-800 p-6 rounded-lg border border-blue-600">
@@ -402,6 +421,10 @@ const RenewalModal: React.FC<RenewalModalProps> = ({ onClose, initialUsername })
 
   // Step de sucesso igual ao PurchaseModal
   else if (currentStep === 'success') {
+    // Extrair credenciais normalizadas (suporte a ambos os formatos)
+    const sshCred = credentials?.ssh_credentials || credentials?.credentials?.ssh;
+    const v2rayCred = credentials?.v2ray_credentials || credentials?.credentials?.v2ray;
+
     content = (
       <div className="space-y-4">
         <div className="text-center">
@@ -416,7 +439,7 @@ const RenewalModal: React.FC<RenewalModalProps> = ({ onClose, initialUsername })
         {credentials && (
           <div className="space-y-4">
             {/* SSH */}
-            {credentials.credentials?.ssh && (
+            {sshCred && (
               <div className="bg-gray-800 p-4 rounded-lg">
                 <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
                   <span>🔐 Credenciais SSH</span>
@@ -425,29 +448,33 @@ const RenewalModal: React.FC<RenewalModalProps> = ({ onClose, initialUsername })
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-300">Usuário:</span>
-                    <span className="font-mono text-white">{credentials.credentials.ssh.username}</span>
+                    <span className="font-mono text-white">{sshCred.username}</span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-300">Senha:</span>
-                    <span className="font-mono text-white">{credentials.credentials.ssh.password}</span>
-                  </div>
+                  {sshCred.password && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-300">Senha:</span>
+                      <span className="font-mono text-white">{sshCred.password}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between items-center">
                     <span className="text-gray-300">Limite:</span>
-                    <span className="text-yellow-400">{credentials.credentials.ssh.limit}</span>
+                    <span className="text-yellow-400">{sshCred.limit}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-300">Expira em:</span>
-                    <span className="text-orange-400">{new Date(credentials.credentials.ssh.expiration_date).toLocaleString()}</span>
+                    <span className="text-orange-400">{new Date(sshCred.expiration_date).toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-300">Ativo:</span>
-                    <span className="text-green-400">{credentials.credentials.ssh.is_active ? 'Sim' : 'Não'}</span>
-                  </div>
+                  {typeof sshCred.is_active !== 'undefined' && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-300">Ativo:</span>
+                      <span className="text-green-400">{sshCred.is_active ? 'Sim' : 'Não'}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
             {/* V2Ray */}
-            {credentials.credentials?.v2ray && (
+            {v2rayCred && (
               <div className="bg-gray-800 p-4 rounded-lg">
                 <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
                   <span>🌐 Credenciais V2Ray</span>
@@ -456,20 +483,22 @@ const RenewalModal: React.FC<RenewalModalProps> = ({ onClose, initialUsername })
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-300">UUID:</span>
-                    <span className="font-mono text-white text-xs break-all">{credentials.credentials.v2ray.uuid}</span>
+                    <span className="font-mono text-white text-xs break-all">{v2rayCred.uuid}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-300">Limite:</span>
-                    <span className="text-yellow-400">{credentials.credentials.v2ray.limit}</span>
+                    <span className="text-yellow-400">{v2rayCred.limit}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-300">Expira em:</span>
-                    <span className="text-orange-400">{new Date(credentials.credentials.v2ray.expiration_date).toLocaleString()}</span>
+                    <span className="text-orange-400">{new Date(v2rayCred.expiration_date).toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-300">Ativo:</span>
-                    <span className="text-green-400">{credentials.credentials.v2ray.is_active ? 'Sim' : 'Não'}</span>
-                  </div>
+                  {typeof v2rayCred.is_active !== 'undefined' && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-300">Ativo:</span>
+                      <span className="text-green-400">{v2rayCred.is_active ? 'Sim' : 'Não'}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

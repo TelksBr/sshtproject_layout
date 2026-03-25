@@ -151,12 +151,12 @@ export function useCredentialsManager(): CredentialsManagerHook {
   }, [refreshCredentials]);
 
   // Verificar renovação
-  const checkRenewal = useCallback(async (username: string) => {
+  const checkRenewal = useCallback(async (identifier: string) => {
     try {
       setLoading(true);
       setError(null);
       
-      const response = await checkRenewalUser(username);
+      const response = await checkRenewalUser(identifier);
       
       return {
         canRenew: response.data?.can_renew || false,
@@ -176,12 +176,12 @@ export function useCredentialsManager(): CredentialsManagerHook {
   }, []);
 
   // Renovar credencial
-  const renewCredential = useCallback(async (username: string, planId: string) => {
+  const renewCredential = useCallback(async (identifier: string, planId: string) => {
     try {
       setLoading(true);
       setError(null);
       
-      const response = await purchaseRenewal(username, planId);
+      const response = await purchaseRenewal(identifier, planId);
       
       return {
         success: response.success,

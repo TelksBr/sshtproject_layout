@@ -50,7 +50,7 @@ const usePaymentPolling = (paymentId: string | null): PaymentPollingResult => {
       // Suporte para resposta de renovação (credentials dentro de 'credentials')
       let isCompleted = false;
       let hasCredenciais = false;
-      if (credentialsResponse?.status === 'completed') {
+      if (credentialsResponse?.status === 'completed' || credentialsResponse?.status === 'approved') {
         // Fluxo padrão (compra)
         if (credentialsResponse.ssh_credentials || credentialsResponse.v2ray_credentials) {
           isCompleted = true;

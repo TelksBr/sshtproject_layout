@@ -15,10 +15,7 @@ export interface CheckUserResponse {
   error?: string;
 }
 
-// Token de autenticação da API
-const SALES_API_TOKEN = 'sales-api_8c28c7dd151694afab5cb0958f1c443bb7e45315ed4cfeb1ea1569093287ca0d';
-
-// Verificar usuário (CheckUser API)
+// Verificar usuário (CheckUser API - Rota pública, sem autenticação)
 export async function checkUser(identifier: string): Promise<CheckUserResponse> {
   try {
     const url = `https://bot.sshtproject.com/check/${encodeURIComponent(identifier)}`;
@@ -29,7 +26,6 @@ export async function checkUser(identifier: string): Promise<CheckUserResponse> 
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
         'Expires': '0',
-        Authorization: `Bearer ${SALES_API_TOKEN}`,
       },
     });
     
@@ -85,7 +81,7 @@ export async function checkUser(identifier: string): Promise<CheckUserResponse> 
   }
 }
 
-// Buscar informações do usuário (CheckUser API)
+// Buscar informações do usuário (CheckUser API - Rota pública, sem autenticação)
 export async function fetchUserInfo(username: string, deviceId?: string): Promise<UserInfo> {
   try {
     const url = deviceId 
@@ -98,7 +94,6 @@ export async function fetchUserInfo(username: string, deviceId?: string): Promis
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
         'Expires': '0',
-        Authorization: `Bearer ${SALES_API_TOKEN}`,
       },
     });
     

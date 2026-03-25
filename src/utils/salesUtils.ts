@@ -5,20 +5,24 @@ export interface RenewalPurchaseResponse {
   data?: any;
 }
 
-export async function purchaseRenewal(username: string, plan_id: string): Promise<RenewalPurchaseResponse> {
+export async function purchaseRenewal(identifier: string, plan_id: string, customer_name?: string): Promise<RenewalPurchaseResponse> {
   // Validação de parâmetros obrigatórios
-  if (!username || username.trim() === '') {
-    throw new Error('Username é obrigatório para renovação');
+  if (!identifier || identifier.trim() === '') {
+    throw new Error('Identificador (username ou UUID) é obrigatório para renovação');
   }
   
   if (!plan_id || plan_id.trim() === '') {
     throw new Error('Plan ID é obrigatório para renovação');
   }
   
-  const payload = {
-    username: username.trim(),
+  const payload: Record<string, string> = {
+    identifier: identifier.trim(),
     plan_id: plan_id.trim()
   };
+
+  if (customer_name && customer_name.trim()) {
+    payload.customer_name = customer_name.trim();
+  }
   
   const response = await apiRequest<any>(
     '/api/v1/renewals/orders',
@@ -41,16 +45,26 @@ export interface RenewalCheckResponse {
   success: boolean;
   message: string;
   data?: {
-    username: string;
+    user_type: 'ssh' | 'v2ray' | 'both';
+    current_expiration: string;
+    is_expired: boolean;
+    days_until_expiration: number;
     can_renew: boolean;
-    expires_at?: string;
+    ssh?: {
+      username: string;
+      limit: number;
+    };
+    v2ray?: {
+      uuid: string;
+      limit: number;
+    };
     [key: string]: any;
   };
 }
 
-export async function checkRenewalUser(username: string): Promise<RenewalCheckResponse> {
+export async function checkRenewalUser(identifier: string): Promise<RenewalCheckResponse> {
   const response = await apiRequest<any>(
-    `/api/v1/renewals/users/${encodeURIComponent(username)}/validation`,
+    `/api/v1/renewals/users/${encodeURIComponent(identifier)}/validation`,
     {
       method: 'GET',
     }
@@ -77,7 +91,9 @@ import {
   InvoiceStatus,
   PaymentStatus,
   CredentialsResponse,
-  ApiResponse
+  ApiResponse,
+  RenewalValidationData,
+  RenewalOrderResponse
 } from '../types/sales';
 
 // URL permanece a mesma (legado)
@@ -156,12 +172,7 @@ export async function createOrder(purchase: PurchaseRequest): Promise<OrderRespo
 
 // Alias para compatibilidade - DEPRECADO: usar createOrder
 export async function createPurchase(purchase: PurchaseRequest): Promise<PurchaseResponse> {
-  const orderResponse = await createOrder(purchase);
-  // Adicionar invoice_id como alias de order_id para compatibilidade
-  return {
-    ...orderResponse,
-    invoice_id: orderResponse.order_id,
-  } as PurchaseResponse;
+  return createOrder(purchase);
 }
 
 // Verificar status da invoice/order (API v1 RESTful)
