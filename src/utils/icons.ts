@@ -93,6 +93,9 @@ export {
   // Business e negócios
   BriefcaseBusiness,
   
+  // Mídia
+  PlaySquare,
+  
   // Social
   Share2,
   Star,

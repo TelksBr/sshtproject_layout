@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal } from './Modal';
 import { checkRenewalUser, getPlans, purchaseRenewal } from '../../utils/salesUtils';
 import usePaymentPolling from '../../hooks/usePaymentPolling';
-import QRCode from 'qrcode';
+import { generateQRCodeDataURL } from '../../utils/qrCodeGenerator';
 import { navigateToUrl } from '../../utils/nativeNavigation';
 import { copyToClipboard } from '../../utils/nativeClipboard';
 import { RefreshCw, CheckCircle, XCircle, DollarSign } from '../../utils/icons';
@@ -115,7 +115,7 @@ const RenewalModal: React.FC<RenewalModalProps> = ({ onClose, initialUsername })
         // Gerar QR Code visual se possível
         if (response.data.qr_code) {
           try {
-            const url = await QRCode.toDataURL(response.data.qr_code, { width: 256, margin: 4 });
+            const url = await generateQRCodeDataURL(response.data.qr_code, { size: 256, margin: 4 });
             setQrCodeUrl(url);
           } catch (e) {
             setQrCodeError('Erro ao gerar QR Code visual');

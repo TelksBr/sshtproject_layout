@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { generateTestCredentials } from '../../utils/salesUtils';
 import { Modal } from './Modal';
-import { Mail, Timer } from 'lucide-react';
+import { Mail, Timer } from '../../utils/icons';
 
 interface TestGenerateModalProps {
   onClose: () => void;

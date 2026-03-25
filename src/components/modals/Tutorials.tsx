@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Book, Smartphone, Wifi, Settings, ShoppingCart, PlaneLanding, HelpCircle } from 'lucide-react';
+import { Book, Smartphone, Wifi, Settings, ShoppingCart, PlaneLanding, HelpCircle } from '../../utils/icons';
 import { Modal } from './Modal';
 import { openExternalUrl } from '../../utils/appFunctions';
 
@@ -100,7 +100,7 @@ export function Tutorials({ onClose }: { onClose: () => void }) {
           {tutorials.map((tutorial) => (
             <button
               key={tutorial.id}
-              className="w-full p-4 rounded-lg bg-[#26074d]/30 border border-[#6205D5]/20 backdrop-blur-sm text-left hover:bg-[#26074d]/40 transition-colors"
+              className="w-full p-4 rounded-lg bg-[#26074d] border border-[#6205D5]/20 text-left hover:bg-[#26074d]/80 transition-colors"
               onClick={() => setSelectedTutorial(tutorial)}
             >
               <div className="flex items-center gap-3 mb-2">
@@ -113,7 +113,7 @@ export function Tutorials({ onClose }: { onClose: () => void }) {
         </div>
 
         {selectedTutorial && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
             <div className="bg-[#2A0A3E] rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-6">

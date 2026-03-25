@@ -1,8 +1,5 @@
-import React, { useEffect, useState, useMemo } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useEffect, useState, useCallback } from 'react';
 import { X, type LucideIcon } from '../../utils/icons';
-import { useSafeModalHeight } from '../../hooks/useViewportHeight';
-import { ensureModalRoot } from '../../utils/createPortal';
 
 interface ModalProps {
   children: React.ReactNode;
@@ -14,54 +11,54 @@ interface ModalProps {
 
 export function Modal({ children, onClose, allowClose = true, title, icon: Icon }: ModalProps) {
   const [isClosing, setIsClosing] = useState(false);
-  const [isOpening, setIsOpening] = useState(true);
-  const safeHeight = useSafeModalHeight(0.85);
-  
-  // Memoizar para evitar re-renders desnecessários
-  const modalStyle = useMemo(() => ({
-    maxHeight: `${Math.max(safeHeight, 300)}px`,
-    display: 'flex',
-    flexDirection: 'column' as const
-  }), [safeHeight]);
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    setIsOpening(false);
+    // Duplo rAF garante que o browser pintou o frame inicial
+    // antes de disparar a transição — resolve race condition no Android WebView
+    const raf1 = requestAnimationFrame(() => {
+      const raf2 = requestAnimationFrame(() => {
+        setIsVisible(true);
+      });
+      return () => cancelAnimationFrame(raf2);
+    });
+    return () => cancelAnimationFrame(raf1);
   }, []);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
+    if (!allowClose) return;
     setIsClosing(true);
     setTimeout(onClose, 200);
-  };
+  }, [allowClose, onClose]);
 
-  return createPortal(
+  return (
     <div 
-      className={`
-        fixed inset-0 z-50 flex items-center justify-center
-        p-2 sm:p-3 md:p-4
-        bg-black/60 backdrop-blur-sm
-        transition-opacity duration-300 ease-out
-        pointer-events-auto
-        ${isOpening ? 'opacity-0' : 'opacity-100'}
-        ${isClosing ? 'opacity-0' : 'opacity-100'}
-      `}
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3 md:p-4"
+      style={{
+        // Fallback sólido + backdrop-filter com prefixo webkit
+        backgroundColor: isVisible && !isClosing ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0)',
+        WebkitBackdropFilter: 'blur(4px)',
+        backdropFilter: 'blur(4px)',
+        transition: 'background-color 0.3s ease, opacity 0.3s ease',
+        opacity: isVisible && !isClosing ? 1 : 0,
+      }}
       onClick={(e) => allowClose && e.target === e.currentTarget && handleClose()}
     >
       <div 
-        className={`
-          relative w-full
-          max-w-[95vw] sm:max-w-md md:max-w-2xl lg:max-w-3xl xl:max-w-5xl 2xl:max-w-6xl
-          bg-gradient-to-br from-[#26074d]/95 to-[#100322]/95
-          rounded-lg sm:rounded-xl
-          shadow-2xl shadow-black/20
-          border border-[#6205D5]/20
-          transition-opacity duration-300 ease-out
-          pointer-events-auto
-          ${isOpening ? 'opacity-0' : 'opacity-100'}
-          ${isClosing ? 'opacity-0' : 'opacity-100'}
-          overflow-hidden backdrop-blur-xl
-        `}
-        style={modalStyle}
-        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-[95vw] sm:max-w-md md:max-w-2xl lg:max-w-3xl xl:max-w-4xl rounded-lg sm:rounded-xl shadow-2xl shadow-black/20 border border-[#6205D5]/20 flex flex-col"
+        style={{
+          // ✅ Background SÓLIDO — sem backdrop-blur-xl (causa render bug no Android WebView)
+          background: 'linear-gradient(to bottom right, #26074d, #100322)',
+          // ✅ Animação só com opacity — sem scale (scale + backdrop-filter = bug conhecido)
+          opacity: isVisible && !isClosing ? 1 : 0,
+          transition: 'opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          // ✅ Max height fixo com fallback seguro (vh pode ser instável no Android)
+          maxHeight: 'min(85vh, calc(100% - 32px))',
+          // ✅ Força composição GPU isolada
+          willChange: 'opacity',
+          // ✅ Previne colapso do flex
+          minHeight: '200px',
+        }}
       >
         {/* Header fixo */}
         <div className="flex items-center justify-between p-3 sm:p-4 border-b border-[#6205D5]/20">
@@ -77,10 +74,7 @@ export function Modal({ children, onClose, allowClose = true, title, icon: Icon 
           )}
           {allowClose && (
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleClose();
-              }}
+              onClick={handleClose}
               className="p-1.5 sm:p-2 rounded-full hover:bg-[#6205D5]/10 transition-colors group ml-auto flex-shrink-0"
             >
               <X className="w-5 h-5 sm:w-6 sm:h-6 text-[#b0a8ff] group-hover:text-white transition-colors" />
@@ -89,7 +83,7 @@ export function Modal({ children, onClose, allowClose = true, title, icon: Icon 
         </div>
         
         {/* Conteúdo com scroll */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 lg:p-6 2xl:p-8">
+        <div className="flex-1 overflow-y-auto custom-scrollbar">
           {children}
         </div>
 
@@ -113,7 +107,6 @@ export function Modal({ children, onClose, allowClose = true, title, icon: Icon 
           }
         `}</style>
       </div>
-    </div>,
-    ensureModalRoot()
+    </div>
   );
 }

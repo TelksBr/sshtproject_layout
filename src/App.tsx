@@ -1,11 +1,10 @@
-import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Header from './components/Header';
 import ServerSelector from './components/ServerSelector';
 import ConnectionForm from './components/ConnectionForm';
 import { Sidebar } from './components/Sidebar';
 import { AnimatedLogo } from './components/AnimatedLogo';
 import { ToastContainer } from './components/Toast';
-import { ToastProvider } from './hooks/useToast';
 import { useSdkToastListener } from './hooks/useSdkToastListener';
 import { getConfigVersion } from './utils/appFunctions';
 import { getStorageItem } from './utils/storageUtils';
@@ -32,7 +31,7 @@ function App() {
   
   // 💾 MONITOR: Hook para monitorar compras pendentes em background
   useBackgroundMonitor({
-    onPurchaseCompleted: (purchase, credentials) => {
+    onPurchaseCompleted: (_purchase, _credentials) => {
       // Opcional: Abrir modal de credenciais automaticamente
       // setCurrentModal('credentials');
     }

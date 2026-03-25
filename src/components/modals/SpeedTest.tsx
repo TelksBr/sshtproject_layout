@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Download, Upload, RefreshCw, Server, ChevronDown } from 'lucide-react';
+import { Download, Upload, RefreshCw, Server, ChevronDown } from '../../utils/icons';
 import { Modal } from './Modal';
 import { getSpeedTestServers, runSpeedTest, measureLatency } from '../../utils/speedTestUtils';
 
@@ -127,7 +127,7 @@ export function SpeedTest({ onClose }: SpeedTestProps) {
             <button
               onClick={() => setShowServers(!showServers)}
               disabled={loading || testing}
-              className="w-full p-4 rounded-lg bg-[#26074d]/30 border border-[#6205D5]/20 backdrop-blur-sm text-left hover:bg-[#26074d]/40 transition-colors flex items-center justify-between"
+              className="w-full p-4 rounded-lg bg-[#26074d]/30 border border-[#6205D5]/20 text-left hover:bg-[#26074d]/40 transition-colors flex items-center justify-between"
             >
               <div className="flex items-center gap-3">
                 <Server className="w-5 h-5 text-[#6205D5]" />
@@ -147,7 +147,7 @@ export function SpeedTest({ onClose }: SpeedTestProps) {
 
             {/* Server List */}
             {showServers && (
-              <div className="absolute inset-x-0 top-full mt-2 p-2 rounded-lg bg-[#26074d]/95 border border-[#6205D5]/20 backdrop-blur-lg z-10 max-h-48 overflow-y-auto">
+              <div className="absolute inset-x-0 top-full mt-2 p-2 rounded-lg bg-[#26074d]/95 border border-[#6205D5]/20 z-10 max-h-48 overflow-y-auto">
                 {servers.map((server, index) => (
                   <button
                     key={index}
@@ -180,7 +180,7 @@ export function SpeedTest({ onClose }: SpeedTestProps) {
           </div>
 
           {/* Speed Test Display */}
-          <div className="p-6 rounded-lg bg-[#26074d]/30 border border-[#6205D5]/20 backdrop-blur-sm text-center">
+          <div className="p-6 rounded-lg bg-[#26074d]/30 border border-[#6205D5]/20 text-center">
             <div className="w-48 h-48 mx-auto relative mb-6">
               <div className="absolute inset-0 rounded-full border-4 border-[#6205D5]/20" />
               <div 
@@ -225,7 +225,7 @@ export function SpeedTest({ onClose }: SpeedTestProps) {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 rounded-lg bg-[#26074d]/30 border border-[#6205D5]/20 backdrop-blur-sm">
+            <div className="p-4 rounded-lg bg-[#26074d]/30 border border-[#6205D5]/20">
               <div className="flex items-center gap-2 mb-2">
                 <Upload className="w-4 h-4 text-[#6205D5]" />
                 <span className="text-[#b0a8ff] text-sm">Upload</span>
@@ -233,7 +233,7 @@ export function SpeedTest({ onClose }: SpeedTestProps) {
               <span className="text-xl font-bold text-[#b0a8ff]">{results.upload} Mbps</span>
             </div>
 
-            <div className="p-4 rounded-lg bg-[#26074d]/30 border border-[#6205D5]/20 backdrop-blur-sm">
+            <div className="p-4 rounded-lg bg-[#26074d]/30 border border-[#6205D5]/20">
               <div className="flex items-center gap-2 mb-2">
                 <RefreshCw className="w-4 h-4 text-[#6205D5]" />
                 <span className="text-[#b0a8ff] text-sm">Ping</span>

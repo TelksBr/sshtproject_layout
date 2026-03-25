@@ -1,4 +1,4 @@
-import { FileText, Check, ShieldCheck } from 'lucide-react';
+import { FileText, Check, ShieldCheck } from '../../utils/icons';
 import { Modal } from './Modal';
 import { useTermsAcceptance } from '../../hooks/useTermsAcceptance';
 
@@ -30,7 +30,7 @@ export function Terms({ onClose, onAccept }: TermsProps) {
             </span>
           </div>
         )}
-        <div className="p-4 rounded-lg bg-[#26074d]/30 border border-[#6205D5]/20 backdrop-blur-sm">
+        <div className="p-4 rounded-lg bg-[#26074d] border border-[#6205D5]/20">
           <div className="prose prose-invert max-w-none">
             <p className="text-[#b0a8ff]/80 mb-4">
               Bem-vindo ao SSH T Project. Ao utilizar nossos serviços, você concorda com os seguintes Termos de Uso. Leia atentamente antes de utilizar o aplicativo.
@@ -115,7 +115,7 @@ export function Terms({ onClose, onAccept }: TermsProps) {
           </div>
         </div>
 
-        <div className="mt-4 sticky bottom-0 left-0 right-0 p-4 backdrop-blur-lg border-t border-[#6205D5]/20">
+        <div className="mt-4 sticky bottom-0 left-0 right-0 p-4 bg-[#100322] border-t border-[#6205D5]/20">
           {!accepted && (
             <button
               onClick={handleAccept}

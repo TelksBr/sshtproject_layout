@@ -314,7 +314,7 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
             return (
               <div
                 key={credential.id}
-                className={`rounded-xl border-2 backdrop-blur-sm transition-all overflow-hidden shadow-lg hover:shadow-xl ${
+                className={`rounded-xl border-2 transition-all overflow-hidden shadow-lg hover:shadow-xl ${
                   credential.is_default
                     ? 'bg-gradient-to-br from-[#6205D5]/25 to-[#4B0082]/15 border-[#6205D5]/60'
                     : expired
@@ -663,7 +663,7 @@ function AddCredentialModal({ onClose, onAdd }: AddCredentialModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60] p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60] p-4">
       <div className="bg-gradient-to-br from-[#26074d]/98 to-[#100322]/98 rounded-xl sm:rounded-2xl border-2 border-[#6205D5]/30 p-4 sm:p-6 max-w-sm w-full max-h-[90vh] overflow-y-auto shadow-2xl shadow-[#6205D5]/20">
         {/* Cabeçalho */}
         <div className="mb-5 sm:mb-6">

@@ -209,7 +209,7 @@ export function IpFinder({ onClose }: IpFinderProps) {
         </div>
 
         {showConfirmClose && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
             <div className="bg-[#2A0A3E] rounded-2xl max-w-sm w-full p-6">
               <h2 className="text-xl font-bold mb-4">Parar Busca</h2>
               <p className="text-gray-300 mb-4">A busca de IP está em andamento. Deseja parar a busca e fechar?</p>

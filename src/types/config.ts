@@ -15,10 +15,10 @@ export interface ConfigAuth {
 export interface ConfigItem {
   id: number;
   name: string;
-  description: string;
+  description: string | null;
   mode: string;
   sorter: number;
-  icon: string;
+  icon: string | null;
   type?: string;
   auth?: ConfigAuth;
   // Permite extensibilidade para campos dinâmicos

@@ -1,12 +1,11 @@
 import { Modal } from './Modal';
-import { Helmet } from 'react-helmet';
 import { 
   Server, 
   PlaySquare,
   BriefcaseBusiness,
   ArrowRight,
   CheckCircle,
-} from 'lucide-react';
+} from '../../utils/icons';
 import { openExternalUrl } from '../../utils/appFunctions';
 
 const services = [
@@ -44,11 +43,6 @@ export function ServicesModal({ onClose }: { onClose: () => void }) {
   return (
     <Modal onClose={onClose} title="Serviços" icon={BriefcaseBusiness}>
       <div className="max-w-md mx-auto p-4">
-        <Helmet>
-          <title>Serviços - SSH T Project</title>
-          <meta name="description" content="Conheça nossa linha completa de serviços de hospedagem, VPS, servidores dedicados e mais." />
-        </Helmet>
-
         <div className="max-w-md mx-auto">
           {/* Hero Section */}
           <div className="text-center mb-8">

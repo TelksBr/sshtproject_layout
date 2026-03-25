@@ -1,5 +1,5 @@
 import { Modal } from './Modal';
-import { Phone, Users, Send } from 'lucide-react';
+import { Phone, Users, Send } from '../../utils/icons';
 import { openExternalUrl } from '../../utils/appFunctions';
 
 interface SupportProps {
