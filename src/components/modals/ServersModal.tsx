@@ -35,6 +35,7 @@ interface ServerStatus {
   host: string;
   sshUsers: number;
   v2rayUsers: number;
+  dtProtoUsers: number;
   totalUsers: number;
   isOnline: boolean;
   order: number;
@@ -44,6 +45,7 @@ interface ServerStatus {
 interface ServerTotals {
   ssh: number;
   v2ray: number;
+  dtProto: number;
   total: number;
 }
 
@@ -55,7 +57,7 @@ export function ServersModal({ onClose }: ServersModalProps) {
   const [serverConfigs, setServerConfigs] = useState<ServerConfig[]>([]);
   const [servers, setServers] = useState<ServerStatus[]>([]);
   const [loading, setLoading] = useState(true);
-  const [totals, setTotals] = useState<ServerTotals>({ ssh: 0, v2ray: 0, total: 0 });
+  const [totals, setTotals] = useState<ServerTotals>({ ssh: 0, v2ray: 0, dtProto: 0, total: 0 });
   const [refreshing, setRefreshing] = useState(false);
   const [failedServers, setFailedServers] = useState<Set<string>>(new Set());
   const [configError, setConfigError] = useState<string | null>(null);
@@ -140,11 +142,12 @@ export function ServersModal({ onClose }: ServersModalProps) {
 
   // Função para atualizar totais baseada na lista de servidores
   const updateTotals = (serverList: ServerStatus[]) => {
-    const newTotals = { ssh: 0, v2ray: 0, total: 0 };
+    const newTotals = { ssh: 0, v2ray: 0, dtProto: 0, total: 0 };
     serverList.forEach(server => {
       if (server.isOnline) {
         newTotals.ssh += server.sshUsers;
         newTotals.v2ray += server.v2rayUsers;
+        newTotals.dtProto += server.dtProtoUsers;
         newTotals.total += server.totalUsers;
       }
     });
@@ -217,6 +220,7 @@ export function ServersModal({ onClose }: ServersModalProps) {
         host: config.host,
         sshUsers: dataOnlines.ssh_users ?? 0,
         v2rayUsers: dataOnlines.v2ray_users ?? 0,
+        dtProtoUsers: dataOnlines.dt_proto_users ?? 0,
         totalUsers: dataOnlines.total_users ?? 0,
         isOnline: true,
         order: config.order ?? 999,
@@ -239,6 +243,7 @@ export function ServersModal({ onClose }: ServersModalProps) {
         host: config.host,
         sshUsers: 0,
         v2rayUsers: 0,
+        dtProtoUsers: 0,
         totalUsers: 0,
         isOnline: false,
         order: config.order ?? 999
@@ -353,6 +358,7 @@ export function ServersModal({ onClose }: ServersModalProps) {
               <div className="text-xs md:text-sm text-[#b0a8ff]/70 flex gap-3">
                 <span>SSH: <span className="text-white font-semibold">{totals.ssh}</span></span>
                 <span>V2Ray: <span className="text-white font-semibold">{totals.v2ray}</span></span>
+                <span>DT Proto: <span className="text-white font-semibold">{totals.dtProto}</span></span>
                 <span className="text-[#b0a8ff]">Total: <span className="text-[#00ff88] font-semibold">{totals.total}</span></span>
               </div>
             )}
@@ -421,7 +427,7 @@ export function ServersModal({ onClose }: ServersModalProps) {
                   
                   {server.isOnline && (
                     <>
-                      <div className="grid grid-cols-3 gap-2 text-xs md:text-sm mb-2">
+                      <div className="grid grid-cols-4 gap-2 text-xs md:text-sm mb-2">
                         <div className="bg-[#6205D5]/10 p-2 rounded">
                           <span className="text-[#b0a8ff]/70 block">SSH</span>
                           <span className="text-white font-mono font-semibold">{server.sshUsers}</span>
@@ -429,6 +435,10 @@ export function ServersModal({ onClose }: ServersModalProps) {
                         <div className="bg-[#6205D5]/10 p-2 rounded">
                           <span className="text-[#b0a8ff]/70 block">V2Ray</span>
                           <span className="text-white font-mono font-semibold">{server.v2rayUsers}</span>
+                        </div>
+                        <div className="bg-[#6205D5]/10 p-2 rounded">
+                          <span className="text-[#b0a8ff]/70 block">DT Proto</span>
+                          <span className="text-white font-mono font-semibold">{server.dtProtoUsers}</span>
                         </div>
                         <div className="bg-[#6205D5]/15 p-2 rounded">
                           <span className="text-[#b0a8ff]/70 block">Total</span>
