@@ -54,13 +54,13 @@ const Hotspot = memo(function Hotspot({ onClose }: HotspotProps) {
                 onClick={toggleHotspot}
                 disabled={loading}
                 className={`
-                  px-4 h-8 rounded-full font-medium text-sm transition-all duration-200
+                  px-4 h-8 rounded-full font-medium text-sm transition-colors duration-200
                   ${isEnabled 
                     ? 'bg-red-500/20 text-red-300 hover:bg-red-500/30 border border-red-500/30' 
                     : 'bg-[#6205D5] text-[#b0a8ff] hover:bg-[#6205D5]/90 border border-[#6205D5]/50'
                   }
                   disabled:opacity-50 disabled:cursor-not-allowed
-                  ${loading ? 'animate-pulse' : ''}
+                  ${loading ? 'opacity-70' : ''}
                 `}
               >
                 {loading ? (

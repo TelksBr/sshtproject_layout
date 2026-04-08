@@ -224,7 +224,7 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
           <div className="flex gap-2">
             <button
               onClick={() => setShowAddModal(true)}
-              className="flex-1 sm:flex-initial flex items-center justify-center sm:justify-start gap-2 px-4 py-2.5 sm:py-2 bg-gradient-to-r from-[#6205D5] to-[#7a19eb] hover:from-[#7a19eb] hover:to-[#6205D5] text-white rounded-lg transition-all active:scale-95 font-semibold text-sm whitespace-nowrap"
+              className="flex-1 sm:flex-initial flex items-center justify-center sm:justify-start gap-2 px-4 py-2.5 sm:py-2 bg-gradient-to-r from-[#6205D5] to-[#7a19eb] hover:from-[#7a19eb] hover:to-[#6205D5] text-white rounded-lg transition-colors active:scale-95 font-semibold text-sm whitespace-nowrap"
             >
               <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
               <span className="hidden sm:inline">Adicionar</span>
@@ -244,7 +244,7 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
         <div className="grid grid-cols-3 gap-2 p-4 border-b border-[#6205D5]/20 bg-[#1a0628]/50">
           <button
             onClick={() => setFilter('all')}
-            className={`px-3 py-2.5 rounded-lg font-semibold transition-all text-xs sm:text-sm active:scale-95 ${
+            className={`px-3 py-2.5 rounded-lg font-semibold transition-colors text-xs sm:text-sm active:scale-95 ${
               filter === 'all'
                 ? 'bg-[#6205D5] text-white shadow-lg shadow-[#6205D5]/30'
                 : 'bg-[#26074d] text-gray-300 hover:bg-[#6205D5]/20'
@@ -255,7 +255,7 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
           </button>
           <button
             onClick={() => setFilter('active')}
-            className={`px-3 py-2.5 rounded-lg font-semibold transition-all text-xs sm:text-sm active:scale-95 ${
+            className={`px-3 py-2.5 rounded-lg font-semibold transition-colors text-xs sm:text-sm active:scale-95 ${
               filter === 'active'
                 ? 'bg-green-600 text-white shadow-lg shadow-green-600/30'
                 : 'bg-[#26074d] text-gray-300 hover:bg-green-600/20'
@@ -266,7 +266,7 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
           </button>
           <button
             onClick={() => setFilter('expired')}
-            className={`px-3 py-2.5 rounded-lg font-semibold transition-all text-xs sm:text-sm active:scale-95 ${
+            className={`px-3 py-2.5 rounded-lg font-semibold transition-colors text-xs sm:text-sm active:scale-95 ${
               filter === 'expired'
                 ? 'bg-red-600 text-white shadow-lg shadow-red-600/30'
                 : 'bg-[#26074d] text-gray-300 hover:bg-red-600/20'
@@ -557,7 +557,7 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
         <div className="p-4 sm:p-5 border-t border-[#6205D5]/30 bg-gradient-to-r from-[#1a0628]/80 to-[#26074d]/80 flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 sm:flex-initial px-6 py-3 sm:py-2.5 bg-[#26074d] hover:bg-[#26074d]/80 border-2 border-[#6205D5]/30 hover:border-[#6205D5]/60 text-white rounded-lg font-semibold transition-all active:scale-95"
+            className="flex-1 sm:flex-initial px-6 py-3 sm:py-2.5 bg-[#26074d] hover:bg-[#26074d]/80 border-2 border-[#6205D5]/30 hover:border-[#6205D5]/60 text-white rounded-lg font-semibold transition-colors active:scale-95"
           >
             ✕ Fechar
           </button>
@@ -693,7 +693,7 @@ function AddCredentialModal({ onClose, onAdd }: AddCredentialModalProps) {
                 text-white text-sm sm:text-base
                 placeholder-gray-500/70
                 focus:outline-none focus:border-[#6205D5]/70 focus:bg-[#1a0533]/70
-                transition-all
+                transition-colors
               "
             />
           </div>

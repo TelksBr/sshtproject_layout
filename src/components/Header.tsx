@@ -46,7 +46,7 @@ const Header = memo(function Header({ onMenuClick, version, localIP, vpnState }:
     <section className="
       p-3 md:p-4
       rounded-xl
-      border border-[#6205D5]/30 bg-[#26074d]/40 backdrop-blur-md shadow-lg
+      border border-[#6205D5]/30 bg-[#26074d]/80 shadow-lg
     ">
       {/* Layout Mobile: Vertical (2 linhas) | Desktop: Horizontal (1 linha) */}
       <div className="flex flex-col md:flex-row md:items-center gap-3">
@@ -58,7 +58,7 @@ const Header = memo(function Header({ onMenuClick, version, localIP, vpnState }:
             onClick={onMenuClick}
             className="
               p-2 rounded-lg hover:bg-[#6205D5]/20 active:bg-[#6205D5]/30
-              transition-all duration-200 flex-shrink-0
+              transition-colors duration-200 flex-shrink-0
             "
             aria-label="Abrir menu"
           >
@@ -70,7 +70,7 @@ const Header = memo(function Header({ onMenuClick, version, localIP, vpnState }:
             flex items-center gap-2
             bg-[#6205D5]/15 px-3 py-2 rounded-lg flex-1 min-w-0 shadow-inner
           ">
-            <div className={`w-2.5 h-2.5 rounded-full ${statusColor} shadow-md animate-pulse flex-shrink-0`} />
+            <div className={`w-2.5 h-2.5 rounded-full ${statusColor} shadow-md flex-shrink-0`} />
             <span className="text-[#b0a8ff] text-sm font-medium truncate" id="vpn-status">
               {statusMessage}
             </span>

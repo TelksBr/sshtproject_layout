@@ -124,7 +124,11 @@ export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
               </div>
             </div>
             <button
-              onClick={(e) => { e.stopPropagation(); onClose(); }}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                onClose();
+              }}
+              onClick={onClose}
               type="button"
               className="min-w-[44px] min-h-[44px] lg:min-w-[48px] lg:min-h-[48px] 2xl:min-w-[56px] 2xl:min-h-[56px] flex items-center justify-center rounded-lg bg-[#6205D5]/20 hover:bg-[#6205D5]/30 active:bg-[#6205D5]/40 transition-colors flex-shrink-0 touch-manipulation"
               aria-label="Fechar menu"
@@ -157,19 +161,19 @@ export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
           </div>
 
           {/* Footer com botões */}
-          <div className="p-4 lg:p-6 border-t border-[#6205D5]/20 bg-[#26074d]/95 backdrop-blur-lg space-y-3">
+          <div className="p-4 lg:p-6 border-t border-[#6205D5]/20 bg-[#26074d]/95 space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => onNavigate('terms')}
                 className="px-4 lg:px-6 min-h-[44px] lg:min-h-[48px] 2xl:min-h-[56px] rounded-lg bg-[#6205D5]/10 hover:bg-[#6205D5]/20 
-                  transition-all duration-200 text-[#b0a8ff] text-sm lg:text-base 2xl:text-lg font-medium"
+                  transition-colors duration-200 text-[#b0a8ff] text-sm lg:text-base 2xl:text-lg font-medium"
               >
                 Termos
               </button>
               <button
                 onClick={() => onNavigate('privacy')}
                 className="px-4 lg:px-6 min-h-[44px] lg:min-h-[48px] 2xl:min-h-[56px] rounded-lg bg-[#6205D5]/10 hover:bg-[#6205D5]/20 
-                  transition-all duration-200 text-[#b0a8ff] text-sm lg:text-base 2xl:text-lg font-medium"
+                  transition-colors duration-200 text-[#b0a8ff] text-sm lg:text-base 2xl:text-lg font-medium"
               >
                 Privacidade
               </button>
@@ -177,7 +181,7 @@ export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
             <button
               onClick={() => onNavigate('cleandata')}
               className="w-full px-4 lg:px-6 min-h-[44px] lg:min-h-[48px] 2xl:min-h-[56px] rounded-lg bg-red-500/10 hover:bg-red-500/20 
-                transition-all duration-200 text-red-400 text-sm lg:text-base 2xl:text-lg font-medium"
+                transition-colors duration-200 text-red-400 text-sm lg:text-base 2xl:text-lg font-medium"
             >
               Limpar Dados
             </button>
@@ -230,7 +234,7 @@ function MenuItem({ icon, label, onClick, className = '', iconClassName = '' }: 
       onClick={onClick}
       className={`
         w-full flex items-center gap-3 lg:gap-4 px-4 lg:px-6 min-h-[44px] lg:min-h-[48px] 2xl:min-h-[56px] rounded-lg text-[#b0a8ff] 
-        hover:bg-[#6205D5]/10 transition-all duration-200
+        hover:bg-[#6205D5]/10 transition-colors duration-200
         active:scale-[0.98] hover:shadow-lg hover:shadow-[#6205D5]/5
         touch-manipulation
         ${className}

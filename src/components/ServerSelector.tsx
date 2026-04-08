@@ -1,5 +1,4 @@
-import React, { useState, useEffect, memo, useCallback } from 'react';
-import { useDebounce } from '../utils/performanceUtils';
+import React, { useState, useEffect, memo, useCallback, useRef } from 'react';
 import { Settings, RefreshCw, CalendarClock, Wifi, AlertCircle, ChevronLeft, Search, Plane } from '../utils/icons';
 import { getAllConfigs, checkUserStatus, getAirplaneState, toggleAirplaneMode, checkForUpdates, setActiveConfig } from '../utils/appFunctions';
 import { Modal } from './modals/Modal';
@@ -14,8 +13,12 @@ export function ServerSelector() {
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<ConfigCategory | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [searchInput, setSearchInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [airplaneMode, setAirplaneMode] = useState(false);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [airplaneMode, setAirplaneMode] = useState(() => {
+    try { return getAirplaneState(); } catch { return false; }
+  });
 
   const { activeConfig, setActiveConfigId, refreshActiveConfig } = useActiveConfig();
 
@@ -32,16 +35,14 @@ export function ServerSelector() {
     }
   }, [showConfigModal]);
 
+  // Airplane mode: polling apenas quando o componente está montado, intervalo de 3s
   useEffect(() => {
-    const updateAirplaneState = () => {
-      setAirplaneMode(getAirplaneState());
-    };
-
-    // Verificação inicial
-    updateAirplaneState();
-
-    // Monitor de estado
-    const interval = setInterval(updateAirplaneState, 1000);
+    const interval = setInterval(() => {
+      try {
+        const state = getAirplaneState();
+        setAirplaneMode(prev => prev !== state ? state : prev);
+      } catch { /* silencioso */ }
+    }, 3000);
     return () => clearInterval(interval);
   }, []);
 
@@ -96,6 +97,8 @@ export function ServerSelector() {
       setSelectedCategory(null);
       setPendingConfigId(null);
       setIsPending(false);
+      setSearchInput('');
+      setSearchTerm('');
     }
   }, [activeConfig, pendingConfigId]);
 
@@ -112,15 +115,24 @@ export function ServerSelector() {
     loadConfigs(); // Reload configs after update
   }, []);
 
-  // Função de busca com debounce para melhor performance
-  const debouncedSearch = useDebounce((value: string) => {
-    setSearchTerm(value);
-    setSelectedCategory(null); // Reset selected category on search
-  }, 300); // 300ms de delay
-
+  // Input de pesquisa: estado local para resposta imediata, debounce para filtragem
   const handleSearch = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    debouncedSearch(event.target.value);
-  }, [debouncedSearch]);
+    const value = event.target.value;
+    setSearchInput(value); // Atualiza o input imediatamente (sem lag)
+    
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => {
+      setSearchTerm(value); // Filtragem com debounce de 200ms
+      setSelectedCategory(null);
+    }, 200);
+  }, []);
+
+  // Cleanup do timer ao desmontar
+  useEffect(() => {
+    return () => {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    };
+  }, []);
 
   const toggleAirplaneModeHandler = async () => {
     const newState = !airplaneMode;
@@ -132,25 +144,7 @@ export function ServerSelector() {
     setShowConfigModal(true);
   }, []);
 
-  useEffect(() => {
-    const checkAirplaneState = () => {
-      try {
-        const state = getAirplaneState();
-        if (state !== airplaneMode) {
-          setAirplaneMode(state);
-        }
-      } catch (error) {
-        // Handle error silently
-      }
-    };
 
-    // Verifica estado inicial
-    checkAirplaneState();
-
-    // Monitora mudanças
-    const interval = setInterval(checkAirplaneState, 1000);
-    return () => clearInterval(interval);
-  }, [airplaneMode]);
 
   const filteredConfigs = configs
     .filter(category =>
@@ -158,6 +152,15 @@ export function ServerSelector() {
         category.items.some(item => item.name.toLowerCase().includes(searchTerm.toLowerCase())))
       && category.items.length > 0 // <-- só exibe categorias com configs
     );
+
+  // Quando há pesquisa, cria lista plana de configs que correspondem ao termo
+  const flatFilteredItems: (ConfigItem & { categoryName: string })[] = searchTerm
+    ? configs.flatMap(category =>
+        category.items
+          .filter(item => item.name.toLowerCase().includes(searchTerm.toLowerCase()))
+          .map(item => ({ ...item, categoryName: category.name }))
+      )
+    : [];
 
   const activeCategory = configs.find(category =>
     category.items.some(item => item.id === activeConfig?.id)
@@ -168,7 +171,7 @@ export function ServerSelector() {
     <>
       <section className="flex gap-1.5 server-selector-row">
         <button
-          className="flex-1 min-w-0 max-w-full h-10 flex items-center justify-between px-3 rounded-lg glass-effect overflow-hidden group hover:bg-[#6205D5]/5 transition-all duration-200"
+          className="flex-1 min-w-0 max-w-full h-10 flex items-center justify-between px-3 rounded-lg glass-effect overflow-hidden group hover:bg-[#6205D5]/5 transition-colors duration-200"
           type="button"
           onClick={openConfigModal}
         >
@@ -176,7 +179,7 @@ export function ServerSelector() {
             <Settings className="w-4 h-4 text-[#6205D5] flex-shrink-0 group-hover:text-[#7c4dff] transition-colors" />
             {/* Indicador de configuração ativa */}
             {activeConfig && (
-              <div className="w-2 h-2 rounded-full bg-[#6205D5] animate-pulse shadow-lg shadow-[#6205D5]/60" />
+              <div className="w-2 h-2 rounded-full bg-[#6205D5] shadow-lg shadow-[#6205D5]/60" />
             )}
           </div>
           
@@ -187,7 +190,7 @@ export function ServerSelector() {
                   <span className="text-[#b0a8ff] text-xs font-medium block truncate max-w-full">
                     {activeConfig.name}
                   </span>
-                  <div className="w-1 h-1 rounded-full bg-[#6205D5] animate-pulse flex-shrink-0" />
+                  <div className="w-1 h-1 rounded-full bg-[#6205D5] flex-shrink-0" />
                 </div>
                 <span className="text-[#b0a8ff]/50 text-[10px] block truncate max-w-full">
                   {activeCategory?.name || 'Sem categoria'}
@@ -232,7 +235,7 @@ export function ServerSelector() {
         >
           <Plane 
             className={`
-              w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 transition-all
+              w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 transition-transform
               ${airplaneMode ? 'text-white' : 'text-[#6205D5]'}
               ${airplaneMode ? 'rotate-45' : ''}
             `}
@@ -252,6 +255,8 @@ export function ServerSelector() {
             setShowConfigModal(false);
             setSelectedCategory(null);
             setIsPending(false);
+            setSearchInput('');
+            setSearchTerm('');
           }}
           title={selectedCategory ? selectedCategory.name : activeConfig ? activeConfig.name : 'Configurações'}
           icon={Settings}
@@ -306,7 +311,7 @@ export function ServerSelector() {
               <input
                 type="text"
                 placeholder="Pesquisar..."
-                value={searchTerm}
+                value={searchInput}
                 onChange={handleSearch}
                 className="flex-1 p-2 rounded-lg glass-effect"
               />
@@ -317,8 +322,85 @@ export function ServerSelector() {
               <div className="flex items-center justify-center p-8">
                 <RefreshCw className="w-6 h-6 text-[#6205D5] animate-spin" />
               </div>
+            ) : searchTerm && flatFilteredItems.length > 0 ? (
+              <div className="grid gap-1.5">
+                {flatFilteredItems.map((config) => {
+                  const isActiveConfig = String(activeConfig?.id) === String(config.id);
+                  return (
+                    <button
+                      key={config.id}
+                      onClick={() => handleConfigSelect(config)}
+                      className={`
+                        w-full p-3 rounded-lg transition-colors duration-200 relative overflow-hidden
+                        ${isActiveConfig 
+                          ? 'border-2 border-[#6205D5] bg-gradient-to-r from-[#6205D5]/20 to-[#26074d]/40 shadow-lg shadow-[#6205D5]/20' 
+                          : 'glass-effect hover:bg-[#6205D5]/5 hover:border-[#6205D5]/30 border border-transparent'
+                        }
+                      `}
+                    >
+                      <div className="flex items-center gap-3 relative z-10">
+                        <div className={`w-3 h-3 rounded-full flex-shrink-0 ${
+                          isActiveConfig 
+                            ? 'bg-[#6205D5] shadow-lg shadow-[#6205D5]/60 ring-2 ring-white/30' 
+                            : 'bg-[#6205D5]/20'
+                        }`} />
+
+                        {config.icon && (
+                          <img 
+                            src={config.icon} 
+                            alt="" 
+                            className={`w-6 h-6 rounded-lg object-cover ${
+                              isActiveConfig 
+                                ? 'ring-2 ring-[#6205D5]/60 shadow-md' 
+                                : 'bg-[#26074d]'
+                            }`}
+                          />
+                        )}
+                        
+                        <div className="flex-1 text-left min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className={`text-sm font-medium truncate transition-colors ${
+                              isActiveConfig ? 'text-white' : 'text-[#b0a8ff]'
+                            }`}>
+                              {config.name}
+                            </h3>
+                            {isActiveConfig && (
+                              <div className="px-2 py-0.5 rounded-full bg-[#6205D5] text-white text-[9px] font-bold flex-shrink-0">
+                                EM USO
+                              </div>
+                            )}
+                          </div>
+                          <p className={`text-[11px] truncate transition-colors ${
+                            isActiveConfig ? 'text-[#b0a8ff]' : 'text-[#b0a8ff]/70'
+                          }`}>
+                            {config.description}
+                          </p>
+                          <p className="text-[10px] text-[#b0a8ff]/40 mt-0.5 truncate">
+                            {config.categoryName}
+                          </p>
+                        </div>
+                        
+                        <div className={`text-[10px] px-2 py-1 rounded-full border transition-colors flex-shrink-0 ${
+                          isActiveConfig 
+                            ? 'bg-[#6205D5] text-white border-[#6205D5]/60 shadow-md' 
+                            : 'text-[#b0a8ff]/50 bg-[#100322]/30 border-[#6205D5]/10'
+                        }`}>
+                          {config.mode?.toUpperCase()}
+                        </div>
+                      </div>
+                      
+                      {isActiveConfig && (
+                        <>
+                          <div className="absolute left-0 top-0 w-1 h-full bg-gradient-to-b from-[#6205D5] to-[#7c4dff] rounded-l-lg" />
+                          <div className="absolute inset-0 bg-gradient-to-r from-[#6205D5]/5 via-transparent to-[#6205D5]/5" />
+                        </>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             ) : filteredConfigs.length > 0 ? (
-              <div className="space-y-2 transition-all duration-300">
+              <div className="space-y-2">
                 {!selectedCategory ? (
                   filteredConfigs
                     .map((category) => {
@@ -327,7 +409,7 @@ export function ServerSelector() {
                         <button
                           key={category.id}
                           onClick={() => handleCategorySelect(category)}
-                          className={`w-full p-3 rounded-lg transition-all duration-200 relative ${
+                          className={`w-full p-3 rounded-lg transition-colors duration-200 relative ${
                             isActiveCategory 
                               ? 'glass-effect border-2 border-[#6205D5]/60 bg-[#6205D5]/10' 
                               : 'glass-effect hover:bg-[#6205D5]/5'
@@ -336,9 +418,9 @@ export function ServerSelector() {
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3 flex-1">
                               {/* Indicador visual da categoria ativa */}
-                              <div className={`w-3 h-3 rounded-full flex-shrink-0 transition-all duration-200 ${
+                              <div className={`w-3 h-3 rounded-full flex-shrink-0 ${
                                 isActiveCategory 
-                                  ? 'bg-[#6205D5] shadow-lg shadow-[#6205D5]/40 animate-pulse' 
+                                  ? 'bg-[#6205D5] shadow-lg shadow-[#6205D5]/40' 
                                   : 'bg-[#6205D5]/20'
                               }`} />
                               
@@ -350,7 +432,7 @@ export function ServerSelector() {
                                     {category.name}
                                   </h3>
                                   {isActiveCategory && (
-                                    <div className="px-2 py-0.5 rounded-full bg-[#6205D5] text-white text-[10px] font-bold animate-pulse">
+                                    <div className="px-2 py-0.5 rounded-full bg-[#6205D5] text-white text-[10px] font-bold">
                                       ATIVA
                                     </div>
                                   )}
@@ -364,7 +446,7 @@ export function ServerSelector() {
                             </div>
                             
                             {/* Seta indicativa */}
-                            <div className={`ml-2 transition-all duration-200 ${
+                            <div className={`ml-2 transition-colors duration-200 ${
                               isActiveCategory ? 'text-[#6205D5]' : 'text-[#b0a8ff]/40'
                             }`}>
                               <ChevronLeft className="w-4 h-4 rotate-180" />
@@ -379,7 +461,7 @@ export function ServerSelector() {
                       );
                     })
                 ) : (
-                  <div className="grid gap-1.5 transition-all duration-300">
+                  <div className="grid gap-1.5">
                     {selectedCategory.items.map((config) => {
                       const isActiveConfig = String(activeConfig?.id) === String(config.id);
                       return (
@@ -387,7 +469,7 @@ export function ServerSelector() {
                           key={config.id}
                           onClick={() => handleConfigSelect(config)}
                           className={`
-                            w-full p-3 rounded-lg transition-all duration-200 relative overflow-hidden
+                            w-full p-3 rounded-lg transition-colors duration-200 relative overflow-hidden
                             ${isActiveConfig 
                               ? 'border-2 border-[#6205D5] bg-gradient-to-r from-[#6205D5]/20 to-[#26074d]/40 shadow-lg shadow-[#6205D5]/20' 
                               : 'glass-effect hover:bg-[#6205D5]/5 hover:border-[#6205D5]/30 border border-transparent'
@@ -396,10 +478,10 @@ export function ServerSelector() {
                         >
                           <div className="flex items-center gap-3 relative z-10">
                             {/* Indicador visual da config ativa */}
-                            <div className={`w-3 h-3 rounded-full flex-shrink-0 transition-all duration-200 ${
+                            <div className={`w-3 h-3 rounded-full flex-shrink-0 ${
                               isActiveConfig 
-                                ? 'bg-[#6205D5] shadow-lg shadow-[#6205D5]/60 animate-pulse ring-2 ring-white/30' 
-                                : 'bg-[#6205D5]/20 hover:bg-[#6205D5]/40'
+                                ? 'bg-[#6205D5] shadow-lg shadow-[#6205D5]/60 ring-2 ring-white/30' 
+                                : 'bg-[#6205D5]/20'
                             }`} />
 
                             {/* Ícone da configuração */}
@@ -407,7 +489,7 @@ export function ServerSelector() {
                               <img 
                                 src={config.icon} 
                                 alt="" 
-                                className={`w-6 h-6 rounded-lg object-cover transition-all duration-200 ${
+                                className={`w-6 h-6 rounded-lg object-cover ${
                                   isActiveConfig 
                                     ? 'ring-2 ring-[#6205D5]/60 shadow-md' 
                                     : 'bg-[#26074d]'
@@ -423,7 +505,7 @@ export function ServerSelector() {
                                   {config.name}
                                 </h3>
                                 {isActiveConfig && (
-                                  <div className="px-2 py-0.5 rounded-full bg-[#6205D5] text-white text-[9px] font-bold animate-pulse flex-shrink-0">
+                                  <div className="px-2 py-0.5 rounded-full bg-[#6205D5] text-white text-[9px] font-bold flex-shrink-0">
                                     EM USO
                                   </div>
                                 )}
@@ -436,7 +518,7 @@ export function ServerSelector() {
                             </div>
                             
                             {/* Badge do modo */}
-                            <div className={`text-[10px] px-2 py-1 rounded-full border transition-all flex-shrink-0 ${
+                            <div className={`text-[10px] px-2 py-1 rounded-full border transition-colors flex-shrink-0 ${
                               isActiveConfig 
                                 ? 'bg-[#6205D5] text-white border-[#6205D5]/60 shadow-md' 
                                 : 'text-[#b0a8ff]/50 bg-[#100322]/30 border-[#6205D5]/10'
@@ -449,7 +531,7 @@ export function ServerSelector() {
                           {isActiveConfig && (
                             <>
                               <div className="absolute left-0 top-0 w-1 h-full bg-gradient-to-b from-[#6205D5] to-[#7c4dff] rounded-l-lg" />
-                              <div className="absolute inset-0 bg-gradient-to-r from-[#6205D5]/5 via-transparent to-[#6205D5]/5 animate-pulse" />
+                              <div className="absolute inset-0 bg-gradient-to-r from-[#6205D5]/5 via-transparent to-[#6205D5]/5" />
                             </>
                           )}
                         </button>

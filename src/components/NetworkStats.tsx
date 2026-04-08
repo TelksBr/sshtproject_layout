@@ -15,7 +15,7 @@ const NetworkStats = memo(function NetworkStats() {
     <section className="
       w-full p-4 rounded-xl
       bg-gradient-to-br from-[#26074d]/60 to-[#3a0a7a]/40
-      border border-[#6205D5]/30 shadow-lg backdrop-blur-md
+      border border-[#6205D5]/30 shadow-lg
       flex flex-col gap-4
     ">
       {/* Título */}

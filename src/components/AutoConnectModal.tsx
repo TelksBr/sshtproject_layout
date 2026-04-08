@@ -227,12 +227,12 @@ export function AutoConnectModal({
         </div>
         
         {/* Tab Navigation - Melhorado */}
-  <div className="flex bg-[#26074d]/40 rounded-lg sm:rounded-xl p-0.5 sm:p-1 mb-2 sm:mb-6 backdrop-blur-sm">
+  <div className="flex bg-[#26074d]/60 rounded-lg sm:rounded-xl p-0.5 sm:p-1 mb-2 sm:mb-6">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex-1 flex items-center justify-center gap-1 sm:gap-2 py-2 sm:py-3 px-2 sm:px-4 rounded-md sm:rounded-lg font-medium transition-all duration-300 text-xs sm:text-sm relative ${
+              className={`flex-1 flex items-center justify-center gap-1 sm:gap-2 py-2 sm:py-3 px-2 sm:px-4 rounded-md sm:rounded-lg font-medium transition-colors duration-300 text-xs sm:text-sm relative ${
                 activeTab === tab.id 
                   ? 'bg-[#6205D5] text-white shadow-lg transform scale-105' 
                   : 'text-[#b0a8ff]/70 hover:bg-[#6205D5]/20 hover:text-[#b0a8ff] hover:scale-102'
@@ -259,7 +259,7 @@ export function AutoConnectModal({
                 <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-400/40 rounded-xl p-2 sm:p-4 shadow-lg shadow-green-500/20 animate-in slide-in-from-top-4 duration-500">
                   <div className="flex items-center gap-2 sm:gap-3">
                     <div className="w-9 h-9 sm:w-12 sm:h-12 bg-green-500/20 rounded-full flex items-center justify-center">
-                      <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-green-400 animate-pulse" />
+                      <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-green-400" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="font-bold text-green-400 text-base sm:text-lg mb-1">🎉 Conectado com Sucesso!</h4>
@@ -321,7 +321,7 @@ export function AutoConnectModal({
 
               {/* Stats Cards */}
               <div className="grid grid-cols-2 gap-2 sm:gap-4">
-                <div className="bg-[#26074d]/40 rounded-xl p-2 sm:p-4 border border-[#6205D5]/20 backdrop-blur-sm">
+                <div className="bg-[#26074d]/60 rounded-xl p-2 sm:p-4 border border-[#6205D5]/20">
                   <div className="flex items-center gap-2 sm:gap-3">
                     <div className="w-7 h-7 sm:w-10 sm:h-10 bg-[#6205D5]/20 rounded-lg flex items-center justify-center">
                       <Wifi className="w-4 h-4 sm:w-5 sm:h-5 text-[#6205D5]" />
@@ -333,7 +333,7 @@ export function AutoConnectModal({
                   </div>
                 </div>
                 
-                <div className="bg-[#26074d]/40 rounded-xl p-2 sm:p-4 border border-[#6205D5]/20 backdrop-blur-sm">
+                <div className="bg-[#26074d]/60 rounded-xl p-2 sm:p-4 border border-[#6205D5]/20">
                   <div className="flex items-center gap-2 sm:gap-3">
                     <div className="w-7 h-7 sm:w-10 sm:h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
                       <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />
@@ -351,7 +351,7 @@ export function AutoConnectModal({
                 {!running ? (
                   <button
                     onClick={onStart}
-                    className="flex-1 bg-gradient-to-r from-[#6205D5] to-[#4B0082] hover:from-[#4B0082] hover:to-[#6205D5] text-white py-3 px-3 sm:py-4 sm:px-6 rounded-xl font-bold text-base sm:text-lg transition-all duration-300 flex items-center justify-center gap-2 sm:gap-3 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
+                    className="flex-1 bg-gradient-to-r from-[#6205D5] to-[#4B0082] hover:from-[#4B0082] hover:to-[#6205D5] text-white py-3 px-3 sm:py-4 sm:px-6 rounded-xl font-bold text-base sm:text-lg transition-colors duration-300 flex items-center justify-center gap-2 sm:gap-3 shadow-lg active:scale-95"
                   >
                     <Zap className="w-5 h-5" />
                     {isCompleted ? 'Testar Novamente' : 'Iniciar Teste'}
@@ -360,7 +360,7 @@ export function AutoConnectModal({
                 ) : (
                   <button
                     onClick={onCancel}
-                    className="flex-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white py-3 px-3 sm:py-4 sm:px-6 rounded-xl font-bold text-base sm:text-lg transition-all duration-300 flex items-center justify-center gap-2 sm:gap-3 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
+                    className="flex-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white py-3 px-3 sm:py-4 sm:px-6 rounded-xl font-bold text-base sm:text-lg transition-colors duration-300 flex items-center justify-center gap-2 sm:gap-3 shadow-lg active:scale-95"
                   >
                     <XCircle className="w-5 h-5" />
                     Parar Teste
@@ -386,10 +386,10 @@ export function AutoConnectModal({
                     <button
                       key={option.value}
                       onClick={() => updateConfig({ configType: option.value as 'all' | 'ssh' | 'v2ray' })}
-                      className={`w-full p-2 sm:p-4 rounded-xl text-left transition-all duration-200 flex items-center gap-2 sm:gap-4 ${
+                      className={`w-full p-2 sm:p-4 rounded-xl text-left transition-colors duration-200 flex items-center gap-2 sm:gap-4 ${
                         autoConnectConfig.configType === option.value 
-                          ? 'bg-[#6205D5] text-white shadow-lg transform scale-[1.02]' 
-                          : 'bg-[#26074d]/40 text-[#b0a8ff] hover:bg-[#6205D5]/20 hover:scale-[1.01]'
+                          ? 'bg-[#6205D5] text-white shadow-lg' 
+                          : 'bg-[#26074d]/40 text-[#b0a8ff] hover:bg-[#6205D5]/20'
                       }`}
                     >
                       <span className="text-xl sm:text-2xl">{option.icon}</span>
@@ -463,7 +463,7 @@ export function AutoConnectModal({
                   {/* All Categories Button */}
                   <button
                     onClick={() => updateConfig({ selectedCategories: [] })}
-                    className={`w-full p-2 sm:p-3 rounded-lg text-left transition-all duration-200 font-medium text-sm sm:text-base ${
+                    className={`w-full p-2 sm:p-3 rounded-lg text-left transition-colors duration-200 font-medium text-sm sm:text-base ${
                       autoConnectConfig.selectedCategories.length === 0 
                         ? 'bg-[#6205D5] text-white shadow-lg' 
                         : 'bg-[#26074d]/40 text-[#b0a8ff] hover:bg-[#6205D5]/20'
@@ -477,10 +477,10 @@ export function AutoConnectModal({
                       <button
                         key={category.id}
                         onClick={() => toggleCategory(category.id)}
-                        className={`w-full p-2 sm:p-3 rounded-lg text-left transition-all duration-200 flex items-center gap-2 sm:gap-3 text-sm sm:text-base ${
+                        className={`w-full p-2 sm:p-3 rounded-lg text-left transition-colors duration-200 flex items-center gap-2 sm:gap-3 text-sm sm:text-base ${
                           autoConnectConfig.selectedCategories.includes(category.id) 
-                            ? 'bg-[#6205D5] text-white shadow-md transform scale-[1.01]' 
-                            : 'bg-[#26074d]/40 text-[#b0a8ff] hover:bg-[#6205D5]/20 hover:scale-[1.01]'
+                            ? 'bg-[#6205D5] text-white shadow-md' 
+                            : 'bg-[#26074d]/40 text-[#b0a8ff] hover:bg-[#6205D5]/20'
                         }`}
                       >
                         <div 

@@ -51,8 +51,16 @@ document.addEventListener('DOMContentLoaded', function() {
   // Desabilitar zoom com duplo toque (específico para WebView)
   let lastTouchEnd = 0;
   document.addEventListener('touchend', function(e) {
-    // Não prevenir em inputs e textareas
-    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+    // Não prevenir em elementos interativos (inputs, textareas, botões, links)
+    const target = e.target as HTMLElement;
+    if (
+      target instanceof HTMLInputElement || 
+      target instanceof HTMLTextAreaElement ||
+      target instanceof HTMLButtonElement ||
+      target instanceof HTMLAnchorElement ||
+      target.closest('button') ||
+      target.closest('a')
+    ) {
       return;
     }
     
