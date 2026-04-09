@@ -15,6 +15,7 @@ import { useModalRenderer } from './hooks/useModalRenderer';
 import { useGlobalPolling } from './hooks/useGlobalPolling';
 import { useBackgroundMonitor } from './hooks/useBackgroundMonitor';
 import { usePurchaseNotifications } from './hooks/usePurchaseNotifications';
+import { useViewportHeight } from './hooks/useViewportHeight';
 import PaymentApprovedNotification from './components/modals/PaymentApprovedNotification';
 
 export type ModalType = 'buy' | 'recovery' | 'tutorials' | 'support' | 'speedtest' | 'terms' | 'privacy' | 'checkuser' | 'cleandata' | 'hotspot' | 'services' | 'ipfinder' | 'faq' | 'testgenerate' | 'renewal' | 'credentials' | null;
@@ -25,6 +26,9 @@ function App() {
   
   // 🚀 OTIMIZAÇÃO: Hook global que substitui todos os pollings
   const { vpnState, localIP } = useGlobalPolling();
+  
+  // 📐 VIEWPORT: Sync --vh com viewport visual (teclado Android)
+  useViewportHeight();
   
   // 🔔 NOTIFICAÇÕES: Hook para notificações de pagamento
   const { notifications, dismissNotification } = usePurchaseNotifications();

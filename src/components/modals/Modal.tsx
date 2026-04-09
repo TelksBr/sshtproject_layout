@@ -53,7 +53,7 @@ export function Modal({ children, onClose, allowClose = true, title, icon: Icon 
           opacity: isVisible && !isClosing ? 1 : 0,
           transition: 'opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           // ✅ Max height fixo com fallback seguro (vh pode ser instável no Android)
-          maxHeight: 'min(85vh, calc(100% - 32px))',
+          maxHeight: 'min(85dvh, calc(100% - 32px))',
           // ✅ Força composição GPU isolada
           willChange: 'opacity',
           // ✅ Previne colapso do flex
@@ -75,7 +75,7 @@ export function Modal({ children, onClose, allowClose = true, title, icon: Icon 
           {allowClose && (
             <button
               onClick={handleClose}
-              className="p-1.5 sm:p-2 rounded-full hover:bg-[#6205D5]/10 transition-colors group ml-auto flex-shrink-0"
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-[#6205D5]/10 transition-colors group ml-auto flex-shrink-0 touch-manipulation"
             >
               <X className="w-5 h-5 sm:w-6 sm:h-6 text-[#b0a8ff] group-hover:text-white transition-colors" />
             </button>

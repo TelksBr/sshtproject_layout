@@ -171,7 +171,7 @@ export function ServerSelector() {
     <>
       <section className="flex gap-1.5 server-selector-row">
         <button
-          className="flex-1 min-w-0 max-w-full h-10 flex items-center justify-between px-3 rounded-lg glass-effect overflow-hidden group hover:bg-[#6205D5]/5 transition-colors duration-200"
+          className="flex-1 min-w-0 max-w-full min-h-[44px] flex items-center justify-between px-3 rounded-lg glass-effect overflow-hidden group hover:bg-[#6205D5]/5 transition-colors duration-200"
           type="button"
           onClick={openConfigModal}
         >
@@ -210,7 +210,7 @@ export function ServerSelector() {
         </button>
 
         <button
-          className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 flex items-center justify-center rounded-lg glass-effect"
+          className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg glass-effect touch-manipulation"
           type="button"
           onClick={handleUpdate}
         >
@@ -218,7 +218,7 @@ export function ServerSelector() {
         </button>
 
         <button
-          className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 flex items-center justify-center rounded-lg glass-effect"
+          className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg glass-effect touch-manipulation"
           type="button"
           onClick={checkUserStatus}
         >
@@ -227,7 +227,7 @@ export function ServerSelector() {
 
         <button
           className={`
-            w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 flex items-center justify-center rounded-lg glass-effect
+            w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg glass-effect touch-manipulation
             ${airplaneMode ? 'bg-[#6205D5]/30' : ''}
           `}
           type="button"

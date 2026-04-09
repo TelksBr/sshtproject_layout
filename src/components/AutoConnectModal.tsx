@@ -232,7 +232,7 @@ export function AutoConnectModal({
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex-1 flex items-center justify-center gap-1 sm:gap-2 py-2 sm:py-3 px-2 sm:px-4 rounded-md sm:rounded-lg font-medium transition-colors duration-300 text-xs sm:text-sm relative ${
+              className={`flex-1 flex items-center justify-center gap-1 sm:gap-2 min-h-[44px] py-2 sm:py-3 px-2 sm:px-4 rounded-md sm:rounded-lg font-medium transition-colors duration-300 text-xs sm:text-sm relative touch-manipulation ${
                 activeTab === tab.id 
                   ? 'bg-[#6205D5] text-white shadow-lg transform scale-105' 
                   : 'text-[#b0a8ff]/70 hover:bg-[#6205D5]/20 hover:text-[#b0a8ff] hover:scale-102'
