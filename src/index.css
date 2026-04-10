@@ -14,12 +14,20 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    height: 100%;
   }
 
   body {
-    background: linear-gradient(135deg, #2A0A3E 0%, #4B0082 50%, #2A0A3E 100%);
-    min-height: 100vh;
+    background: linear-gradient(to bottom right, #1A0628, #2A0A3E, #1A0628);
+    height: 100%;
+    margin: 0;
     color: #f3f4f6;
+    overflow: hidden;
+  }
+
+  #root {
+    height: 100%;
+    overflow: hidden;
   }
 
   input {
@@ -120,11 +128,30 @@
 
   .card {
     background: linear-gradient(135deg, rgba(75, 0, 130, 0.5), rgba(42, 10, 62, 0.5));
+    -webkit-backdrop-filter: blur(4px);
     backdrop-filter: blur(4px);
     border-radius: 0.75rem;
     padding: 1.5rem;
     border: 1px solid rgba(58, 10, 122, 0.3);
   }
+
+  /* Animações de entrada — fallback para classes TW4 que não existem no TW 3.4 */
+  @keyframes _animate-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes _slide-in-from-top {
+    from { opacity: 0; transform: translateY(-0.5rem); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes _zoom-in-95 {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  .animate-in { animation: _animate-in 0.3s ease-out both; }
+  .slide-in-from-top-2 { animation: _slide-in-from-top 0.3s ease-out both; }
+  .fade-in { animation: _animate-in 0.3s ease-out both; }
+  .zoom-in-95 { animation: _zoom-in-95 0.2s ease-out both; }
 
   .nav-link {
     color: #E0E0E0;
@@ -405,6 +432,47 @@ input[type="range"]::-moz-range-thumb {
   
   h1, h2, h3 {
     font-size: 1.15rem;
+  }
+}
+
+/* Desktop: telas grandes (1280px+) */
+@media (min-width: 1280px) {
+  .card {
+    padding: 2rem;
+    border-radius: 1.25rem;
+  }
+  
+  .btn-primary, .btn-outline {
+    font-size: 1.1rem;
+    padding: 0.9rem 1.75rem;
+    border-radius: 0.75rem;
+  }
+  
+  .glass-effect {
+    border-radius: 0.75rem;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+}
+
+/* TV / Ultra-wide: telas muito grandes (1920px+) */
+@media (min-width: 1920px) {
+  .card {
+    padding: 2.5rem;
+    border-radius: 1.5rem;
+  }
+  
+  .btn-primary, .btn-outline {
+    font-size: 1.2rem;
+    padding: 1rem 2rem;
+    border-radius: 1rem;
+  }
+  
+  .glass-effect {
+    border-radius: 1rem;
   }
 }
 

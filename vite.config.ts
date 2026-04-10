@@ -6,6 +6,13 @@ export default defineConfig({
     react(),
   ],
 
+    server: {
+    host: '::', // aceita IPv6 (e normalmente IPv4 também)
+    port: 80,
+    allowedHosts: ['talkera.sshtproject.com']
+
+  },
+
   build: {
     target: 'es2015', // Compatível com Android 6+ e webviews modernas
     minify: 'esbuild', // Mais rápido e eficiente que terser

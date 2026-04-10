@@ -9,14 +9,14 @@ export function ToastContainer() {
   const getIcon = (type: string) => {
     switch (type) {
       case 'success':
-        return <CheckCircle className="w-5 h-5" />;
+        return <CheckCircle className="w-5 h-5 lg:w-6 lg:h-6" />;
       case 'error':
-        return <XCircle className="w-5 h-5" />;
+        return <XCircle className="w-5 h-5 lg:w-6 lg:h-6" />;
       case 'warning':
-        return <AlertTriangle className="w-5 h-5" />;
+        return <AlertTriangle className="w-5 h-5 lg:w-6 lg:h-6" />;
       case 'info':
       default:
-        return <Info className="w-5 h-5" />;
+        return <Info className="w-5 h-5 lg:w-6 lg:h-6" />;
     }
   };
 
@@ -36,7 +36,7 @@ export function ToastContainer() {
 
   return (
     <div 
-      className="fixed z-[9999] flex flex-col gap-2 pointer-events-none"
+      className="fixed z-[9999] flex flex-col gap-2 lg:gap-3 pointer-events-none"
       style={{
         top: `${position.top}px`,
         right: `${position.right}px`
@@ -47,8 +47,8 @@ export function ToastContainer() {
           key={toast.id}
           className={`
             ${getStyles(toast.type)}
-            border-2 rounded-lg shadow-2xl p-4 pr-12
-            flex items-center gap-3 min-w-[300px] max-w-[400px]
+            border-2 rounded-lg 2xl:rounded-xl shadow-2xl p-4 pr-12 lg:p-5 lg:pr-14 2xl:p-6 2xl:pr-16
+            flex items-center gap-3 lg:gap-4 min-w-[300px] max-w-[400px] lg:min-w-[340px] lg:max-w-[450px] 2xl:max-w-[500px]
             pointer-events-auto
             animate-in slide-in-from-top-2 fade-in duration-300
           `}
@@ -57,13 +57,13 @@ export function ToastContainer() {
             {getIcon(toast.type)}
           </div>
           <div className="flex-1">
-            <p className="text-sm font-medium">{toast.message}</p>
+            <p className="text-sm lg:text-base font-medium">{toast.message}</p>
           </div>
           <button
             onClick={() => removeToast(toast.id)}
             className="absolute top-2 right-2 p-1 hover:bg-white/20 rounded transition-colors"
           >
-            <X className="w-4 h-4" />
+            <X className="w-4 h-4 lg:w-5 lg:h-5" />
           </button>
         </div>
       ))}

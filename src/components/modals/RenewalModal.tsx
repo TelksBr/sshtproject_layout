@@ -1,9 +1,8 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Modal } from './Modal';
 import { checkRenewalUser, getPlans, purchaseRenewal } from '../../utils/salesUtils';
 import usePaymentPolling from '../../hooks/usePaymentPolling';
-import { generateQRCodeDataURL } from '../../utils/qrCodeGenerator';
 import { navigateToUrl } from '../../utils/nativeNavigation';
 import { copyToClipboard } from '../../utils/nativeClipboard';
 import { RefreshCw, CheckCircle, XCircle, DollarSign } from '../../utils/icons';
@@ -43,9 +42,10 @@ const RenewalModal: React.FC<RenewalModalProps> = ({ onClose, initialUsername })
   const [renewResult, setRenewResult] = useState<{success: boolean; message: string} | null>(null);
   const [currentStep, setCurrentStep] = useState<'check' | 'payment' | 'success'>('check');
   const [paymentData, setPaymentData] = useState<any>(null);
-  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
+  const [qrCodeReady, setQrCodeReady] = useState(false);
   const [qrCodeError, setQrCodeError] = useState<string | null>(null);
   const [credentials, setCredentials] = useState<any>(null);
+  const qrCanvasRef = useRef<HTMLCanvasElement>(null);
 
   // Polling para verificar pagamento
   const {
@@ -107,7 +107,7 @@ const RenewalModal: React.FC<RenewalModalProps> = ({ onClose, initialUsername })
     setRenewLoading(true);
     setRenewResult(null);
     setPaymentData(null);
-    setQrCodeUrl(null);
+    setQrCodeReady(false);
     setQrCodeError(null);
     setCredentials(null);
     try {
@@ -115,17 +115,6 @@ const RenewalModal: React.FC<RenewalModalProps> = ({ onClose, initialUsername })
       if (response.success && response.data) {
         setPaymentData(response.data);
         setCurrentStep('payment');
-        // Usar qr_code_base64 da API se disponível, senão gerar dinamicamente
-        if (response.data.qr_code_base64) {
-          setQrCodeUrl(response.data.qr_code_base64);
-        } else if (response.data.qr_code) {
-          try {
-            const url = await generateQRCodeDataURL(response.data.qr_code, { size: 256, margin: 4 });
-            setQrCodeUrl(url);
-          } catch (e) {
-            setQrCodeError('Erro ao gerar QR Code visual');
-          }
-        }
         resetPolling(); // Reinicia polling para novo pagamento
       } else {
         setRenewResult({ success: false, message: response.message || 'Erro ao renovar login.' });
@@ -136,6 +125,33 @@ const RenewalModal: React.FC<RenewalModalProps> = ({ onClose, initialUsername })
       setRenewLoading(false);
     }
   };
+
+
+  // Callback ref: desenha QR direto no canvas quando ele aparece no DOM
+  const drawQRCode = useCallback(async (canvas: HTMLCanvasElement | null) => {
+    if (!canvas || !paymentData) return;
+    (qrCanvasRef as React.MutableRefObject<HTMLCanvasElement | null>).current = canvas;
+
+    const pixCode = paymentData.qr_code || paymentData.ticket_url || '';
+    if (!pixCode) return;
+
+    try {
+      setQrCodeError(null);
+      const QRCodeModule = await import('qrcode');
+      const QRCode = QRCodeModule.default || QRCodeModule;
+
+      await QRCode.toCanvas(canvas, pixCode, {
+        width: 256,
+        margin: 4,
+        color: { dark: '#000000', light: '#FFFFFF' },
+        errorCorrectionLevel: 'M',
+      });
+      setQrCodeReady(true);
+    } catch (err) {
+      console.error('[QRCode] toCanvas falhou:', err);
+      setQrCodeError(`Erro ao gerar QR Code: ${err}`);
+    }
+  }, [paymentData]);
 
 
   // Renderização condicional por step
@@ -265,44 +281,31 @@ const RenewalModal: React.FC<RenewalModalProps> = ({ onClose, initialUsername })
             <p className="text-purple-200 text-sm">🌐 <strong>V2Ray:</strong> {paymentData.v2ray_message}</p>
           </div>
         )}
-        {/* QR Code Visual Gerado Dinamicamente */}
-        {qrCodeUrl ? (
+        {/* QR Code Visual — Canvas direto */}
+        {(paymentData.qr_code || paymentData.ticket_url) ? (
           <div className="bg-gradient-to-br from-blue-900 to-blue-800 p-6 rounded-lg border border-blue-600">
             <div className="text-center">
               <p className="text-white mb-4 font-semibold text-lg">📱 Escaneie o QR Code PIX</p>
               <div className="bg-white p-6 rounded-xl inline-block mb-4 shadow-lg">
-                <img src={qrCodeUrl} alt="QR Code PIX" className="w-56 h-56 mx-auto block" />
+                <canvas 
+                  ref={drawQRCode}
+                  style={{ width: 224, height: 224, display: qrCodeReady ? 'block' : 'none' }}
+                />
+                {!qrCodeReady && !qrCodeError && (
+                  <div className="w-56 h-56 flex items-center justify-center bg-gray-100 rounded">
+                    <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#6205D5] border-t-transparent"></div>
+                  </div>
+                )}
               </div>
+
+              {qrCodeError && (
+                <div className="text-xs text-red-300 bg-red-900/30 p-2 rounded mb-3">
+                  {qrCodeError} — Use o código PIX abaixo
+                </div>
+              )}
+
               <div className="text-sm text-blue-100 bg-blue-800/50 p-3 rounded-lg">
                 💡  Abra seu app de banco e escaneie o código acima
-              </div>
-            </div>
-          </div>
-        ) : qrCodeError ? (
-          <div className="bg-gradient-to-br from-red-900 to-red-800 p-6 rounded-lg border border-red-600">
-            <div className="text-center">
-              <p className="text-white mb-4 font-semibold text-lg">❌ Erro no QR Code</p>
-              <div className="bg-red-950 p-4 rounded-lg border border-red-700 mb-4">{qrCodeError}</div>
-              <div className="text-sm text-red-100 bg-red-800/50 p-3 rounded-lg">
-                💡  Copie e cole no seu app
-              </div>
-            </div>
-          </div>
-        ) : (paymentData.qr_code || paymentData.ticket_url) ? (
-          <div className="bg-gradient-to-br from-blue-900 to-blue-800 p-6 rounded-lg border border-blue-600">
-            <div className="text-center">
-              <p className="text-white mb-4 font-semibold text-lg">📱 QR Code PIX</p>
-              <div className="bg-white p-6 rounded-xl inline-block mb-4 shadow-lg">
-                <div className="w-56 h-56 flex items-center justify-center bg-gray-100 text-gray-800 text-sm p-4 rounded">
-                  <div className="text-center">
-                    <div className="text-4xl mb-3 animate-spin">⚙️</div>
-                    <div className="font-semibold">Gerando QR Code</div>
-                    <div className="text-xs mt-2 text-gray-600">Aguarde...</div>
-                  </div>
-                </div>
-              </div>
-              <div className="text-sm text-blue-100 bg-blue-800/50 p-3 rounded-lg">
-                💡 <strong>Aguarde:</strong> O QR Code está sendo gerado
               </div>
             </div>
           </div>

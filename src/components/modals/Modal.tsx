@@ -33,7 +33,7 @@ export function Modal({ children, onClose, allowClose = true, title, icon: Icon 
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3 md:p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3 md:p-4 xl:p-6 2xl:p-8"
       style={{
         // Fallback sólido + backdrop-filter com prefixo webkit
         backgroundColor: isVisible && !isClosing ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0)',
@@ -45,15 +45,15 @@ export function Modal({ children, onClose, allowClose = true, title, icon: Icon 
       onClick={(e) => allowClose && e.target === e.currentTarget && handleClose()}
     >
       <div 
-        className="relative w-full max-w-[95vw] sm:max-w-md md:max-w-2xl lg:max-w-3xl xl:max-w-4xl rounded-lg sm:rounded-xl shadow-2xl shadow-black/20 border border-[#6205D5]/20 flex flex-col"
+        className="relative w-full max-w-[95vw] sm:max-w-md md:max-w-2xl lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl 3xl:max-w-6xl rounded-lg sm:rounded-xl 2xl:rounded-2xl shadow-2xl shadow-black/20 border border-[#6205D5]/20 flex flex-col"
         style={{
           // ✅ Background SÓLIDO — sem backdrop-blur-xl (causa render bug no Android WebView)
           background: 'linear-gradient(to bottom right, #26074d, #100322)',
           // ✅ Animação só com opacity — sem scale (scale + backdrop-filter = bug conhecido)
           opacity: isVisible && !isClosing ? 1 : 0,
           transition: 'opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          // ✅ Max height fixo com fallback seguro (vh pode ser instável no Android)
-          maxHeight: 'min(85dvh, calc(100% - 32px))',
+          // ✅ Max height fixo com fallback seguro para WebView antigo (sem dvh/min())
+          maxHeight: 'calc(85vh - 32px)',
           // ✅ Força composição GPU isolada
           willChange: 'opacity',
           // ✅ Previne colapso do flex
@@ -61,15 +61,15 @@ export function Modal({ children, onClose, allowClose = true, title, icon: Icon 
         }}
       >
         {/* Header fixo */}
-        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-[#6205D5]/20">
+        <div className="flex items-center justify-between p-3 sm:p-4 xl:p-5 2xl:p-6 border-b border-[#6205D5]/20">
           {(title || Icon) && (
             <div className="flex items-center gap-2 sm:gap-3">
               {Icon && (
-                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#6205D5]/20 flex items-center justify-center">
-                  <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-[#6205D5]" />
+                <div className="w-7 h-7 sm:w-8 sm:h-8 xl:w-10 xl:h-10 2xl:w-12 2xl:h-12 rounded-full bg-[#6205D5]/20 flex items-center justify-center">
+                  <Icon className="w-4 h-4 sm:w-5 sm:h-5 xl:w-6 xl:h-6 2xl:w-7 2xl:h-7 text-[#6205D5]" />
                 </div>
               )}
-              {title && <h2 className="text-base sm:text-lg font-bold text-white truncate">{title}</h2>}
+              {title && <h2 className="text-base sm:text-lg xl:text-xl 2xl:text-2xl font-bold text-white truncate">{title}</h2>}
             </div>
           )}
           {allowClose && (
@@ -77,7 +77,7 @@ export function Modal({ children, onClose, allowClose = true, title, icon: Icon 
               onClick={handleClose}
               className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-[#6205D5]/10 transition-colors group ml-auto flex-shrink-0 touch-manipulation"
             >
-              <X className="w-5 h-5 sm:w-6 sm:h-6 text-[#b0a8ff] group-hover:text-white transition-colors" />
+              <X className="w-5 h-5 sm:w-6 sm:h-6 xl:w-7 xl:h-7 text-[#b0a8ff] group-hover:text-white transition-colors" />
             </button>
           )}
         </div>

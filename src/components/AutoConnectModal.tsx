@@ -140,8 +140,8 @@ export function AutoConnectModal({
     >
   <div className="w-full max-w-2xl mx-auto px-1 sm:px-0">
         {/* Status Header - Sempre visível */}
-        <div className="mb-2 sm:mb-6">
-          <div className={`relative rounded-lg sm:rounded-xl p-1.5 sm:p-4 border transition-all duration-500 ${
+        <div className="mb-2 sm:mb-6 lg:mb-8">
+          <div className={`relative rounded-lg sm:rounded-xl 2xl:rounded-2xl p-1.5 sm:p-4 lg:p-5 2xl:p-6 border transition-all duration-500 ${
             running 
               ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-blue-400/40 shadow-lg shadow-blue-500/20' 
               : successConfigName 
@@ -151,9 +151,9 @@ export function AutoConnectModal({
                   : 'bg-gradient-to-r from-[#6205D5]/10 to-[#26074d]/20 border-[#6205D5]/30'
           }`}>
             {/* Progress Ring */}
-            <div className="flex items-center gap-1.5 sm:gap-4">
-              <div className="relative w-9 h-9 sm:w-16 sm:h-16 flex-shrink-0">
-                <svg className="w-9 h-9 sm:w-16 sm:h-16 transform -rotate-90" viewBox="0 0 64 64">
+            <div className="flex items-center gap-1.5 sm:gap-4 lg:gap-5">
+              <div className="relative w-9 h-9 sm:w-16 sm:h-16 lg:w-20 lg:h-20 2xl:w-24 2xl:h-24 flex-shrink-0">
+                <svg className="w-9 h-9 sm:w-16 sm:h-16 lg:w-20 lg:h-20 2xl:w-24 2xl:h-24 transform -rotate-90" viewBox="0 0 64 64">
                   <circle
                     cx="32" cy="32" r="28"
                     fill="none" stroke="currentColor" strokeWidth="4"
@@ -171,20 +171,20 @@ export function AutoConnectModal({
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
                   {running ? (
-                    <RefreshCw className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400 animate-spin" />
+                    <RefreshCw className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 2xl:w-10 2xl:h-10 text-blue-400 animate-spin" />
                   ) : successConfigName ? (
-                    <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-green-400" />
+                    <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 2xl:w-10 2xl:h-10 text-green-400" />
                   ) : error ? (
-                    <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-400" />
+                    <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 2xl:w-10 2xl:h-10 text-red-400" />
                   ) : (
-                    <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-[#6205D5]" />
+                    <Zap className="w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8 2xl:w-10 2xl:h-10 text-[#6205D5]" />
                   )}
                 </div>
               </div>
               
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1 mb-0.5 sm:gap-2 sm:mb-2">
-                  <h3 className="text-sm sm:text-lg font-bold text-white truncate">
+                <div className="flex items-center gap-1 mb-0.5 sm:gap-2 sm:mb-2 lg:gap-3 lg:mb-3">
+                  <h3 className="text-sm sm:text-lg lg:text-xl 2xl:text-2xl font-bold text-white truncate">
                     {running ? 'Testando Conexões...' : successConfigName ? '🎉 Conectado!' : error ? '❌ Erro no Teste' : 'Pronto para Testar'}
                   </h3>
                   {running && (
@@ -194,7 +194,7 @@ export function AutoConnectModal({
                   )}
                 </div>
                 
-                <p className="text-xs sm:text-sm text-[#b0a8ff]/70 mb-0.5 sm:mb-2 truncate">
+                <p className="text-xs sm:text-sm lg:text-base 2xl:text-lg text-[#b0a8ff]/70 mb-0.5 sm:mb-2 lg:mb-3 truncate">
                   {running && currentConfigName 
                     ? `Testando: ${currentConfigName}` 
                     : successConfigName 
@@ -206,8 +206,8 @@ export function AutoConnectModal({
                 </p>
                 
                 {/* Mini Progress Bar */}
-                <div className="flex items-center gap-1.5 sm:gap-3">
-                  <div className="flex-1 bg-[#26074d]/60 rounded-full h-1 sm:h-2 overflow-hidden">
+                <div className="flex items-center gap-1.5 sm:gap-3 lg:gap-4">
+                  <div className="flex-1 bg-[#26074d]/60 rounded-full h-1 sm:h-2 lg:h-2.5 2xl:h-3 overflow-hidden">
                     <div 
                       className={`h-full rounded-full transition-all duration-700 ease-out ${
                         running ? 'bg-gradient-to-r from-blue-400 to-purple-400' : 
@@ -217,7 +217,7 @@ export function AutoConnectModal({
                       style={{ width: `${progressPercentage}%` }}
                     />
                   </div>
-                  <span className="text-xs sm:text-sm font-bold text-white min-w-[2.2rem] text-right">
+                  <span className="text-xs sm:text-sm lg:text-base font-bold text-white min-w-[2.2rem] text-right">
                     {progressPercentage.toFixed(0)}%
                   </span>
                 </div>
@@ -227,18 +227,18 @@ export function AutoConnectModal({
         </div>
         
         {/* Tab Navigation - Melhorado */}
-  <div className="flex bg-[#26074d]/60 rounded-lg sm:rounded-xl p-0.5 sm:p-1 mb-2 sm:mb-6">
+  <div className="flex bg-[#26074d]/60 rounded-lg sm:rounded-xl 2xl:rounded-2xl p-0.5 sm:p-1 lg:p-1.5 mb-2 sm:mb-6 lg:mb-8">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex-1 flex items-center justify-center gap-1 sm:gap-2 min-h-[44px] py-2 sm:py-3 px-2 sm:px-4 rounded-md sm:rounded-lg font-medium transition-colors duration-300 text-xs sm:text-sm relative touch-manipulation ${
+              className={`flex-1 flex items-center justify-center gap-1 sm:gap-2 lg:gap-3 min-h-[44px] lg:min-h-[52px] 2xl:min-h-[60px] py-2 sm:py-3 lg:py-4 px-2 sm:px-4 lg:px-6 rounded-md sm:rounded-lg 2xl:rounded-xl font-medium transition-colors duration-300 text-xs sm:text-sm lg:text-base 2xl:text-lg relative touch-manipulation ${
                 activeTab === tab.id 
                   ? 'bg-[#6205D5] text-white shadow-lg transform scale-105' 
                   : 'text-[#b0a8ff]/70 hover:bg-[#6205D5]/20 hover:text-[#b0a8ff] hover:scale-102'
               }`}
             >
-              <tab.icon className={`w-4 h-4 sm:w-4 sm:h-4 transition-transform ${activeTab === tab.id ? 'scale-110' : ''}`} />
+              <tab.icon className={`w-4 h-4 sm:w-4 sm:h-4 lg:w-5 lg:h-5 2xl:w-6 2xl:h-6 transition-transform ${activeTab === tab.id ? 'scale-110' : ''}`} />
               <span className="hidden sm:inline font-semibold">{tab.label}</span>
               {activeTab === tab.id && (
                 <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-5 sm:w-8 h-0.5 sm:h-1 bg-white rounded-full" />
@@ -248,22 +248,22 @@ export function AutoConnectModal({
         </div>
 
         {/* Tab Content */}
-  <div className="min-h-[220px] sm:min-h-[400px]">
+  <div className="min-h-[220px] sm:min-h-[400px] lg:min-h-[450px] 2xl:min-h-[500px]">
           
           {/* STATUS TAB */}
           {activeTab === 'status' && (
-            <div className="space-y-3 sm:space-y-6">
+            <div className="space-y-3 sm:space-y-6 lg:space-y-8">
               
               {/* Success Message */}
               {successConfigName && (
-                <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-400/40 rounded-xl p-2 sm:p-4 shadow-lg shadow-green-500/20 animate-in slide-in-from-top-4 duration-500">
-                  <div className="flex items-center gap-2 sm:gap-3">
-                    <div className="w-9 h-9 sm:w-12 sm:h-12 bg-green-500/20 rounded-full flex items-center justify-center">
-                      <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-green-400" />
+                <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-400/40 rounded-xl 2xl:rounded-2xl p-2 sm:p-4 lg:p-5 2xl:p-6 shadow-lg shadow-green-500/20 animate-in slide-in-from-top-4 duration-500">
+                  <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">
+                    <div className="w-9 h-9 sm:w-12 sm:h-12 lg:w-14 lg:h-14 2xl:w-16 2xl:h-16 bg-green-500/20 rounded-full flex items-center justify-center">
+                      <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 lg:w-9 lg:h-9 2xl:w-10 2xl:h-10 text-green-400" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-bold text-green-400 text-base sm:text-lg mb-1">🎉 Conectado com Sucesso!</h4>
-                      <p className="text-green-300 font-mono text-xs sm:text-sm truncate">{successConfigName}</p>
+                      <h4 className="font-bold text-green-400 text-base sm:text-lg lg:text-xl 2xl:text-2xl mb-1">🎉 Conectado com Sucesso!</h4>
+                      <p className="text-green-300 font-mono text-xs sm:text-sm lg:text-base truncate">{successConfigName}</p>
                       <div className="flex items-center gap-1.5 mt-1 sm:gap-2 sm:mt-2">
                         <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-400 rounded-full animate-ping" />
                         <span className="text-green-300 text-xs">Conexão ativa e estável</span>
@@ -275,14 +275,14 @@ export function AutoConnectModal({
 
               {/* Error Message */}
               {error && (
-                <div className="bg-gradient-to-r from-red-500/20 to-orange-500/20 border border-red-400/40 rounded-xl p-2 sm:p-4 shadow-lg shadow-red-500/20 animate-in slide-in-from-top-4 duration-500">
-                  <div className="flex items-center gap-2 sm:gap-3">
-                    <div className="w-9 h-9 sm:w-12 sm:h-12 bg-red-500/20 rounded-full flex items-center justify-center">
-                      <AlertCircle className="w-6 h-6 sm:w-8 sm:h-8 text-red-400" />
+                <div className="bg-gradient-to-r from-red-500/20 to-orange-500/20 border border-red-400/40 rounded-xl 2xl:rounded-2xl p-2 sm:p-4 lg:p-5 2xl:p-6 shadow-lg shadow-red-500/20 animate-in slide-in-from-top-4 duration-500">
+                  <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">
+                    <div className="w-9 h-9 sm:w-12 sm:h-12 lg:w-14 lg:h-14 2xl:w-16 2xl:h-16 bg-red-500/20 rounded-full flex items-center justify-center">
+                      <AlertCircle className="w-6 h-6 sm:w-8 sm:h-8 lg:w-9 lg:h-9 2xl:w-10 2xl:h-10 text-red-400" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-bold text-red-400 text-base sm:text-lg mb-1">Erro no Teste</h4>
-                      <p className="text-red-300 text-xs sm:text-sm">{error}</p>
+                      <h4 className="font-bold text-red-400 text-base sm:text-lg lg:text-xl 2xl:text-2xl mb-1">Erro no Teste</h4>
+                      <p className="text-red-300 text-xs sm:text-sm lg:text-base">{error}</p>
                       <div className="flex items-center gap-1.5 mt-1 sm:gap-2 sm:mt-2">
                         <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-red-400 rounded-full" />
                         <span className="text-red-300 text-xs">Verifique sua conexão</span>
@@ -294,13 +294,13 @@ export function AutoConnectModal({
 
               {/* Running Status */}
               {running && (
-                <div className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-400/40 rounded-xl p-2 sm:p-4 shadow-lg shadow-blue-500/20 animate-in slide-in-from-top-4 duration-500">
-                  <div className="flex items-center gap-2 sm:gap-3">
-                    <div className="w-9 h-9 sm:w-12 sm:h-12 bg-blue-500/20 rounded-full flex items-center justify-center">
-                      <RefreshCw className="w-6 h-6 sm:w-8 sm:h-8 text-blue-400 animate-spin" />
+                <div className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-400/40 rounded-xl 2xl:rounded-2xl p-2 sm:p-4 lg:p-5 2xl:p-6 shadow-lg shadow-blue-500/20 animate-in slide-in-from-top-4 duration-500">
+                  <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">
+                    <div className="w-9 h-9 sm:w-12 sm:h-12 lg:w-14 lg:h-14 2xl:w-16 2xl:h-16 bg-blue-500/20 rounded-full flex items-center justify-center">
+                      <RefreshCw className="w-6 h-6 sm:w-8 sm:h-8 lg:w-9 lg:h-9 2xl:w-10 2xl:h-10 text-blue-400 animate-spin" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-bold text-blue-400 text-base sm:text-lg mb-1">Testando em Progresso...</h4>
+                      <h4 className="font-bold text-blue-400 text-base sm:text-lg lg:text-xl 2xl:text-2xl mb-1">Testando em Progresso...</h4>
                       {currentConfigName && (
                         <p className="text-blue-300 font-mono text-xs sm:text-sm truncate mb-1 sm:mb-2">
                           Config atual: {currentConfigName}
@@ -320,47 +320,47 @@ export function AutoConnectModal({
               )}
 
               {/* Stats Cards */}
-              <div className="grid grid-cols-2 gap-2 sm:gap-4">
-                <div className="bg-[#26074d]/60 rounded-xl p-2 sm:p-4 border border-[#6205D5]/20">
-                  <div className="flex items-center gap-2 sm:gap-3">
-                    <div className="w-7 h-7 sm:w-10 sm:h-10 bg-[#6205D5]/20 rounded-lg flex items-center justify-center">
-                      <Wifi className="w-4 h-4 sm:w-5 sm:h-5 text-[#6205D5]" />
+              <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:gap-5 2xl:gap-6">
+                <div className="bg-[#26074d]/60 rounded-xl 2xl:rounded-2xl p-2 sm:p-4 lg:p-5 2xl:p-6 border border-[#6205D5]/20">
+                  <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">
+                    <div className="w-7 h-7 sm:w-10 sm:h-10 lg:w-12 lg:h-12 2xl:w-14 2xl:h-14 bg-[#6205D5]/20 rounded-lg flex items-center justify-center">
+                      <Wifi className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 2xl:w-7 2xl:h-7 text-[#6205D5]" />
                     </div>
                     <div>
-                      <p className="text-[#b0a8ff]/70 text-xs">Configurações</p>
-                      <p className="text-white font-bold text-base sm:text-lg">{actualTotalConfigs}</p>
+                      <p className="text-[#b0a8ff]/70 text-xs lg:text-sm 2xl:text-base">Configurações</p>
+                      <p className="text-white font-bold text-base sm:text-lg lg:text-xl 2xl:text-2xl">{actualTotalConfigs}</p>
                     </div>
                   </div>
                 </div>
                 
-                <div className="bg-[#26074d]/60 rounded-xl p-2 sm:p-4 border border-[#6205D5]/20">
-                  <div className="flex items-center gap-2 sm:gap-3">
-                    <div className="w-7 h-7 sm:w-10 sm:h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
-                      <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />
+                <div className="bg-[#26074d]/60 rounded-xl 2xl:rounded-2xl p-2 sm:p-4 lg:p-5 2xl:p-6 border border-[#6205D5]/20">
+                  <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">
+                    <div className="w-7 h-7 sm:w-10 sm:h-10 lg:w-12 lg:h-12 2xl:w-14 2xl:h-14 bg-green-500/20 rounded-lg flex items-center justify-center">
+                      <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 2xl:w-7 2xl:h-7 text-green-400" />
                     </div>
                     <div>
-                      <p className="text-[#b0a8ff]/70 text-xs">Testadas</p>
-                      <p className="text-white font-bold text-base sm:text-lg">{testedConfigs}</p>
+                      <p className="text-[#b0a8ff]/70 text-xs lg:text-sm 2xl:text-base">Testadas</p>
+                      <p className="text-white font-bold text-base sm:text-lg lg:text-xl 2xl:text-2xl">{testedConfigs}</p>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Action Buttons - Melhorados */}
-              <div className="flex gap-2 sm:gap-3 pt-1 sm:pt-2">
+              <div className="flex gap-2 sm:gap-3 lg:gap-4 pt-1 sm:pt-2">
                 {!running ? (
                   <button
                     onClick={onStart}
-                    className="flex-1 bg-gradient-to-r from-[#6205D5] to-[#4B0082] hover:from-[#4B0082] hover:to-[#6205D5] text-white py-3 px-3 sm:py-4 sm:px-6 rounded-xl font-bold text-base sm:text-lg transition-colors duration-300 flex items-center justify-center gap-2 sm:gap-3 shadow-lg active:scale-95"
+                    className="relative flex-1 bg-gradient-to-r from-[#6205D5] to-[#4B0082] hover:from-[#4B0082] hover:to-[#6205D5] text-white py-3 px-3 sm:py-4 sm:px-6 lg:py-5 2xl:py-6 rounded-xl 2xl:rounded-2xl font-bold text-base sm:text-lg lg:text-xl 2xl:text-2xl transition-colors duration-300 flex items-center justify-center gap-2 sm:gap-3 shadow-lg active:scale-95 overflow-hidden"
                   >
                     <Zap className="w-5 h-5" />
                     {isCompleted ? 'Testar Novamente' : 'Iniciar Teste'}
-                    <div className="absolute inset-0 bg-white/10 rounded-xl opacity-0 hover:opacity-100 transition-opacity" />
+                    <div className="absolute inset-0 bg-white/10 rounded-xl opacity-0 hover:opacity-100 transition-opacity pointer-events-none" />
                   </button>
                 ) : (
                   <button
                     onClick={onCancel}
-                    className="flex-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white py-3 px-3 sm:py-4 sm:px-6 rounded-xl font-bold text-base sm:text-lg transition-colors duration-300 flex items-center justify-center gap-2 sm:gap-3 shadow-lg active:scale-95"
+                    className="flex-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white py-3 px-3 sm:py-4 sm:px-6 lg:py-5 2xl:py-6 rounded-xl 2xl:rounded-2xl font-bold text-base sm:text-lg lg:text-xl 2xl:text-2xl transition-colors duration-300 flex items-center justify-center gap-2 sm:gap-3 shadow-lg active:scale-95"
                   >
                     <XCircle className="w-5 h-5" />
                     Parar Teste
@@ -375,9 +375,9 @@ export function AutoConnectModal({
             <div className="space-y-4">
               
               {/* Connection Type */}
-              <div className="card p-2 sm:p-4">
-                <h4 className="font-bold text-[#b0a8ff] mb-2 sm:mb-3 text-base sm:text-lg">🔧 Tipo de Configuração</h4>
-                <div className="grid grid-cols-1 gap-2 sm:gap-3">
+              <div className="card p-2 sm:p-4 lg:p-5 2xl:p-6">
+                <h4 className="font-bold text-[#b0a8ff] mb-2 sm:mb-3 lg:mb-4 text-base sm:text-lg lg:text-xl 2xl:text-2xl">🔧 Tipo de Configuração</h4>
+                <div className="grid grid-cols-1 gap-2 sm:gap-3 lg:gap-4">
                   {[
                     { value: 'all', label: 'Todas as Configurações', desc: 'SSH + V2Ray + Proxy', icon: '🌐' },
                     { value: 'ssh', label: 'SSH/Proxy', desc: 'Apenas SSH e Proxy', icon: '🔐' },
@@ -386,16 +386,16 @@ export function AutoConnectModal({
                     <button
                       key={option.value}
                       onClick={() => updateConfig({ configType: option.value as 'all' | 'ssh' | 'v2ray' })}
-                      className={`w-full p-2 sm:p-4 rounded-xl text-left transition-colors duration-200 flex items-center gap-2 sm:gap-4 ${
+                      className={`w-full p-2 sm:p-4 lg:p-5 2xl:p-6 rounded-xl 2xl:rounded-2xl text-left transition-colors duration-200 flex items-center gap-2 sm:gap-4 lg:gap-5 ${
                         autoConnectConfig.configType === option.value 
                           ? 'bg-[#6205D5] text-white shadow-lg' 
                           : 'bg-[#26074d]/40 text-[#b0a8ff] hover:bg-[#6205D5]/20'
                       }`}
                     >
-                      <span className="text-xl sm:text-2xl">{option.icon}</span>
+                      <span className="text-xl sm:text-2xl lg:text-3xl">{option.icon}</span>
                       <div className="flex-1">
-                        <div className="font-bold text-sm sm:text-base">{option.label}</div>
-                        <div className="text-xs sm:text-sm opacity-80">{option.desc}</div>
+                        <div className="font-bold text-sm sm:text-base lg:text-lg 2xl:text-xl">{option.label}</div>
+                        <div className="text-xs sm:text-sm lg:text-base 2xl:text-lg opacity-80">{option.desc}</div>
                       </div>
                       {autoConnectConfig.configType === option.value && (
                         <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
@@ -406,9 +406,9 @@ export function AutoConnectModal({
               </div>
 
               {/* Timeouts */}
-              <div className="card p-2 sm:p-4">
-                <h4 className="font-bold text-[#b0a8ff] mb-2 sm:mb-4 text-base sm:text-lg">⏱️ Configurações de Tempo</h4>
-                <div className="space-y-3 sm:space-y-6">
+              <div className="card p-2 sm:p-4 lg:p-5 2xl:p-6">
+                <h4 className="font-bold text-[#b0a8ff] mb-2 sm:mb-4 lg:mb-5 text-base sm:text-lg lg:text-xl 2xl:text-2xl">⏱️ Configurações de Tempo</h4>
+                <div className="space-y-3 sm:space-y-6 lg:space-y-8">
                   {/* Connection Timeout */}
                   <div>
                     <div className="flex justify-between items-center mb-1.5 sm:mb-3">
@@ -457,8 +457,8 @@ export function AutoConnectModal({
               </div>
 
               {/* Categories */}
-              <div className="card p-2 sm:p-4">
-                <h4 className="font-bold text-[#b0a8ff] mb-2 sm:mb-4 text-base sm:text-lg">📂 Categorias para Testar</h4>
+              <div className="card p-2 sm:p-4 lg:p-5 2xl:p-6">
+                <h4 className="font-bold text-[#b0a8ff] mb-2 sm:mb-4 lg:mb-5 text-base sm:text-lg lg:text-xl 2xl:text-2xl">📂 Categorias para Testar</h4>
                 <div className="space-y-1.5 sm:space-y-2">
                   {/* All Categories Button */}
                   <button
@@ -512,8 +512,8 @@ export function AutoConnectModal({
           {/* LOGS TAB */}
           {activeTab === 'logs' && (
             <div className="space-y-2 sm:space-y-4">
-              <div className="card p-2 sm:p-4">
-                <h4 className="font-bold text-[#b0a8ff] mb-2 sm:mb-4 text-base sm:text-lg">📋 Histórico de Testes</h4>
+              <div className="card p-2 sm:p-4 lg:p-5 2xl:p-6">
+                <h4 className="font-bold text-[#b0a8ff] mb-2 sm:mb-4 lg:mb-5 text-base sm:text-lg lg:text-xl 2xl:text-2xl">📋 Histórico de Testes</h4>
                 <div className="space-y-2 sm:space-y-3 max-h-48 sm:max-h-80 overflow-y-auto">
                   {logs.length > 0 ? (
                     logs.slice(-15).reverse().map((log) => (

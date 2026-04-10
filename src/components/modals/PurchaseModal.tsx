@@ -1,9 +1,9 @@
-import { useState, useEffect, Fragment } from 'react';
+import { useState, useEffect, useRef, useCallback, Fragment } from 'react';
 import { Modal } from './Modal';
 import { Plan, PaymentStep, PurchaseRequest, OrderResponse, CredentialsResponse } from '../../types/sales';
 import { getPlans, createPurchase, formatPrice, formatDate } from '../../utils/salesUtils';
 import { validateEmail } from '../../utils/emailValidation';
-import { generateQRCodeDataURL, isValidPixCode } from '../../utils/qrCodeGenerator';
+
 import usePaymentPolling from '../../hooks/usePaymentPolling';
 import { purchaseStorage, PendingPurchase } from '../../utils/purchaseStorageManager';
 import { ShoppingCart } from '../../utils/icons';
@@ -28,8 +28,9 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
   // Estados do processo de pagamento
   const [purchaseData, setPurchaseData] = useState<OrderResponse | null>(null);
   const [credentials, setCredentials] = useState<CredentialsResponse | null>(null);
-  const [generatedQRCode, setGeneratedQRCode] = useState<string | null>(null);
+  const [qrCodeReady, setQrCodeReady] = useState(false);
   const [qrCodeError, setQrCodeError] = useState<string | null>(null);
+  const qrCanvasRef = useRef<HTMLCanvasElement>(null);
 
   // Hook de polling simplificado para verificar credenciais
   const { 
@@ -66,45 +67,32 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
     loadPlans();
   }, []);
 
-  // Gerar QR Code quando os dados de compra chegarem
-  useEffect(() => {
-    async function generateQRCode() {
-      if (!purchaseData?.qr_code && !purchaseData?.ticket_url) return;
+  // Callback ref: assim que o canvas estiver no DOM, desenha o QR nele
+  const drawQRCode = useCallback(async (canvas: HTMLCanvasElement | null) => {
+    if (!canvas || !purchaseData) return;
+    // Guardar ref para limpar depois se necessário
+    (qrCanvasRef as React.MutableRefObject<HTMLCanvasElement | null>).current = canvas;
 
-      try {
-        // Usar qr_code_base64 da API se disponível (já vem pronto)
-        if (purchaseData.qr_code_base64) {
-          setGeneratedQRCode(purchaseData.qr_code_base64);
-          return;
-        }
+    const pixCode = purchaseData.qr_code || purchaseData.ticket_url || '';
+    if (!pixCode) return;
 
-        // Fallback: gerar QR Code localmente
-        const pixCode = purchaseData.qr_code || purchaseData.ticket_url;
+    try {
+      setQrCodeError(null);
+      const QRCodeModule = await import('qrcode');
+      const QRCode = QRCodeModule.default || QRCodeModule;
 
-        if (!pixCode) {
-          return;
-        }
-
-        setQrCodeError(null);
-
-        // Verificar se é um código PIX válido
-        if (isValidPixCode(pixCode)) {
-          const qrCodeDataURL = await generateQRCodeDataURL(pixCode, {
-            size: 256,
-            margin: 4,
-            colorDark: '#000000',
-            colorLight: '#FFFFFF'
-          });
-          setGeneratedQRCode(qrCodeDataURL);
-        } else {
-          setQrCodeError('Código PIX inválido recebido da API');
-        }
-      } catch (error) {
-        setQrCodeError(`Erro ao gerar QR Code: ${error}`);
-      }
+      // Desenha direto no <canvas> — método mais confiável, sem intermediários
+      await QRCode.toCanvas(canvas, pixCode, {
+        width: 256,
+        margin: 4,
+        color: { dark: '#000000', light: '#FFFFFF' },
+        errorCorrectionLevel: 'M',
+      });
+      setQrCodeReady(true);
+    } catch (err) {
+      console.error('[QRCode] toCanvas falhou:', err);
+      setQrCodeError(`Erro ao gerar QR Code: ${err}`);
     }
-
-    generateQRCode();
   }, [purchaseData]);
 
   async function loadPlans() {
@@ -531,24 +519,28 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
                 </div>
 
                 {/* QR Code Visual Gerado Dinamicamente */}
-                {generatedQRCode ? (
+                {(purchaseData.qr_code || purchaseData.ticket_url) ? (
                   <div className="bg-gradient-to-br from-blue-900/50 to-blue-800/50 p-3 sm:p-4 rounded-lg border-2 border-blue-600/30">
                     <div className="text-center">
                       <p className="text-white mb-2 sm:mb-3 font-semibold text-xs sm:text-sm">📱 Escaneie o QR Code PIX</p>
                       
                       <div className="bg-white p-2.5 sm:p-3 rounded-lg inline-block mb-2 sm:mb-3 shadow-lg">
-                        <img 
-                          src={generatedQRCode}
-                          alt="QR Code PIX"
-                          className="w-[min(70vw,200px)] sm:w-[min(60vw,240px)] h-[min(70vw,200px)] sm:h-[min(60vw,240px)] mx-auto block"
-                          onLoad={() => {
-                            // QR Code carregado
-                          }}
-                          onError={() => {
-                            // Erro ao carregar QR Code visual
-                          }}
+                        <canvas 
+                          ref={drawQRCode}
+                          style={{ width: 200, height: 200, display: qrCodeReady ? 'block' : 'none' }}
                         />
+                        {!qrCodeReady && !qrCodeError && (
+                          <div className="w-48 h-48 flex items-center justify-center bg-gray-100 rounded">
+                            <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#6205D5] border-t-transparent"></div>
+                          </div>
+                        )}
                       </div>
+
+                      {qrCodeError && (
+                        <div className="text-xs text-red-300 bg-red-900/30 p-2 rounded mb-2">
+                          {qrCodeError} — Use o código PIX abaixo
+                        </div>
+                      )}
 
                       <div className="text-xs sm:text-sm text-blue-100 bg-blue-900/50 p-2 sm:p-2.5 rounded">
                         💡 Abra seu banco e escaneie
@@ -566,26 +558,6 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
 
                       <div className="text-xs text-red-200 bg-red-900/30 p-2 rounded">
                         💡 Use o código PIX abaixo
-                      </div>
-                    </div>
-                  </div>
-                ) : (purchaseData.qr_code || purchaseData.ticket_url) ? (
-                  <div className="bg-gradient-to-br from-blue-900/50 to-blue-800/50 p-3 sm:p-4 rounded-lg border-2 border-blue-600/30">
-                    <div className="text-center">
-                      <p className="text-white mb-2 sm:mb-3 font-semibold text-xs sm:text-sm">📱 Gerando QR Code PIX</p>
-                      
-                      <div className="bg-white p-2.5 sm:p-3 rounded inline-block mb-2 sm:mb-3 shadow-lg">
-                        <div className="w-40 h-40 sm:w-48 sm:h-48 flex items-center justify-center bg-gray-100 text-gray-600 text-xs p-2 rounded">
-                          <div className="text-center">
-                            <div className="text-2xl mb-1 animate-spin">⚙️</div>
-                            <div className="font-semibold text-[10px] sm:text-xs">Gerando</div>
-                            <div className="text-[9px] mt-1 text-gray-500">Aguarde...</div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="text-xs text-blue-200 bg-blue-900/30 p-2 rounded">
-                        ⏳ Processando sua solicitação
                       </div>
                     </div>
                   </div>

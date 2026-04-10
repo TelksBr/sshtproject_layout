@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Modal } from './Modal';
-import { Loader, RefreshCw, Server } from '../../utils/icons';
+import { Modal } from '../../modals/Modal';
+import { Loader, RefreshCw, Server } from '../../../utils/icons';
 
 interface ServerConfig {
   name: string;
@@ -337,7 +337,7 @@ export function ServersModal({ onClose }: ServersModalProps) {
 
   return (
     <Modal onClose={onClose} title="Status dos Servidores" icon={Server}>
-      <div className="flex flex-col h-[80vh] max-h-[90dvh] w-full p-2 md:p-6">
+      <div className="flex flex-col h-[80vh] max-h-[90vh] w-full p-2 md:p-6 lg:p-8 2xl:p-10">
         {/* Erro de configuração */}
         {configError && (
           <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
@@ -351,15 +351,15 @@ export function ServersModal({ onClose }: ServersModalProps) {
         )}
 
         {/* Cabeçalho fixo com refresh */}
-        <div className="flex items-center justify-between mb-2 sticky top-0 z-10 bg-[#18122B] rounded-t-lg p-2 md:p-0">
+        <div className="flex items-center justify-between mb-2 sticky top-0 z-10 rounded-t-lg p-2 md:p-0" style={{ background: 'linear-gradient(to right, #26074d, #100322)' }}>
           <div className="flex items-center gap-4">
-            <span className="font-semibold text-base md:text-lg text-white">Status dos Servidores</span>
+            <span className="font-semibold text-base md:text-lg lg:text-xl 2xl:text-2xl text-white">Status dos Servidores</span>
             {!loading && servers.length > 0 && (
-              <div className="text-xs md:text-sm text-[#b0a8ff]/70 flex gap-3">
+              <div className="text-xs md:text-sm lg:text-base text-[#b0a8ff]/70 flex gap-3 lg:gap-4">
                 <span>SSH: <span className="text-white font-semibold">{totals.ssh}</span></span>
                 <span>V2Ray: <span className="text-white font-semibold">{totals.v2ray}</span></span>
                 <span>DT Proto: <span className="text-white font-semibold">{totals.dtProto}</span></span>
-                <span className="text-[#b0a8ff]">Total: <span className="text-[#00ff88] font-semibold">{totals.total}</span></span>
+                <span className="text-[#b0a8ff]">Total: <span className="text-emerald-400 font-semibold">{totals.total}</span></span>
               </div>
             )}
           </div>
@@ -377,7 +377,7 @@ export function ServersModal({ onClose }: ServersModalProps) {
           >
             <RefreshCw 
               className={`
-                w-5 h-5 md:w-6 md:h-6 text-[#b0a8ff]
+                w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 text-[#b0a8ff]
                 ${refreshing ? 'animate-spin' : 'hover:text-white transition-colors'}
               `}
             />
@@ -402,22 +402,24 @@ export function ServersModal({ onClose }: ServersModalProps) {
                 <div
                   key={server.host}
                   className={`
-                    px-3 py-3 md:px-4 md:py-4 rounded-lg
-                    transition-colors duration-200 active:scale-95
-                    ${server.isOnline ? 'bg-[#6205D5]/20' : 'bg-red-500/10'}
-                    ${server.isOnline ? '' : 'opacity-60'}
-                    shadow-sm hover:shadow-md cursor-pointer select-none
+                    px-3 py-3 md:px-4 md:py-4 lg:px-5 lg:py-5 2xl:px-6 2xl:py-6 rounded-xl 2xl:rounded-2xl
+                    transition-all duration-200 active:scale-[0.98]
+                    ${server.isOnline 
+                      ? 'bg-[#6205D5]/15 hover:bg-[#6205D5]/25 border border-[#6205D5]/10 hover:border-[#6205D5]/30' 
+                      : 'bg-red-500/10 border border-red-500/10 opacity-60'
+                    }
+                    shadow-sm select-none
                   `}
                   tabIndex={0}
                   aria-label={`Servidor ${server.name} com ${server.totalUsers} usuários online`}
                 >
                   <div className="flex justify-between items-center mb-2">
-                    <span className="font-medium text-white text-sm md:text-base truncate max-w-[60vw] md:max-w-[250px]">
+                    <span className="font-medium text-white text-sm md:text-base lg:text-lg 2xl:text-xl truncate max-w-[60vw] md:max-w-[250px] lg:max-w-[400px]">
                       {server.name}
                     </span>
                     <div className="flex items-center gap-2">
                       <span className={`
-                        text-xs font-semibold px-2 py-1 rounded
+                        text-xs lg:text-sm font-semibold px-2 py-1 lg:px-3 lg:py-1.5 rounded
                         ${server.isOnline ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'}
                       `}>
                         {server.isOnline ? 'Online' : 'Offline'}
@@ -427,20 +429,20 @@ export function ServersModal({ onClose }: ServersModalProps) {
                   
                   {server.isOnline && (
                     <>
-                      <div className="grid grid-cols-4 gap-2 text-xs md:text-sm mb-2">
-                        <div className="bg-[#6205D5]/10 p-2 rounded">
+                      <div className="grid grid-cols-4 gap-2 lg:gap-3 2xl:gap-4 text-xs md:text-sm lg:text-base mb-2">
+                        <div className="bg-[#6205D5]/10 p-2 lg:p-3 2xl:p-4 rounded lg:rounded-lg">
                           <span className="text-[#b0a8ff]/70 block">SSH</span>
                           <span className="text-white font-mono font-semibold">{server.sshUsers}</span>
                         </div>
-                        <div className="bg-[#6205D5]/10 p-2 rounded">
+                        <div className="bg-[#6205D5]/10 p-2 lg:p-3 2xl:p-4 rounded lg:rounded-lg">
                           <span className="text-[#b0a8ff]/70 block">V2Ray</span>
                           <span className="text-white font-mono font-semibold">{server.v2rayUsers}</span>
                         </div>
-                        <div className="bg-[#6205D5]/10 p-2 rounded">
+                        <div className="bg-[#6205D5]/10 p-2 lg:p-3 2xl:p-4 rounded lg:rounded-lg">
                           <span className="text-[#b0a8ff]/70 block">DT Proto</span>
                           <span className="text-white font-mono font-semibold">{server.dtProtoUsers}</span>
                         </div>
-                        <div className="bg-[#6205D5]/15 p-2 rounded">
+                        <div className="bg-[#6205D5]/15 p-2 lg:p-3 2xl:p-4 rounded lg:rounded-lg">
                           <span className="text-[#b0a8ff]/70 block">Total</span>
                           <span className="text-white font-mono font-semibold">{server.totalUsers}</span>
                         </div>
@@ -448,13 +450,13 @@ export function ServersModal({ onClose }: ServersModalProps) {
                       
                       {/* Recursos do Sistema */}
                       {server.resources && (
-                        <div className="grid grid-cols-2 gap-2 text-xs md:text-sm pt-2 border-t border-[#6205D5]/20">
-                          <div className="bg-[#6205D5]/5 p-2 rounded">
+                        <div className="grid grid-cols-2 gap-2 lg:gap-3 2xl:gap-4 text-xs md:text-sm lg:text-base pt-2 border-t border-[#6205D5]/20">
+                          <div className="bg-[#6205D5]/5 p-2 lg:p-3 2xl:p-4 rounded lg:rounded-lg">
                             <span className="text-[#b0a8ff]/70 block mb-1">💾 Memória</span>
                             <div className="flex items-center gap-2">
-                              <div className="flex-1 bg-[#6205D5]/20 rounded-full h-2">
+                              <div className="flex-1 bg-[#6205D5]/20 rounded-full h-2 lg:h-2.5 2xl:h-3">
                                 <div 
-                                  className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-300"
+                                  className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 lg:h-2.5 2xl:h-3 rounded-full transition-all duration-300"
                                   style={{ width: `${server.resources.memory.usage_percent}%` }}
                                 />
                               </div>
@@ -462,16 +464,16 @@ export function ServersModal({ onClose }: ServersModalProps) {
                                 {server.resources.memory.usage_percent.toFixed(1)}%
                               </span>
                             </div>
-                            <span className="text-[#b0a8ff]/50 text-[10px] block mt-1">
+                            <span className="text-[#b0a8ff]/50 text-[10px] lg:text-xs block mt-1">
                               {(server.resources.memory.used / 1024).toFixed(0)}MB / {(server.resources.memory.total / 1024).toFixed(0)}MB
                             </span>
                           </div>
-                          <div className="bg-[#6205D5]/5 p-2 rounded">
+                          <div className="bg-[#6205D5]/5 p-2 lg:p-3 2xl:p-4 rounded lg:rounded-lg">
                             <span className="text-[#b0a8ff]/70 block mb-1">⚡ CPU</span>
                             <div className="flex items-center gap-2">
-                              <div className="flex-1 bg-[#6205D5]/20 rounded-full h-2">
+                              <div className="flex-1 bg-[#6205D5]/20 rounded-full h-2 lg:h-2.5 2xl:h-3">
                                 <div 
-                                  className="bg-gradient-to-r from-green-500 to-cyan-500 h-2 rounded-full transition-all duration-300"
+                                  className="bg-gradient-to-r from-green-500 to-cyan-500 h-2 lg:h-2.5 2xl:h-3 rounded-full transition-all duration-300"
                                   style={{ width: `${server.resources.cpu.usage_percent}%` }}
                                 />
                               </div>

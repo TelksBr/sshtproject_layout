@@ -44,19 +44,20 @@ const Header = memo(function Header({ onMenuClick, version, localIP, vpnState }:
 
   return (
     <section className="
-      p-3 md:p-4
-      rounded-xl
+      p-3 md:p-4 xl:p-5 2xl:p-6
+      rounded-xl 2xl:rounded-2xl
       border border-[#6205D5]/30 bg-[#26074d]/80 shadow-lg
     ">
       {/* Layout Mobile: Vertical (2 linhas) | Desktop: Horizontal (1 linha) */}
-      <div className="flex flex-col md:flex-row md:items-center gap-3">
+      <div className="flex flex-col md:flex-row md:items-center gap-3 xl:gap-4">
         
         {/* Linha 1 Mobile / Esquerda Desktop: Menu + Status */}
-        <div className="flex items-center gap-3 flex-1">
-          {/* Menu Button */}
+        <div className="flex items-center gap-3 xl:gap-4 flex-1">
+          {/* Menu Button — hidden on lg+ (sidebar is fixed) */}
           <button
             onClick={onMenuClick}
             className="
+              lg:hidden
               p-2 rounded-lg hover:bg-[#6205D5]/20 active:bg-[#6205D5]/30
               transition-colors duration-200 flex-shrink-0
             "
@@ -67,34 +68,34 @@ const Header = memo(function Header({ onMenuClick, version, localIP, vpnState }:
 
           {/* Status */}
           <div className="
-            flex items-center gap-2
-            bg-[#6205D5]/15 px-3 py-2 rounded-lg flex-1 min-w-0 shadow-inner
+            flex items-center gap-2 xl:gap-3
+            bg-[#6205D5]/15 px-3 py-2 xl:px-4 xl:py-2.5 2xl:px-5 2xl:py-3 rounded-lg xl:rounded-xl flex-1 min-w-0 shadow-inner
           ">
-            <div className={`w-2.5 h-2.5 rounded-full ${statusColor} shadow-md flex-shrink-0`} />
-            <span className="text-[#b0a8ff] text-sm font-medium truncate" id="vpn-status">
+            <div className={`w-2.5 h-2.5 xl:w-3 xl:h-3 rounded-full ${statusColor} shadow-md flex-shrink-0`} />
+            <span className="text-[#b0a8ff] text-sm xl:text-base 2xl:text-lg font-medium truncate" id="vpn-status">
               {statusMessage}
             </span>
           </div>
         </div>
 
         {/* Linha 2 Mobile / Direita Desktop: IP + Version */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 xl:gap-4">
           {/* IP */}
           <div className="
-            flex items-center gap-2 bg-[#6205D5]/15 px-3 py-2 rounded-lg shadow-inner flex-1 md:flex-initial min-w-0
+            flex items-center gap-2 bg-[#6205D5]/15 px-3 py-2 xl:px-4 xl:py-2.5 2xl:px-5 2xl:py-3 rounded-lg xl:rounded-xl shadow-inner flex-1 md:flex-initial min-w-0
           ">
-            <EthernetPort className="w-4 h-4 text-[#b0a8ff] opacity-75 flex-shrink-0" />
-            <span className="text-[#b0a8ff] text-sm font-mono opacity-90 truncate" id="ip-status">
+            <EthernetPort className="w-4 h-4 xl:w-5 xl:h-5 text-[#b0a8ff] opacity-75 flex-shrink-0" />
+            <span className="text-[#b0a8ff] text-sm xl:text-base font-mono opacity-90 truncate" id="ip-status">
               {localIP}
             </span>
           </div>
 
           {/* Version */}
           <div className="
-            flex items-center gap-2 bg-[#6205D5]/15 px-3 py-2 rounded-lg shadow-inner flex-shrink-0
+            flex items-center gap-2 bg-[#6205D5]/15 px-3 py-2 xl:px-4 xl:py-2.5 2xl:px-5 2xl:py-3 rounded-lg xl:rounded-xl shadow-inner flex-shrink-0
           ">
-            <GitFork className="w-4 h-4 text-[#b0a8ff] opacity-75" />
-            <span className="text-[#b0a8ff] text-sm font-medium opacity-90" id="version">
+            <GitFork className="w-4 h-4 xl:w-5 xl:h-5 text-[#b0a8ff] opacity-75" />
+            <span className="text-[#b0a8ff] text-sm xl:text-base font-medium opacity-90" id="version">
               {version}
             </span>
           </div>

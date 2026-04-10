@@ -301,15 +301,15 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
   };
 
   return (
-    <section className="card p-6 lg:p-6">
-      <h1 className="text-gradient text-base lg:text-lg font-medium text-center mb-4 lg:mb-4">
+    <section className="card p-6 lg:p-6 xl:p-8 2xl:p-10">
+      <h1 className="text-gradient text-base lg:text-lg xl:text-xl 2xl:text-2xl font-medium text-center mb-4 lg:mb-4 xl:mb-5 2xl:mb-6">
         Dados de Acesso
       </h1>
       <div className="space-y-4">
         {showUsernameInput && (
           <div className="relative">
             <input
-              className="w-full h-10 lg:h-11 px-3 rounded-lg glass-effect text-white placeholder-gray-400 outline-hidden focus:border-purple-500 text-sm allow-select"
+              className="w-full h-10 lg:h-11 xl:h-12 2xl:h-14 px-3 xl:px-4 rounded-lg 2xl:rounded-xl glass-effect text-white placeholder-gray-400 outline-none focus:border-purple-500 text-sm xl:text-base 2xl:text-lg allow-select"
               type="text"
               autoCapitalize="none"
               placeholder="Usuário"
@@ -322,7 +322,7 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
         {showPasswordInput && (
           <div className="relative">
             <input
-              className="w-full h-10 lg:h-11 px-3 pr-10 rounded-lg glass-effect text-white placeholder-gray-400 outline-hidden focus:border-purple-500 text-sm allow-select"
+              className="w-full h-10 lg:h-11 xl:h-12 2xl:h-14 px-3 xl:px-4 pr-10 rounded-lg 2xl:rounded-xl glass-effect text-white placeholder-gray-400 outline-none focus:border-purple-500 text-sm xl:text-base 2xl:text-lg allow-select"
               type={showPassword ? 'text' : 'password'}
               placeholder="Senha"
               value={passwordValue}
@@ -341,7 +341,7 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
         {showUUIDInput && (
           <div className="relative">
             <input
-              className="w-full h-10 lg:h-11 px-3 pr-16 rounded-lg glass-effect text-white placeholder-gray-400 outline-hidden focus:border-purple-500 text-sm allow-select"
+              className="w-full h-10 lg:h-11 xl:h-12 2xl:h-14 px-3 xl:px-4 pr-16 rounded-lg 2xl:rounded-xl glass-effect text-white placeholder-gray-400 outline-none focus:border-purple-500 text-sm xl:text-base 2xl:text-lg allow-select"
               type={showUUID ? 'text' : 'password'}
               placeholder="UUID"
               value={uuidValue}
@@ -377,7 +377,7 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
 
         {/* Botão de conexão */}
         <button
-          className={`w-full h-10 lg:h-11 text-sm lg:text-base font-bold rounded-lg transition-colors duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center bg-gradient-to-r ${getButtonStyle()}`}
+          className={`w-full h-10 lg:h-11 xl:h-12 2xl:h-14 text-sm lg:text-base xl:text-lg 2xl:text-xl font-bold rounded-lg 2xl:rounded-xl transition-colors duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center bg-gradient-to-r ${getButtonStyle()}`}
           onClick={handleConnection}
           disabled={vpnState === 'STOPPING'}
           title={`Estado atual: ${vpnState}`}
@@ -394,14 +394,14 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
         {/* Botões lado a lado: Registros e Auto Conect */}
         <div className="flex gap-2">
           <button
-            className="w-1/2 h-10 lg:h-11 flex items-center justify-center gap-1 text-xs lg:text-sm font-medium rounded-lg border border-[#6205D5]/30 bg-[#26074d]/40 text-[#b0a8ff] hover:bg-[#6205D5]/20 hover:border-[#6205D5]/60 hover:text-white transition-colors duration-300 active:scale-[0.98]"
+            className="w-1/2 h-10 lg:h-11 xl:h-12 2xl:h-14 flex items-center justify-center gap-1 xl:gap-2 text-xs lg:text-sm xl:text-base 2xl:text-lg font-medium rounded-lg 2xl:rounded-xl border border-[#6205D5]/30 bg-[#26074d]/40 text-[#b0a8ff] hover:bg-[#6205D5]/20 hover:border-[#6205D5]/60 hover:text-white transition-colors duration-300 active:scale-[0.98]"
             onClick={openDialogLogs}
           >
             <Scroll className="w-4 h-4" />
             <span className="font-medium">Registros</span>
           </button>
           <button
-            className="w-1/2 h-10 lg:h-11 flex items-center justify-center gap-1 text-xs lg:text-sm font-medium rounded-lg border border-[#6205D5]/30 bg-[#26074d]/40 text-[#b0a8ff] hover:bg-[#6205D5]/20 hover:border-[#6205D5]/60 hover:text-white transition-colors duration-300 active:scale-[0.98]"
+            className="w-1/2 h-10 lg:h-11 xl:h-12 2xl:h-14 flex items-center justify-center gap-1 xl:gap-2 text-xs lg:text-sm xl:text-base 2xl:text-lg font-medium rounded-lg 2xl:rounded-xl border border-[#6205D5]/30 bg-[#26074d]/40 text-[#b0a8ff] hover:bg-[#6205D5]/20 hover:border-[#6205D5]/60 hover:text-white transition-colors duration-300 active:scale-[0.98]"
             onClick={autoConnect.openModal}
             type="button"
           >

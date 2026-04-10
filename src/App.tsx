@@ -129,7 +129,7 @@ function App() {
 
   return (
     <ActiveConfigProvider>
-      <main className="w-full h-screen flex flex-col md:flex-row bg-gradient-to-br from-[#1A0628] via-[#2A0A3E] to-[#1A0628] relative overflow-hidden">
+      <main className="w-full h-full flex flex-col lg:flex-row bg-gradient-to-br from-[#1A0628] via-[#2A0A3E] to-[#1A0628] relative overflow-hidden">
         <Sidebar 
           isOpen={showMenu}
           onClose={handleMenuClose}
@@ -137,15 +137,15 @@ function App() {
         />
 
         <section 
-          className="flex-1 w-full h-full flex overflow-y-auto overflow-x-hidden p-4 md:p-6" 
+          className="flex-1 w-full h-full flex overflow-y-auto overflow-x-hidden p-4 md:p-6 xl:p-8 2xl:p-10 3xl:p-12" 
           id="container-home"
           style={containerStyleMemo}
         >
-          {/* Container centralizado para desktop */}
-          <div className="w-full max-w-7xl mx-auto flex flex-col lg:flex-row lg:gap-6">
+          {/* Container centralizado — expande em telas grandes */}
+          <div className="w-full max-w-7xl xl:max-w-[1200px] 2xl:max-w-[1400px] 3xl:max-w-[1600px] mx-auto flex flex-col lg:flex-row lg:gap-8 xl:gap-10 2xl:gap-12">
             
             {/* Coluna principal - Conteúdo */}
-            <div className="flex-1 flex flex-col gap-4 lg:max-w-3xl">
+            <div className="flex-1 flex flex-col gap-4 lg:gap-5 xl:gap-6 2xl:gap-8 lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl">
               <Header 
                 onMenuClick={handleMenuClick}
                 version={version}

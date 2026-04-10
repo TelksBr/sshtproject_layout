@@ -109,11 +109,11 @@ export function Privacy({ onClose, onAccept }: PrivacyProps) {
           </div>
         </div>
 
-        <div className="mt-4 sticky bottom-0 left-0 right-0 p-4 bg-[#100322] border-t border-[#6205D5]/20">
+        <div className="mt-4 sticky bottom-0 left-0 right-0 p-4 bg-gradient-to-b from-[#26074d]/0 via-[#26074d] to-[#26074d]">
           {!accepted && (
             <button
               onClick={handleAccept}
-              className="w-full h-12 rounded-lg font-medium flex items-center justify-center gap-2 bg-[#6205D5] text-[#b0a8ff] hover:bg-[#6205D5]/90"
+              className="w-full h-12 rounded-xl font-medium flex items-center justify-center gap-2 bg-gradient-to-r from-[#6205D5] to-[#4B0082] text-white hover:brightness-110 active:scale-[0.98] transition-all shadow-lg shadow-[#6205D5]/20"
             >
               <Check className="w-5 h-5" />
               Aceitar Política de Privacidade

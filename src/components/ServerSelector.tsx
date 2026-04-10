@@ -171,7 +171,7 @@ export function ServerSelector() {
     <>
       <section className="flex gap-1.5 server-selector-row">
         <button
-          className="flex-1 min-w-0 max-w-full min-h-[44px] flex items-center justify-between px-3 rounded-lg glass-effect overflow-hidden group hover:bg-[#6205D5]/5 transition-colors duration-200"
+          className="flex-1 min-w-0 max-w-full min-h-[44px] xl:min-h-[52px] 2xl:min-h-[60px] flex items-center justify-between px-3 xl:px-4 rounded-lg 2xl:rounded-xl glass-effect overflow-hidden group hover:bg-[#6205D5]/5 transition-colors duration-200"
           type="button"
           onClick={openConfigModal}
         >
@@ -210,24 +210,24 @@ export function ServerSelector() {
         </button>
 
         <button
-          className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg glass-effect touch-manipulation"
+          className="w-9 h-9 sm:w-10 sm:h-10 xl:w-12 xl:h-12 2xl:w-14 2xl:h-14 flex items-center justify-center rounded-lg 2xl:rounded-xl glass-effect touch-manipulation"
           type="button"
           onClick={handleUpdate}
         >
-          <RefreshCw className={`w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 text-[#6205D5] ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 xl:w-5 xl:h-5 text-[#6205D5] ${loading ? 'animate-spin' : ''}`} />
         </button>
 
         <button
-          className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg glass-effect touch-manipulation"
+          className="w-9 h-9 sm:w-10 sm:h-10 xl:w-12 xl:h-12 2xl:w-14 2xl:h-14 flex items-center justify-center rounded-lg 2xl:rounded-xl glass-effect touch-manipulation"
           type="button"
           onClick={checkUserStatus}
         >
-          <CalendarClock className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 text-[#6205D5]" />
+          <CalendarClock className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 xl:w-5 xl:h-5 text-[#6205D5]" />
         </button>
 
         <button
           className={`
-            w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg glass-effect touch-manipulation
+            w-9 h-9 sm:w-10 sm:h-10 xl:w-12 xl:h-12 2xl:w-14 2xl:h-14 flex items-center justify-center rounded-lg 2xl:rounded-xl glass-effect touch-manipulation
             ${airplaneMode ? 'bg-[#6205D5]/30' : ''}
           `}
           type="button"
@@ -235,7 +235,7 @@ export function ServerSelector() {
         >
           <Plane 
             className={`
-              w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 transition-transform
+              w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 xl:w-5 xl:h-5 transition-transform
               ${airplaneMode ? 'text-white' : 'text-[#6205D5]'}
               ${airplaneMode ? 'rotate-45' : ''}
             `}

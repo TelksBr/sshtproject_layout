@@ -9,7 +9,7 @@ export const AnimatedLogo = memo(function AnimatedLogo({ logo, alt = "SSH T PROJ
   return (
     <div className="flex justify-center">
       <img
-        className="w-28 h-28 lg:w-32 lg:h-32 object-contain rounded-full"
+        className="w-28 h-28 lg:w-32 lg:h-32 xl:w-40 xl:h-40 2xl:w-48 2xl:h-48 3xl:w-56 3xl:h-56 object-contain rounded-full"
         id="app-logo"
         src={logo}
         alt={alt}
