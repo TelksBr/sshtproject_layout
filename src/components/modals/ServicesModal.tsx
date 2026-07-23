@@ -19,8 +19,8 @@ const services = [
       'Sempre Atualizado',
       'Suporte 24/7'
     ],
-    price: 'A partir de R$ 10/mês',
-    link: 'https://reselltproject.store/'
+    price: 'A partir de R$ 15/mês',
+    link: 'https://reselltproject.shop/'
   },
   {
     title: 'Serviço de IPTV',
