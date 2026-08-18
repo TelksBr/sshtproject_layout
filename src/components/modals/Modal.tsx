@@ -12,10 +12,23 @@ interface ModalProps {
 export function Modal({ children, onClose, allowClose = true, title, icon: Icon }: ModalProps) {
   const [isClosing, setIsClosing] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(
+    typeof window !== 'undefined' ? window.matchMedia('(min-width: 768px)').matches : true
+  );
 
   useEffect(() => {
-    // Duplo rAF garante que o browser pintou o frame inicial
-    // antes de disparar a transição — resolve race condition no Android WebView
+    const mq = window.matchMedia('(min-width: 768px)');
+    const update = () => setIsDesktop(mq.matches);
+    update();
+    if (typeof mq.addEventListener === 'function') {
+      mq.addEventListener('change', update);
+      return () => mq.removeEventListener('change', update);
+    }
+    mq.addListener(update);
+    return () => mq.removeListener(update);
+  }, []);
+
+  useEffect(() => {
     const raf1 = requestAnimationFrame(() => {
       const raf2 = requestAnimationFrame(() => {
         setIsVisible(true);
@@ -31,59 +44,64 @@ export function Modal({ children, onClose, allowClose = true, title, icon: Icon 
     setTimeout(onClose, 200);
   }, [allowClose, onClose]);
 
+  const show = isVisible && !isClosing;
+
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3 md:p-4 xl:p-6 2xl:p-8"
+      className={`fixed inset-0 z-50 flex ${isDesktop ? 'items-center justify-center p-2 sm:p-3 md:p-4 xl:p-6 2xl:p-8' : 'items-end justify-center p-0'}`}
       style={{
-        // Fallback sólido + backdrop-filter com prefixo webkit
-        backgroundColor: isVisible && !isClosing ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0)',
-        WebkitBackdropFilter: 'blur(4px)',
-        backdropFilter: 'blur(4px)',
+        backgroundColor: show ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0)',
         transition: 'background-color 0.3s ease, opacity 0.3s ease',
-        opacity: isVisible && !isClosing ? 1 : 0,
+        opacity: show ? 1 : 0,
+        height: 'calc(var(--vh, 1vh) * 100)',
       }}
       onClick={(e) => allowClose && e.target === e.currentTarget && handleClose()}
     >
       <div 
-        className="relative w-full max-w-[95vw] sm:max-w-md md:max-w-2xl lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl 3xl:max-w-6xl rounded-lg sm:rounded-xl 2xl:rounded-2xl shadow-2xl shadow-black/20 border border-[#6205D5]/20 flex flex-col"
+        className={`relative w-full flex flex-col ${
+          isDesktop
+            ? 'max-w-[95vw] sm:max-w-md md:max-w-2xl lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl 3xl:max-w-6xl rounded-xl sm:rounded-2xl'
+            : 'max-w-none rounded-t-2xl rounded-b-none'
+        }`}
         style={{
-          // ✅ Background SÓLIDO — sem backdrop-blur-xl (causa render bug no Android WebView)
-          background: 'linear-gradient(to bottom right, #26074d, #100322)',
-          // ✅ Animação só com opacity — sem scale (scale + backdrop-filter = bug conhecido)
-          opacity: isVisible && !isClosing ? 1 : 0,
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          opacity: show ? 1 : 0,
           transition: 'opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          // ✅ Max height fixo com fallback seguro para WebView antigo (sem dvh/min())
-          maxHeight: 'calc(85vh - 32px)',
-          // ✅ Força composição GPU isolada
+          maxHeight: isDesktop ? 'calc(var(--vh, 1vh) * 85)' : 'calc(var(--vh, 1vh) * 90)',
           willChange: 'opacity',
-          // ✅ Previne colapso do flex
           minHeight: '200px',
         }}
       >
-        {/* Header fixo */}
-        <div className="flex items-center justify-between p-3 sm:p-4 xl:p-5 2xl:p-6 border-b border-[#6205D5]/20">
+        {!isDesktop && (
+          <div className="flex justify-center pt-2 pb-1" aria-hidden>
+            <div className="w-10 h-1 rounded-full bg-white/25" />
+          </div>
+        )}
+        <div className="flex items-center justify-between p-3 sm:p-4 xl:p-5 2xl:p-6" style={{ borderBottom: '1px solid var(--border)' }}>
           {(title || Icon) && (
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               {Icon && (
-                <div className="w-7 h-7 sm:w-8 sm:h-8 xl:w-10 xl:h-10 2xl:w-12 2xl:h-12 rounded-full bg-[#6205D5]/20 flex items-center justify-center">
-                  <Icon className="w-4 h-4 sm:w-5 sm:h-5 xl:w-6 xl:h-6 2xl:w-7 2xl:h-7 text-[#6205D5]" />
+                <div className="w-7 h-7 sm:w-8 sm:h-8 xl:w-10 xl:h-10 2xl:w-12 2xl:h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'var(--accent-dim)' }}>
+                  <Icon className="w-4 h-4 sm:w-5 sm:h-5 xl:w-6 xl:h-6 2xl:w-7 2xl:h-7" style={{ color: 'var(--accent)' }} />
                 </div>
               )}
-              {title && <h2 className="text-base sm:text-lg xl:text-xl 2xl:text-2xl font-bold text-white truncate">{title}</h2>}
+              {title && <h2 className="text-base sm:text-lg xl:text-xl 2xl:text-2xl font-semibold truncate" style={{ color: 'var(--text)' }}>{title}</h2>}
             </div>
           )}
           {allowClose && (
             <button
               onClick={handleClose}
-              className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-[#6205D5]/10 transition-colors group ml-auto flex-shrink-0 touch-manipulation"
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl ml-auto flex-shrink-0 touch-manipulation"
+              style={{ background: 'var(--bg-elevated)' }}
+              aria-label="Fechar"
             >
-              <X className="w-5 h-5 sm:w-6 sm:h-6 xl:w-7 xl:h-7 text-[#b0a8ff] group-hover:text-white transition-colors" />
+              <X className="w-5 h-5 sm:w-6 sm:h-6 xl:w-7 xl:h-7" style={{ color: 'var(--text-muted)' }} />
             </button>
           )}
         </div>
         
-        {/* Conteúdo com scroll */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar">
+        <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
           {children}
         </div>
 
@@ -93,17 +111,17 @@ export function Modal({ children, onClose, allowClose = true, title, icon: Icon 
           }
           
           .custom-scrollbar::-webkit-scrollbar-track {
-            background: #26074d;
+            background: var(--bg-elevated);
             border-radius: 8px;
           }
           
           .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #6205D5;
+            background: var(--accent);
             border-radius: 8px;
           }
           
           .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #4B0082;
+            background: var(--accent);
           }
         `}</style>
       </div>

@@ -10,6 +10,9 @@ import { getConfigVersion } from './utils/appFunctions';
 import { getStorageItem } from './utils/storageUtils';
 import { getAppLogo, setAppLogo } from './utils/storageUtils';
 import { ActiveConfigProvider } from './context/ActiveConfigContext';
+import { AutoConnectProvider } from './context/AutoConnectContext';
+import { AutoConnectModal } from './components/AutoConnectModal';
+import { SdkCheckUserModal } from './components/modals/SdkCheckUserModal';
 import { useAppLayout } from './hooks/useAppLayout';
 import { useModalRenderer } from './hooks/useModalRenderer';
 import { useGlobalPolling } from './hooks/useGlobalPolling';
@@ -46,8 +49,14 @@ function App() {
   
   // Memoizar valores que não mudam frequentemente
   const version = useMemo(() => getConfigVersion() || '1.0', []);
-  const { containerStyle } = useAppLayout();
-  const containerStyleMemo = useMemo(() => containerStyle, [containerStyle]);
+  const { insets } = useAppLayout();
+  const containerStyleMemo = useMemo(
+    () => ({
+      paddingTop: insets.paddingTop,
+      paddingBottom: insets.paddingBottom,
+    }),
+    [insets.paddingTop, insets.paddingBottom]
+  );
   const { getModal } = useModalRenderer();
 
   // Estado para logo dinâmica
@@ -129,7 +138,11 @@ function App() {
 
   return (
     <ActiveConfigProvider>
-      <main className="w-full h-full flex flex-col lg:flex-row bg-gradient-to-br from-[#1A0628] via-[#2A0A3E] to-[#1A0628] relative overflow-hidden">
+      <AutoConnectProvider>
+      <main
+        className="w-full flex flex-col lg:flex-row relative overflow-hidden"
+        style={{ height: 'calc(var(--vh, 1vh) * 100)', background: 'var(--bg)' }}
+      >
         <Sidebar 
           isOpen={showMenu}
           onClose={handleMenuClose}
@@ -137,7 +150,7 @@ function App() {
         />
 
         <section 
-          className="flex-1 w-full h-full flex overflow-y-auto overflow-x-hidden p-4 md:p-6 xl:p-8 2xl:p-10 3xl:p-12" 
+          className="flex-1 w-full min-h-0 flex overflow-y-auto overflow-x-hidden px-3 md:px-6 xl:px-8 2xl:px-10 3xl:px-12" 
           id="container-home"
           style={containerStyleMemo}
         >
@@ -145,7 +158,7 @@ function App() {
           <div className="w-full max-w-7xl xl:max-w-[1200px] 2xl:max-w-[1400px] 3xl:max-w-[1600px] mx-auto flex flex-col lg:flex-row lg:gap-8 xl:gap-10 2xl:gap-12">
             
             {/* Coluna principal - Conteúdo */}
-            <div className="flex-1 flex flex-col gap-4 lg:gap-5 xl:gap-6 2xl:gap-8 lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl">
+            <div className="flex-1 flex flex-col gap-2 sm:gap-3 lg:gap-5 xl:gap-6 2xl:gap-8 lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl">
               <Header 
                 onMenuClick={handleMenuClick}
                 version={version}
@@ -162,6 +175,8 @@ function App() {
         </section>
 
         {getModal(currentModal, setCurrentModal)}
+        <AutoConnectModal />
+        <SdkCheckUserModal />
         <ToastContainer />
         
         {/* Notificações de pagamento aprovado */}
@@ -173,12 +188,14 @@ function App() {
                 planName={notification.plan_name}
                 orderId={notification.order_id}
                 onDismiss={dismissNotification}
-                autoClose={5000}
+                onAccessCredentials={() => setCurrentModal('credentials')}
+                autoClose={8000}
               />
             </div>
           ))}
         </div>
       </main>
+      </AutoConnectProvider>
     </ActiveConfigProvider>
   );
 }

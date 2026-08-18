@@ -83,7 +83,7 @@ export function ServicesModal({ onClose }: { onClose: () => void }) {
                 </ul>
                 <button
                   onClick={() => openExternalUrl(service.link)}
-                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#6205D5] to-[#4B0082] hover:from-[#4B0082] hover:to-[#6205D5] text-white font-bold py-2 px-6 rounded-lg shadow-lg transition-all duration-200 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#8b5cf6] to-[#7c3aed] hover:from-[#7c3aed] hover:to-[#8b5cf6] text-white font-bold py-2 px-6 rounded-lg shadow-lg transition-all duration-200 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   Saiba Mais
                   <ArrowRight className="w-4 h-4" />

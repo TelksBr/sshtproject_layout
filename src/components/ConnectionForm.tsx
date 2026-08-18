@@ -17,21 +17,24 @@ import {
 import { useDTunnelEvent } from '../hooks/useDTunnelEvent';
 import { ConfigAuth } from '../types/config';
 import { VpnState } from '../types/vpn';
-import { AutoConnectModal } from './AutoConnectModal';
-import { createPortal } from 'react-dom';
-import { useAutoConnect } from '../hooks/useAutoConnect';
+import { useAutoConnectContext } from '../context/AutoConnectContext';
 
 interface ConnectionFormProps {
   vpnState: VpnState;
 }
 
 export function ConnectionForm({ vpnState }: ConnectionFormProps) {
-  // Estado do AutoConnectModal
-  const autoConnect = useAutoConnect();
+  const autoConnect = useAutoConnectContext();
   const [showPassword, setShowPassword] = useState(false);
   const [showUUID, setShowUUID] = useState(false);
+  const [showUuidHelp, setShowUuidHelp] = useState(false);
   const [mode, setMode] = useState('');
   const [auth, setAuth] = useState<ConfigAuth>({});
+  const [requires, setRequires] = useState<{
+    username?: boolean;
+    password?: boolean;
+    uuid?: boolean;
+  }>({});
   const [formError, setFormError] = useState<string | null>(null);
 
   // Estado local para controlar tentativa de conexão
@@ -64,6 +67,11 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
           v2ray_uuid: authObj.v2ray_uuid || undefined,
         };
         setAuth(newAuth);
+        setRequires({
+          username: typeof config.requires_username === 'boolean' ? config.requires_username : undefined,
+          password: typeof config.requires_password === 'boolean' ? config.requires_password : undefined,
+          uuid: typeof config.requires_uuid === 'boolean' ? config.requires_uuid : undefined,
+        });
 
         // Carrega valores dos inputs das funções nativas
         let loadedUsername = getUsername() || '';
@@ -96,6 +104,11 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
         v2ray_uuid: authObj.v2ray_uuid || undefined,
       };
       setAuth(newAuth);
+      setRequires({
+        username: typeof config.requires_username === 'boolean' ? config.requires_username : undefined,
+        password: typeof config.requires_password === 'boolean' ? config.requires_password : undefined,
+        uuid: typeof config.requires_uuid === 'boolean' ? config.requires_uuid : undefined,
+      });
       setFormError(null);
 
       let loadedUsername = getUsername() || '';
@@ -166,10 +179,17 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
     };
   }, [mode]);
   const isSSH = mode.toLowerCase().startsWith('ssh');
-  // Para hysteria, mostrar os mesmos campos que SSH
-  const showUsernameInput = (!isV2Ray && !auth.username) || isHysteria;
-  const showPasswordInput = (!isV2Ray && !auth.password) || isHysteria;
-  const showUUIDInput = isV2Ray && !auth.v2ray_uuid;
+  const showUsernameInput =
+    autoConnect.homeEnabled ||
+    isHysteria ||
+    (typeof requires.username === 'boolean' ? requires.username : !isV2Ray && !auth.username);
+  const showPasswordInput =
+    autoConnect.homeEnabled ||
+    isHysteria ||
+    (typeof requires.password === 'boolean' ? requires.password : !isV2Ray && !auth.password);
+  const showUUIDInput =
+    autoConnect.homeEnabled ||
+    (typeof requires.uuid === 'boolean' ? requires.uuid : isV2Ray && !auth.v2ray_uuid);
 
   // Valores dos inputs: só mostram quando o input está visível
   const usernameValue = showUsernameInput ? username : '';
@@ -187,38 +207,40 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
 
   // Validação antes de conectar
   const validateForm = () => {
-    if (isV2Ray) {
-      if (!auth.v2ray_uuid && !uuid) return 'UUID obrigatório para V2Ray';
-    } else {
+    if (autoConnect.homeEnabled) {
       if (!auth.username && !username) return 'Usuário obrigatório';
       if (!auth.password && !password) return 'Senha obrigatória';
+      return null;
     }
+    if (showUsernameInput && !auth.username && !username) return 'Usuário obrigatório';
+    if (showPasswordInput && !auth.password && !password) return 'Senha obrigatória';
+    if (showUUIDInput && !auth.v2ray_uuid && !uuid) return 'UUID obrigatório para V2Ray';
     return null;
   };
 
-  // Funções de conexão
+  const prepareCredentials = () => {
+    if (isHysteria) {
+      if (!password.includes(':')) {
+        setPasswordApp(buildHysteriaPassword(username, password));
+      } else {
+        setPasswordApp(password);
+      }
+    }
+    if (isSSH && password.includes(':')) {
+      const parsed = parseHysteriaPassword(password);
+      setUsernameApp(parsed.username);
+      setPasswordApp(parsed.password);
+    }
+  };
+
   const connect = () => {
     try {
       setFormError(null);
       setIsTryingToConnect(true);
-      let originalPassword = password;
-      let originalUsername = username;
-      // Se for hysteria, só concatena se ainda não estiver concatenado
-      if (isHysteria) {
-        if (!password.includes(':')) {
-          setPasswordApp(buildHysteriaPassword(username, password));
-        } else {
-          setPasswordApp(password); // já está concatenado
-        }
-      }
-      // Se for SSH e senha está no formato user:pass, faz o reverso
-      if (isSSH && password.includes(':')) {
-        const parsed = parseHysteriaPassword(password);
-        setUsernameApp(parsed.username);
-        setPasswordApp(parsed.password);
-      }
+      const originalPassword = password;
+      const originalUsername = username;
+      prepareCredentials();
       startConnection();
-      // Restaura valores originais após conectar
       setTimeout(() => {
         setPasswordApp(originalPassword);
         setUsernameApp(originalUsername);
@@ -240,38 +262,54 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
     }
   };
 
-  // Manipula clique do botão de conexão
   const handleConnection = () => {
     setFormError(null);
-    if (!isTryingToConnect) {
-      // Só tenta conectar se não estiver tentando
-      switch (vpnState) {
-        case 'DISCONNECTED':
-        case 'AUTH_FAILED':
-        case 'NO_NETWORK':
-          // Estados onde podemos iniciar conexão
-          const validation = validateForm();
-          if (validation) {
-            setFormError(validation);
-            return;
-          }
-          connect();
-          break;
-        case 'CONNECTED':
-          // Estado conectado - desconectar
-          disconnect();
-          break;
-        default:
-          break;
-      }
-    } else {
-      // Se está tentando conectar, permite cancelar
+
+    if (autoConnect.running) {
+      autoConnect.cancelTest();
       disconnect();
+      return;
+    }
+
+    if (isTryingToConnect) {
+      disconnect();
+      return;
+    }
+
+    switch (vpnState) {
+      case 'DISCONNECTED':
+      case 'AUTH_FAILED':
+      case 'NO_NETWORK': {
+        const validation = validateForm();
+        if (validation) {
+          setFormError(validation);
+          return;
+        }
+        if (autoConnect.homeEnabled) {
+          try {
+            prepareCredentials();
+            autoConnect.startHomeAutoConnect();
+          } catch (e) {
+            setFormError(e instanceof Error ? e.message : 'Falha ao iniciar Auto Conect');
+          }
+          return;
+        }
+        connect();
+        break;
+      }
+      case 'CONNECTED':
+        disconnect();
+        break;
+      default:
+        break;
     }
   };
 
   // Texto e estilo do botão baseado no estado
   const getButtonText = () => {
+    if (autoConnect.running) {
+      return 'Cancelar Teste';
+    }
     if (isTryingToConnect) {
       return 'Cancelar Conexão';
     }
@@ -281,35 +319,34 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
       case 'CONNECTED':
         return 'Desconectar';
       default:
-        return 'Conectar';
+        return autoConnect.homeEnabled ? 'Auto Conectar' : 'Conectar';
     }
   };
 
   const getButtonStyle = () => {
-    if (isTryingToConnect) {
-      return 'from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700';
+    if (autoConnect.running || isTryingToConnect) {
+      return 'bg-amber-500';
     }
     switch (vpnState) {
       case 'CONNECTED':
-        return 'from-red-500 to-red-600 hover:from-red-600 hover:to-red-700';
+        return 'bg-red-500';
       case 'STOPPING':
-        return 'from-orange-500 to-orange-600';
+        return 'bg-orange-500';
       default:
-        // Roxo padrão sugerido para o botão "Conectar"
-        return 'from-[#6205D5] to-[#4B0082] hover:from-[#4B0082] hover:to-[#6205D5]';
+        return 'bg-[var(--accent)]';
     }
   };
 
   return (
-    <section className="card p-6 lg:p-6 xl:p-8 2xl:p-10">
-      <h1 className="text-gradient text-base lg:text-lg xl:text-xl 2xl:text-2xl font-medium text-center mb-4 lg:mb-4 xl:mb-5 2xl:mb-6">
+    <section className="card p-3 md:p-6 xl:p-8 2xl:p-10">
+      <h1 className="text-gradient text-base lg:text-lg xl:text-xl 2xl:text-2xl font-medium text-center mb-3 lg:mb-4 xl:mb-5 2xl:mb-6">
         Dados de Acesso
       </h1>
-      <div className="space-y-4">
+      <div className="space-y-3 md:space-y-4">
         {showUsernameInput && (
           <div className="relative">
             <input
-              className="w-full h-10 lg:h-11 xl:h-12 2xl:h-14 px-3 xl:px-4 rounded-lg 2xl:rounded-xl glass-effect text-white placeholder-gray-400 outline-none focus:border-purple-500 text-sm xl:text-base 2xl:text-lg allow-select"
+              className="w-full min-h-[44px] xl:h-12 2xl:h-14 px-3 xl:px-4 rounded-xl input-field outline-none text-sm xl:text-base 2xl:text-lg allow-select"
               type="text"
               autoCapitalize="none"
               placeholder="Usuário"
@@ -322,16 +359,18 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
         {showPasswordInput && (
           <div className="relative">
             <input
-              className="w-full h-10 lg:h-11 xl:h-12 2xl:h-14 px-3 xl:px-4 pr-10 rounded-lg 2xl:rounded-xl glass-effect text-white placeholder-gray-400 outline-none focus:border-purple-500 text-sm xl:text-base 2xl:text-lg allow-select"
+              className="w-full min-h-[44px] xl:h-12 2xl:h-14 px-3 xl:px-4 pr-11 rounded-xl input-field outline-none text-sm xl:text-base 2xl:text-lg allow-select"
               type={showPassword ? 'text' : 'password'}
               placeholder="Senha"
               value={passwordValue}
               onChange={handlePasswordChange}
             />
             <button
-              className="absolute inset-y-0 right-3 flex items-center text-purple-400 hover:text-purple-300 transition-colors"
+              className="absolute inset-y-0 right-0 min-w-[44px] flex items-center justify-center touch-manipulation"
+              style={{ color: 'var(--text-muted)' }}
               onClick={togglePasswordVisibility}
               type="button"
+              aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
             >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
@@ -341,43 +380,54 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
         {showUUIDInput && (
           <div className="relative">
             <input
-              className="w-full h-10 lg:h-11 xl:h-12 2xl:h-14 px-3 xl:px-4 pr-16 rounded-lg 2xl:rounded-xl glass-effect text-white placeholder-gray-400 outline-none focus:border-purple-500 text-sm xl:text-base 2xl:text-lg allow-select"
+              className="w-full min-h-[44px] xl:h-12 2xl:h-14 px-3 xl:px-4 pr-[5.5rem] rounded-xl input-field outline-none text-sm xl:text-base 2xl:text-lg allow-select"
               type={showUUID ? 'text' : 'password'}
               placeholder="UUID"
               value={uuidValue}
               onChange={handleUUIDChange}
             />
             <button
-              className="absolute inset-y-0 right-8 flex items-center text-purple-400 hover:text-purple-300 transition-colors"
+              className="absolute inset-y-0 right-11 min-w-[44px] flex items-center justify-center touch-manipulation"
+              style={{ color: 'var(--text-muted)' }}
               onClick={toggleUUIDVisibility}
               type="button"
+              aria-label={showUUID ? 'Ocultar UUID' : 'Mostrar UUID'}
             >
               {showUUID ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
-            <div className="absolute right-1 top-1/2 -translate-y-1/2 group">
-              <button className="text-[#b0a8ff] cursor-pointer flex items-center p-1" type="button" tabIndex={-1}>
-                <HelpCircle className="w-4 h-4" />
-              </button>
-              <div className="absolute bottom-full right-0 mb-2 w-72 text-sm bg-[#26074d] text-[#b0a8ff] p-3 rounded-lg shadow-lg z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none border border-[#6205D5]/30">
-                <div className="font-bold mb-1 text-[#b0a8ff]">O que é o UUID?</div>
+            <button
+              className="absolute inset-y-0 right-0 min-w-[44px] flex items-center justify-center touch-manipulation"
+              style={{ color: 'var(--text-muted)' }}
+              onClick={() => setShowUuidHelp((prev) => !prev)}
+              type="button"
+              aria-label="Ajuda sobre UUID"
+            >
+              <HelpCircle className="w-4 h-4" />
+            </button>
+            {showUuidHelp && (
+              <div
+                className="absolute bottom-full right-0 mb-2 w-[min(18rem,calc(100vw-2rem))] text-sm p-3 rounded-xl z-50"
+                style={{ background: 'var(--surface)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+              >
+                <div className="font-bold mb-1" style={{ color: 'var(--text)' }}>O que é o UUID?</div>
                 <div className="mb-1">É a chave única de login do seu V2Ray.</div>
                 <div className="mb-1">Recebida no bot após a compra.</div>
                 <div className="mb-1">
-                  <span className="font-semibold text-[#b0a8ff]">Exemplo:</span>
+                  <span className="font-semibold" style={{ color: 'var(--text)' }}>Exemplo:</span>
                   <br />
-                  <span className="font-mono select-all break-all text-[#b0a8ff]/90">
+                  <span className="font-mono select-all break-all">
                     {crypto.randomUUID ? crypto.randomUUID() : 'e.g. 123e4567-e89b-12d3-a456-426614174000'}
                   </span>
                 </div>
-                <div className="text-[#ff5c8a] font-semibold">⚠️ Copie sem espaços extras!</div>
+                <div className="font-semibold" style={{ color: 'var(--danger)' }}>Copie sem espaços extras.</div>
               </div>
-            </div>
+            )}
           </div>
         )}
 
         {/* Botão de conexão */}
         <button
-          className={`w-full h-10 lg:h-11 xl:h-12 2xl:h-14 text-sm lg:text-base xl:text-lg 2xl:text-xl font-bold rounded-lg 2xl:rounded-xl transition-colors duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center bg-gradient-to-r ${getButtonStyle()}`}
+          className={`w-full min-h-[44px] xl:h-12 2xl:h-14 text-sm lg:text-base xl:text-lg 2xl:text-xl font-semibold rounded-xl text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center touch-manipulation ${getButtonStyle()}`}
           onClick={handleConnection}
           disabled={vpnState === 'STOPPING'}
           title={`Estado atual: ${vpnState}`}
@@ -394,14 +444,14 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
         {/* Botões lado a lado: Registros e Auto Conect */}
         <div className="flex gap-2">
           <button
-            className="w-1/2 h-10 lg:h-11 xl:h-12 2xl:h-14 flex items-center justify-center gap-1 xl:gap-2 text-xs lg:text-sm xl:text-base 2xl:text-lg font-medium rounded-lg 2xl:rounded-xl border border-[#6205D5]/30 bg-[#26074d]/40 text-[#b0a8ff] hover:bg-[#6205D5]/20 hover:border-[#6205D5]/60 hover:text-white transition-colors duration-300 active:scale-[0.98]"
+            className="w-1/2 min-h-[44px] xl:h-12 2xl:h-14 flex items-center justify-center gap-1 xl:gap-2 text-xs lg:text-sm xl:text-base 2xl:text-lg font-medium rounded-xl btn-secondary touch-manipulation"
             onClick={openDialogLogs}
           >
             <Scroll className="w-4 h-4" />
             <span className="font-medium">Registros</span>
           </button>
           <button
-            className="w-1/2 h-10 lg:h-11 xl:h-12 2xl:h-14 flex items-center justify-center gap-1 xl:gap-2 text-xs lg:text-sm xl:text-base 2xl:text-lg font-medium rounded-lg 2xl:rounded-xl border border-[#6205D5]/30 bg-[#26074d]/40 text-[#b0a8ff] hover:bg-[#6205D5]/20 hover:border-[#6205D5]/60 hover:text-white transition-colors duration-300 active:scale-[0.98]"
+            className="w-1/2 min-h-[44px] xl:h-12 2xl:h-14 flex items-center justify-center gap-1 xl:gap-2 text-xs lg:text-sm xl:text-base 2xl:text-lg font-medium rounded-xl btn-secondary touch-manipulation"
             onClick={autoConnect.openModal}
             type="button"
           >
@@ -410,28 +460,6 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
           </button>
         </div>
       </div>
-      {/* Modal de AutoConnect sempre no topo da árvore (portal) */}
-      {typeof window !== 'undefined' && createPortal(
-        <AutoConnectModal
-          open={autoConnect.open}
-          onClose={autoConnect.closeModal}
-          currentConfigName={autoConnect.currentName}
-          totalConfigs={autoConnect.total}
-          testedConfigs={autoConnect.tested}
-          successConfigName={autoConnect.success}
-          running={autoConnect.running}
-          onStart={autoConnect.startAutoConnect}
-          onCancel={autoConnect.cancelTest}
-          error={autoConnect.error}
-          logs={autoConnect.logs}
-          currentTestDuration={autoConnect.currentTestDuration}
-          autoConnectConfig={autoConnect.autoConnectConfig}
-          setAutoConnectConfig={autoConnect.setAutoConnectConfig}
-          showSettings={autoConnect.showSettings}
-          setShowSettings={autoConnect.setShowSettings}
-        />,
-        document.body
-      )}
     </section>
   );
 }

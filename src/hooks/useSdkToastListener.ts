@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { useToast } from './useToast';
 import { useDTunnelEvent } from './useDTunnelEvent';
 
@@ -26,8 +25,21 @@ export function useSdkToastListener() {
 
   // Escuta eventos de notificação genérica do SDK
   useDTunnelEvent('notification', (payload: any) => {
-    const message = typeof payload === 'string' ? payload : payload?.message || 'Notificação';
-    const type = payload?.type || 'info';
-    showToast(message, type);
+    if (typeof payload === 'string') {
+      showToast(payload, 'info');
+      return;
+    }
+    const title = payload?.title ? String(payload.title) : '';
+    const body = payload?.message ? String(payload.message) : '';
+    const message = [title, body].filter(Boolean).join(' — ') || 'Notificação';
+    showToast(message, 'info');
+  });
+
+  useDTunnelEvent('messageError', (payload: any) => {
+    const message =
+      typeof payload === 'string'
+        ? payload
+        : payload?.content || payload?.message || payload?.title || 'Erro no aplicativo';
+    showToast(message, 'error');
   });
 }

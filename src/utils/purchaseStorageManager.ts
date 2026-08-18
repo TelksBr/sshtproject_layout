@@ -16,42 +16,116 @@ export interface PendingPurchase {
   plan_name?: string;
   qr_code?: string;
   ticket_url?: string;
+  kind?: 'purchase' | 'renewal';
 }
+
+export type ValidationSource = 'sales' | 'renewal' | 'checkuser';
 
 export interface SavedCredential {
   id: string;
   created_at: string;
   is_default: boolean;
   is_active: boolean;
-  label?: string; // Nome personalizado pelo usuário
+  label?: string;
   payment_id?: string;
-  
-  // Credenciais SSH (opcional)
+  payment_ids?: string[];
   ssh?: {
     username: string;
     password: string;
   };
-  
-  // Credenciais V2Ray (opcional)
   v2ray?: {
     uuid: string;
   };
-  
-  // Servidores disponíveis
   servers?: Array<{
     name: string;
     host: string;
     port: number;
   }>;
-  
-  // Dados de validação (obtidos via CheckUser) - cache
   validation?: {
     limit?: number;
     expiration_date?: string;
     count_connections?: number;
     expiration_days?: number;
     last_checked?: string;
+    source?: ValidationSource;
   };
+}
+
+export interface NormalizedSalesCredentials {
+  ssh?: { username: string; password: string; limit?: number; expiration_date?: string };
+  v2ray?: { uuid: string; limit?: number; expiration_date?: string };
+  servers?: Array<{ name: string; host: string; port: number }>;
+}
+
+const STALE_MS = 60 * 60 * 1000;
+
+function normalizeKey(value?: string | null): string {
+  return (value || '').trim().toLowerCase();
+}
+
+export function parseExpiration(value?: string | null): Date | null {
+  if (!value || typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  const br = trimmed.match(
+    /^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[ T](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/
+  );
+  if (br) {
+    const day = parseInt(br[1], 10);
+    const month = parseInt(br[2], 10) - 1;
+    const year = parseInt(br[3], 10);
+    const hasTime = Boolean(br[4]);
+    const date = new Date(
+      year,
+      month,
+      day,
+      hasTime ? parseInt(br[4], 10) : 23,
+      hasTime ? parseInt(br[5], 10) : 59,
+      br[6] ? parseInt(br[6], 10) : 59
+    );
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    const [year, month, day] = trimmed.split('-').map(Number);
+    return new Date(year, month - 1, day, 23, 59, 59);
+  }
+
+  const parsed = new Date(trimmed);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+export function normalizeSalesCredentials(response: CredentialsResponse): NormalizedSalesCredentials {
+  const sshSrc = response.ssh_credentials || response.credentials?.ssh;
+  const v2raySrc = response.v2ray_credentials || response.credentials?.v2ray;
+  const servers =
+    response.ssh_credentials?.servers ||
+    response.v2ray_credentials?.servers ||
+    [];
+
+  return {
+    ssh: sshSrc?.username
+      ? {
+          username: sshSrc.username,
+          password: 'password' in sshSrc ? sshSrc.password || '' : '',
+          limit: sshSrc.limit,
+          expiration_date: sshSrc.expiration_date,
+        }
+      : undefined,
+    v2ray: v2raySrc?.uuid
+      ? {
+          uuid: v2raySrc.uuid,
+          limit: v2raySrc.limit,
+          expiration_date: v2raySrc.expiration_date,
+        }
+      : undefined,
+    servers,
+  };
+}
+
+export function getCredentialIdentifier(credential: SavedCredential): string {
+  return credential.ssh?.username || credential.v2ray?.uuid || '';
 }
 
 // =============================
@@ -176,115 +250,113 @@ class PurchaseStorageManager {
   // CREDENCIAIS SALVAS
   // =============================
 
-  /**
-   * Salva credenciais no localStorage (SSH e V2Ray juntos)
-   */
   saveCredentials(credentials: CredentialsResponse, label?: string): string {
+    return this.upsertFromSales(credentials, 'sales', label);
+  }
+
+  findCredentialByIdentity(username?: string, uuid?: string): SavedCredential | null {
+    const userKey = normalizeKey(username);
+    const uuidKey = normalizeKey(uuid);
+    if (!userKey && !uuidKey) return null;
+
+    return this.getSavedCredentials().find((credential) => {
+      if (userKey && normalizeKey(credential.ssh?.username) === userKey) return true;
+      if (uuidKey && normalizeKey(credential.v2ray?.uuid) === uuidKey) return true;
+      return false;
+    }) || null;
+  }
+
+  upsertFromSales(
+    response: CredentialsResponse,
+    source: ValidationSource = 'sales',
+    label?: string
+  ): string {
     try {
-      // Verificar se já existe credencial com este payment_id
-      if (credentials.payment_id && this.hasCredentialByPaymentId(credentials.payment_id)) {
-        return ''; // Retorna vazio para indicar que não salvou
-      }
-      
+      const extracted = normalizeSalesCredentials(response);
+      if (!extracted.ssh && !extracted.v2ray) return '';
+
       const saved = this.getSavedCredentials();
-      
-      // Gerar ID único
+      const existing = this.findCredentialByIdentity(extracted.ssh?.username, extracted.v2ray?.uuid);
+      const paymentId = response.payment_id ? String(response.payment_id) : undefined;
+      const expirationDate = extracted.ssh?.expiration_date || extracted.v2ray?.expiration_date;
+      const limit = extracted.ssh?.limit ?? extracted.v2ray?.limit;
+      const now = new Date().toISOString();
+
+      const validation = {
+        limit,
+        expiration_date: expirationDate,
+        last_checked: now,
+        source,
+      };
+
+      if (existing) {
+        const target = saved.find((item) => item.id === existing.id);
+        if (!target) return '';
+
+        if (extracted.ssh) {
+          target.ssh = {
+            username: extracted.ssh.username,
+            password: extracted.ssh.password || target.ssh?.password || '',
+          };
+        }
+        if (extracted.v2ray) {
+          target.v2ray = { uuid: extracted.v2ray.uuid };
+        }
+        if (extracted.servers?.length) {
+          target.servers = extracted.servers;
+        }
+
+        const ids = new Set(
+          [...(target.payment_ids || []), target.payment_id, paymentId].filter(Boolean) as string[]
+        );
+        target.payment_ids = Array.from(ids);
+        if (paymentId) target.payment_id = paymentId;
+        target.validation = { ...target.validation, ...validation };
+        target.is_active = !this.isCredentialExpired(target);
+
+        saveData(SAVED_CREDENTIALS_KEY, saved);
+        return target.id;
+      }
+
       const id = `cred_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
-      // Criar credencial unificada (SSH + V2Ray juntos)
+      let autoLabel = label;
+      if (!autoLabel) {
+        if (extracted.ssh && extracted.v2ray) autoLabel = `SSH + V2Ray - ${extracted.ssh.username}`;
+        else if (extracted.ssh) autoLabel = `SSH - ${extracted.ssh.username}`;
+        else if (extracted.v2ray) autoLabel = `V2Ray - ${extracted.v2ray.uuid.substring(0, 8)}...`;
+        else autoLabel = 'Credencial';
+      }
+
       const newCred: SavedCredential = {
         id,
-        created_at: new Date().toISOString(),
+        created_at: now,
         is_default: saved.length === 0,
         is_active: true,
-        payment_id: String(credentials.payment_id),
-        servers: []
+        label: autoLabel,
+        payment_id: paymentId,
+        payment_ids: paymentId ? [paymentId] : [],
+        ssh: extracted.ssh
+          ? { username: extracted.ssh.username, password: extracted.ssh.password }
+          : undefined,
+        v2ray: extracted.v2ray ? { uuid: extracted.v2ray.uuid } : undefined,
+        servers: extracted.servers || [],
+        validation,
       };
-      
-      // Adicionar SSH se disponível
-      if (credentials.ssh_credentials) {
-        newCred.ssh = {
-          username: credentials.ssh_credentials.username,
-          password: credentials.ssh_credentials.password
-        };
-        newCred.servers = credentials.ssh_credentials.servers || [];
-        
-        // Cache dos dados de validação
-        newCred.validation = {
-          limit: credentials.ssh_credentials.limit,
-          expiration_date: credentials.ssh_credentials.expiration_date,
-          last_checked: new Date().toISOString()
-        };
-      }
-      
-      // Adicionar V2Ray se disponível
-      if (credentials.v2ray_credentials) {
-        newCred.v2ray = {
-          uuid: credentials.v2ray_credentials.uuid
-        };
-        
-        // Se não tinha servers do SSH, usar do V2Ray
-        if (!newCred.servers?.length) {
-          newCred.servers = credentials.v2ray_credentials.servers || [];
-        }
-        
-        // Cache dos dados de validação (se SSH não definiu)
-        if (!newCred.validation) {
-          newCred.validation = {
-            limit: credentials.v2ray_credentials.limit,
-            expiration_date: credentials.v2ray_credentials.expiration_date,
-            last_checked: new Date().toISOString()
-          };
-        }
-      }
-      
-      // Suporte para formato legado (renovação)
-      if (credentials.credentials) {
-        if (credentials.credentials.ssh) {
-          newCred.ssh = {
-            username: credentials.credentials.ssh.username,
-            password: credentials.credentials.ssh.password
-          };
-          newCred.validation = {
-            limit: credentials.credentials.ssh.limit,
-            expiration_date: credentials.credentials.ssh.expiration_date,
-            last_checked: new Date().toISOString()
-          };
-        }
-        if (credentials.credentials.v2ray) {
-          newCred.v2ray = {
-            uuid: credentials.credentials.v2ray.uuid
-          };
-          if (!newCred.validation) {
-            newCred.validation = {
-              limit: credentials.credentials.v2ray.limit,
-              expiration_date: credentials.credentials.v2ray.expiration_date,
-              last_checked: new Date().toISOString()
-            };
-          }
-        }
-      }
-      
-      // Gerar label automático
-      if (!label) {
-        if (newCred.ssh && newCred.v2ray) {
-          label = `SSH + V2Ray - ${newCred.ssh.username}`;
-        } else if (newCred.ssh) {
-          label = `SSH - ${newCred.ssh.username}`;
-        } else if (newCred.v2ray) {
-          label = `V2Ray - ${newCred.v2ray.uuid.substring(0, 8)}...`;
-        } else {
-          label = 'Credencial';
-        }
-      }
-      newCred.label = label;
-      
+      newCred.is_active = !this.isCredentialExpired(newCred);
+
       saved.push(newCred);
       saveData(SAVED_CREDENTIALS_KEY, saved);
       return id;
-    } catch (error) {
+    } catch {
       return '';
     }
+  }
+
+  isValidationStale(credential: SavedCredential, maxAgeMs: number = STALE_MS): boolean {
+    if (!credential.validation?.last_checked) return true;
+    const checked = new Date(credential.validation.last_checked).getTime();
+    if (Number.isNaN(checked)) return true;
+    return Date.now() - checked > maxAgeMs;
   }
 
   /**
@@ -341,17 +413,18 @@ class PurchaseStorageManager {
     try {
       const credentials = loadData<SavedCredential[]>(SAVED_CREDENTIALS_KEY);
       if (!credentials) return [];
-      
-      // Filtrar credenciais expiradas (opcional - manter para histórico)
-      return credentials.sort((a, b) => {
-        // Default primeiro
-        if (a.is_default && !b.is_default) return -1;
-        if (!a.is_default && b.is_default) return 1;
-        
-        // Mais recente primeiro
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      });
-    } catch (error) {
+
+      return credentials
+        .map((credential) => ({
+          ...credential,
+          is_active: !this.isCredentialExpired(credential),
+        }))
+        .sort((a, b) => {
+          if (a.is_default && !b.is_default) return -1;
+          if (!a.is_default && b.is_default) return 1;
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        });
+    } catch {
       return [];
     }
   }
@@ -368,8 +441,10 @@ class PurchaseStorageManager {
    * Verifica se credencial já existe pelo payment_id
    */
   hasCredentialByPaymentId(paymentId: string | number): boolean {
-    const credentials = this.getSavedCredentials();
-    return credentials.some(c => c.payment_id === String(paymentId));
+    const id = String(paymentId);
+    return this.getSavedCredentials().some(
+      (c) => c.payment_id === id || c.payment_ids?.includes(id)
+    );
   }
 
   /**
@@ -449,45 +524,42 @@ class PurchaseStorageManager {
     }
   }
 
-  /**
-   * Verifica se credencial está expirada (baseado no cache de validação)
-   */
   isCredentialExpired(credential: SavedCredential): boolean {
-    if (!credential.validation?.expiration_date) return false;
-    const now = new Date().getTime();
-    const expiresAt = new Date(credential.validation.expiration_date).getTime();
-    return expiresAt < now;
+    const days = credential.validation?.expiration_days;
+    if (typeof days === 'number' && !Number.isNaN(days)) {
+      return days <= 0;
+    }
+    const expiresAt = parseExpiration(credential.validation?.expiration_date);
+    if (!expiresAt) return false;
+    return expiresAt.getTime() < Date.now();
   }
 
-  /**
-   * Retorna dias até expiração (baseado no cache de validação)
-   */
   getDaysUntilExpiration(credential: SavedCredential): number {
-    if (!credential.validation?.expiration_date) return 999;
-    const now = new Date().getTime();
-    const expiresAt = new Date(credential.validation.expiration_date).getTime();
-    const diff = expiresAt - now;
-    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+    const days = credential.validation?.expiration_days;
+    if (typeof days === 'number' && !Number.isNaN(days)) {
+      return days;
+    }
+    const expiresAt = parseExpiration(credential.validation?.expiration_date);
+    if (!expiresAt) return 999;
+    return Math.ceil((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
   }
-  
-  /**
-   * Atualiza dados de validação (cache do CheckUser)
-   */
+
   updateValidation(id: string, validation: SavedCredential['validation']): boolean {
     try {
       const credentials = this.getSavedCredentials();
-      const target = credentials.find(c => c.id === id);
-      
+      const target = credentials.find((c) => c.id === id);
       if (!target) return false;
 
       target.validation = {
+        ...target.validation,
         ...validation,
-        last_checked: new Date().toISOString()
+        last_checked: new Date().toISOString(),
       };
-      
+      target.is_active = !this.isCredentialExpired(target);
+
       saveData(SAVED_CREDENTIALS_KEY, credentials);
       return true;
-    } catch (error) {
+    } catch {
       return false;
     }
   }

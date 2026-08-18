@@ -1,5 +1,6 @@
 import { getCredentials } from './salesUtils';
 import { purchaseStorage, PendingPurchase } from './purchaseStorageManager';
+import { applyPaidCredentials } from './applyPaidCredentials';
 import { paymentLogger } from './paymentLogger';
 import { CredentialsResponse } from '../types/sales';
 
@@ -118,7 +119,7 @@ class BackgroundPurchaseMonitor {
       const credentials = await this.getCredentialsWithRetry(purchase.payment_id, purchase.order_id);
 
       // Verificar se está completa
-      if (credentials.status === 'completed') {
+      if (credentials.status === 'completed' || credentials.status === 'approved') {
         const hasCredentials = 
           credentials.ssh_credentials || 
           credentials.v2ray_credentials ||
@@ -189,22 +190,31 @@ class BackgroundPurchaseMonitor {
       purchase.payment_id
     );
 
-    // Atualizar status
     purchaseStorage.updatePurchaseStatus(purchase.order_id, 'completed');
 
-    // Salvar credenciais (verifica duplicação automaticamente)
-    const label = purchase.plan_name 
-      ? `Compra ${purchase.plan_name}` 
-      : 'Compra Recente';
-    
-    const credentialId = purchaseStorage.saveCredentials(credentials, label);
-    
-    paymentLogger.info(
-      `Credencial salva com sucesso`,
-      { credentialId },
-      purchase.order_id,
-      purchase.payment_id
-    );
+    const label = purchase.plan_name
+      ? `${purchase.kind === 'renewal' ? 'Renovação' : 'Compra'} ${purchase.plan_name}`
+      : purchase.kind === 'renewal' ? 'Renovação Recente' : 'Compra Recente';
+
+    applyPaidCredentials(
+      credentials,
+      purchase.kind === 'renewal' ? 'renewal' : 'sales',
+      label
+    ).then((credentialId) => {
+      paymentLogger.info(
+        `Credencial salva com sucesso`,
+        { credentialId },
+        purchase.order_id,
+        purchase.payment_id
+      );
+    }).catch((error) => {
+      paymentLogger.error(
+        `Falha ao aplicar credenciais pagas`,
+        { error: String(error) },
+        purchase.order_id,
+        purchase.payment_id
+      );
+    });
 
     // Remover da lista de pendentes após um delay
     setTimeout(() => {

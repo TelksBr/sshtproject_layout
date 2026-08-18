@@ -16,6 +16,14 @@ export function useModalRenderer() {
       if (currentModal === 'privacy') {
         return <ModalComponent onClose={() => setCurrentModal(null)} onAccept={() => setCurrentModal(null)} />;
       }
+      if (currentModal === 'buy') {
+        return (
+          <ModalComponent
+            onClose={() => setCurrentModal(null)}
+            onOpenCredentials={() => setCurrentModal('credentials')}
+          />
+        );
+      }
       return <ModalComponent onClose={() => setCurrentModal(null)} />;
     },
     []

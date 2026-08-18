@@ -135,7 +135,7 @@ export function RecoveryModal({ onClose }: RecoveryModalProps) {
             <button
               onClick={handleRecoverySubmit}
               disabled={isLoading || !email.trim()}
-              className="flex-1 py-3 px-4 bg-gradient-to-r from-[#6205D5] to-[#4B0082] hover:from-[#4B0082] hover:to-[#6205D5] disabled:bg-gray-500 text-white rounded-lg transition-all duration-200 flex items-center justify-center font-semibold shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
+              className="flex-1 py-3 px-4 bg-gradient-to-r from-[#8b5cf6] to-[#7c3aed] hover:from-[#7c3aed] hover:to-[#8b5cf6] disabled:bg-gray-500 text-white rounded-lg transition-all duration-200 flex items-center justify-center font-semibold shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>

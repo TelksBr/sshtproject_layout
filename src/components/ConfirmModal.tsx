@@ -41,10 +41,10 @@ export function ConfirmModal({
         };
       default:
         return {
-          border: 'border-[#6205D5]/50',
-          iconBg: 'bg-[#6205D5]/20',
-          iconColor: 'text-[#6205D5]',
-          confirmBg: 'bg-[#6205D5] hover:bg-[#4B0082]'
+          border: 'border-[#8b5cf6]/50',
+          iconBg: 'bg-[#8b5cf6]/20',
+          iconColor: 'text-[#8b5cf6]',
+          confirmBg: 'bg-[#8b5cf6] hover:bg-[#7c3aed]'
         };
     }
   };
@@ -54,7 +54,8 @@ export function ConfirmModal({
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[70] p-4">
       <div 
-        className={`bg-gradient-to-br from-[#1a0628] to-[#2a1038] rounded-lg border-2 ${colors.border} p-6 max-w-md w-full animate-in zoom-in-95 duration-200`}
+        className={`rounded-2xl border ${colors.border} p-6 max-w-md w-full`}
+        style={{ background: 'var(--surface)' }}
       >
         {/* Header */}
         <div className="flex items-start gap-4 mb-4">

@@ -16,15 +16,15 @@ export function Faq({ onClose }: FaqProps) {
         </div>
 
         <div className="grid gap-4 mb-8">
-        <div className="card bg-[#26074d]/30 border border-[#6205D5]/20 p-4 rounded-lg">
-            <h3 className="text-lg font-semibold mb-3 text-[#b0a8ff] flex items-center gap-2">
+        <div className="card bg-[#1a1624]/30 border border-[#8b5cf6]/20 p-4 rounded-lg">
+            <h3 className="text-lg font-semibold mb-3 text-[#b7abc9] flex items-center gap-2">
               <HelpCircle className="w-5 h-5" />
               O que é a internet BugHost?
             </h3>
-            <p className="text-[#b0a8ff]/80 mb-4">
+            <p className="text-[#b7abc9]/80 mb-4">
               A Net Free é um serviço que permite acesso à internet mesmo sem créditos na operadora, utilizando um sistema de proxy através de URLs permitidas.
             </p>
-            <div className="space-y-4 text-[#b0a8ff]/80">
+            <div className="space-y-4 text-[#b7abc9]/80">
               <p>
                 Funcionamento: Seu dispositivo se conecta ao nosso proxy, que redireciona o tráfego para nossos servidores e então para a internet global.
               </p>
@@ -43,12 +43,12 @@ export function Faq({ onClose }: FaqProps) {
             </div>
           </div>
 
-          <div className="card bg-[#26074d]/30 border border-[#6205D5]/20 p-4 rounded-lg">
-            <h3 className="text-lg font-semibold mb-3 text-[#b0a8ff] flex items-center gap-2">
+          <div className="card bg-[#1a1624]/30 border border-[#8b5cf6]/20 p-4 rounded-lg">
+            <h3 className="text-lg font-semibold mb-3 text-[#b7abc9] flex items-center gap-2">
               <HelpCircle className="w-5 h-5" />
               Como Compartilhar?
             </h3>
-            <div className="space-y-4 text-[#b0a8ff]/80">
+            <div className="space-y-4 text-[#b7abc9]/80">
               <p>
                 Existem diferentes métodos para compartilhar sua conexão:
               </p>
@@ -63,7 +63,7 @@ export function Faq({ onClose }: FaqProps) {
                   <h4 className="font-medium mb-2">Para dispositivos com ROOT:</h4>
                   <p>Use o app VPN Hotspot para compartilhamento direto sem proxy. 
                   <a href="https://play.google.com/store/apps/details?id=be.mygod.vpnhotspot" 
-                     className="text-[#b0a8ff] hover:underline ml-1">
+                     className="text-[#b7abc9] hover:underline ml-1">
                     Baixar na Play Store
                   </a>
                   </p>
@@ -74,11 +74,11 @@ export function Faq({ onClose }: FaqProps) {
                   <p>Recomendamos o PdaNet+, que oferece suporte para Windows e alguns modelos de Smart TV. 
                     <div className="mt-2 space-y-2">
                       <a href="https://play.google.com/store/apps/details?id=com.pdanet" 
-                         className="text-[#b0a8ff] hover:underline block">
+                         className="text-[#b7abc9] hover:underline block">
                         Download na Play Store
                       </a>
                       <a href="https://pdanet.co/install/" 
-                         className="text-[#b0a8ff] hover:underline block">
+                         className="text-[#b7abc9] hover:underline block">
                         Site Oficial (Windows e outros downloads)
                       </a>
                     </div>
@@ -88,12 +88,12 @@ export function Faq({ onClose }: FaqProps) {
             </div>
           </div>
 
-          <div className="card bg-[#26074d]/30 border border-[#6205D5]/20 p-4 rounded-lg">
-            <h3 className="text-lg font-semibold mb-3 text-[#b0a8ff] flex items-center gap-2">
+          <div className="card bg-[#1a1624]/30 border border-[#8b5cf6]/20 p-4 rounded-lg">
+            <h3 className="text-lg font-semibold mb-3 text-[#b7abc9] flex items-center gap-2">
               <HelpCircle className="w-5 h-5" />
               Como usar V2Ray?
             </h3>
-            <div className="space-y-4 text-[#b0a8ff]/80">
+            <div className="space-y-4 text-[#b7abc9]/80">
               <p>
                 Para usar o V2Ray, siga estas etapas:
               </p>
@@ -123,12 +123,12 @@ export function Faq({ onClose }: FaqProps) {
             </div>
           </div>
 
-          <div className="card bg-[#26074d]/30 border border-[#6205D5]/20 p-4 rounded-lg">
-            <h3 className="text-lg font-semibold mb-3 text-[#b0a8ff] flex items-center gap-2">
+          <div className="card bg-[#1a1624]/30 border border-[#8b5cf6]/20 p-4 rounded-lg">
+            <h3 className="text-lg font-semibold mb-3 text-[#b7abc9] flex items-center gap-2">
               <HelpCircle className="w-5 h-5" />
               Posso jogar online?
             </h3>
-            <div className="space-y-4 text-[#b0a8ff]/80">
+            <div className="space-y-4 text-[#b7abc9]/80">
               <p>
                 Não oferecemos suporte oficial para jogos online devido à complexidade dos fatores envolvidos.
               </p>
@@ -161,12 +161,12 @@ export function Faq({ onClose }: FaqProps) {
             </div>
           </div>
 
-          <div className="card bg-[#26074d]/30 border border-[#6205D5]/20 p-4 rounded-lg">
-            <h3 className="text-lg font-semibold mb-3 text-[#b0a8ff] flex items-center gap-2">
+          <div className="card bg-[#1a1624]/30 border border-[#8b5cf6]/20 p-4 rounded-lg">
+            <h3 className="text-lg font-semibold mb-3 text-[#b7abc9] flex items-center gap-2">
               <HelpCircle className="w-5 h-5" />
               Posso baixar torrent?
             </h3>
-            <div className="space-y-4 text-[#b0a8ff]/80">
+            <div className="space-y-4 text-[#b7abc9]/80">
               <p>
                 Nossos servidores não possuem bloqueio específico para tráfego P2P (torrent), porém existem considerações importantes:
               </p>

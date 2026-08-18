@@ -66,7 +66,7 @@ export function Sheet({
       role="button"
       tabIndex={0}
       aria-label="Fechar"
-      className={`fixed inset-0 z-[9998] bg-black/50 backdrop-blur-sm cursor-pointer touch-manipulation ${overlayClassName}`}
+      className={`fixed inset-0 z-[9998] bg-black/50 cursor-pointer touch-manipulation ${overlayClassName}`}
       style={{ pointerEvents: 'auto' }}
       onClick={(e) => {
         e.stopPropagation();

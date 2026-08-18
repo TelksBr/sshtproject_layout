@@ -20,11 +20,11 @@ export function CleanDataConfirm({ onClose }: CleanDataConfirmProps) {
             <AlertTriangle className="w-8 h-8 text-red-400" />
           </div>
 
-          <h3 className="text-lg font-medium text-[#b0a8ff] mb-4">
+          <h3 className="text-lg font-medium text-[#b7abc9] mb-4">
             Atenção!
           </h3>
 
-          <div className="space-y-4 text-[#b0a8ff]/80 mb-6">
+          <div className="space-y-4 text-[#b7abc9]/80 mb-6">
             <p>
               Ao limpar os dados do aplicativo, todas as configurações serão removidas, incluindo:
             </p>
@@ -33,8 +33,8 @@ export function CleanDataConfirm({ onClose }: CleanDataConfirmProps) {
               <li>Dados de usuário</li>
               <li>Preferências do aplicativo</li>
             </ul>
-            <div className="flex items-center justify-center gap-2 p-4 rounded-lg bg-[#100322]/50 border border-[#6205D5]/20 text-[#b0a8ff]/70">
-              <Wifi className="w-5 h-5 text-[#6205D5]" />
+            <div className="flex items-center justify-center gap-2 p-4 rounded-lg bg-[#14111c]/50 border border-[#8b5cf6]/20 text-[#b7abc9]/70">
+              <Wifi className="w-5 h-5 text-[#8b5cf6]" />
               <p className="text-sm">
                 É necessário ter uma conexão estável com a internet para baixar as configurações novamente.
               </p>
@@ -51,7 +51,7 @@ export function CleanDataConfirm({ onClose }: CleanDataConfirmProps) {
             </button>
             <button
               onClick={onClose}
-              className="w-full h-12 rounded-lg font-medium bg-[#26074d]/50 text-[#b0a8ff] hover:bg-[#26074d]/70 transition-colors"
+              className="w-full h-12 rounded-lg font-medium bg-[#1a1624]/50 text-[#b7abc9] hover:bg-[#1a1624]/70 transition-colors"
             >
               Cancelar
             </button>

@@ -200,7 +200,7 @@ button:active,
 .btn-connect {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg, #6205D5 0%, #7c4dff 100%);
+  background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
   box-shadow: 0 4px 16px rgba(98, 5, 213, 0.4);
   transition: all 0.3s ease;
 }
@@ -269,7 +269,7 @@ button:active,
 /* Card ativo com brilho */
 .card-active {
   position: relative;
-  border: 2px solid #6205D5 !important;
+  border: 2px solid #8b5cf6 !important;
   background: linear-gradient(135deg, rgba(98, 5, 213, 0.15) 0%, rgba(124, 77, 255, 0.1) 100%);
 }
 
@@ -500,7 +500,7 @@ button:active,
   position: absolute;
   bottom: 0;
   width: 2px;
-  background: linear-gradient(to top, #6205D5, #7c4dff);
+  background: linear-gradient(to top, #8b5cf6, #a78bfa);
   transition: height 0.3s ease;
 }
 
@@ -513,7 +513,7 @@ button:active,
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(to right, transparent, #6205D5, transparent);
+  background: linear-gradient(to right, transparent, #8b5cf6, transparent);
   opacity: 0;
   transition: opacity 0.3s;
 }
@@ -532,7 +532,7 @@ button:active,
 
 .progress-ring-circle {
   fill: none;
-  stroke: #6205D5;
+  stroke: #8b5cf6;
   stroke-width: 4;
   stroke-linecap: round;
   transition: stroke-dashoffset 0.3s ease;

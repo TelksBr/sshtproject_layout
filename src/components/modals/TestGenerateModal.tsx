@@ -64,7 +64,7 @@ export const TestGenerateModal: React.FC<TestGenerateModalProps> = ({ onClose })
         <form onSubmit={handleSubmit} className="flex flex-col gap-6 p-4 animate-fade-in">
           <div className="flex flex-col gap-2">
             <label htmlFor="test-email" className="text-white font-semibold text-base flex items-center gap-2">
-              <Mail className="w-5 h-5 text-[#b0a8ff]" /> Email para receber as credenciais:
+              <Mail className="w-5 h-5 text-[#b7abc9]" /> Email para receber as credenciais:
             </label>
             <input
               id="test-email"
@@ -74,7 +74,7 @@ export const TestGenerateModal: React.FC<TestGenerateModalProps> = ({ onClose })
               required
               disabled={loading}
               placeholder="seu@email.com"
-              className="rounded-lg px-4 py-2 bg-[#1a0628] border-2 border-[#6205D5]/40 text-white focus:outline-none focus:ring-2 focus:ring-[#6205D5] shadow-sm transition-all"
+              className="rounded-lg px-4 py-2 bg-[#0c0a12] border-2 border-[#8b5cf6]/40 text-white focus:outline-none focus:ring-2 focus:ring-[#8b5cf6] shadow-sm transition-all"
               style={{ width: '100%' }}
               autoFocus
             />
@@ -82,7 +82,7 @@ export const TestGenerateModal: React.FC<TestGenerateModalProps> = ({ onClose })
           <button
             type="submit"
             disabled={loading || !email}
-            className="flex items-center justify-center gap-2 bg-gradient-to-r from-[#6205D5] to-[#4B0082] hover:from-[#4B0082] hover:to-[#6205D5] text-white font-bold py-2 px-6 rounded-lg shadow-lg transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-2 bg-gradient-to-r from-[#8b5cf6] to-[#7c3aed] hover:from-[#7c3aed] hover:to-[#8b5cf6] text-white font-bold py-2 px-6 rounded-lg shadow-lg transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {loading && <span className="loader mr-2"></span>}
             {loading ? 'Enviando...' : 'Gerar e Enviar'}
@@ -94,27 +94,27 @@ export const TestGenerateModal: React.FC<TestGenerateModalProps> = ({ onClose })
       {success && (
         <div className="flex flex-col items-center gap-5 p-6 animate-fade-in">
           <div className="flex items-center gap-3 mb-2">
-            <Mail className="w-8 h-8 text-[#7c4dff] animate-bounce" />
+            <Mail className="w-8 h-8 text-[#a78bfa] animate-bounce" />
             <span className="text-xl font-bold text-white drop-shadow">Credenciais enviadas!</span>
           </div>
-          <div className="bg-[#1a0628]/80 rounded-lg p-4 border border-[#6205D5]/30 shadow-inner w-full max-w-md">
-            <div className="text-white text-base mb-2"><b>Email:</b> <span className="text-[#b0a8ff]">{success.email}</span></div>
+          <div className="bg-[#0c0a12]/80 rounded-lg p-4 border border-[#8b5cf6]/30 shadow-inner w-full max-w-md">
+            <div className="text-white text-base mb-2"><b>Email:</b> <span className="text-[#b7abc9]">{success.email}</span></div>
             {success.credentials_type?.length > 0 && (
-              <div className="text-white text-base mb-2"><b>Tipos:</b> <span className="text-[#b0a8ff]">{success.credentials_type.join(', ')}</span></div>
+              <div className="text-white text-base mb-2"><b>Tipos:</b> <span className="text-[#b7abc9]">{success.credentials_type.join(', ')}</span></div>
             )}
             {success.expires_in_hours && (
-              <div className="text-white text-base mb-2"><b>Expira em:</b> <span className="text-[#b0a8ff]">{success.expires_in_hours} hora(s)</span></div>
+              <div className="text-white text-base mb-2"><b>Expira em:</b> <span className="text-[#b7abc9]">{success.expires_in_hours} hora(s)</span></div>
             )}
             {success.expiration_date && (
-              <div className="text-white text-base mb-2"><b>Validade:</b> <span className="text-[#b0a8ff]">{new Date(success.expiration_date).toLocaleString()}</span></div>
+              <div className="text-white text-base mb-2"><b>Validade:</b> <span className="text-[#b7abc9]">{new Date(success.expiration_date).toLocaleString()}</span></div>
             )}
             {success.sent_at && (
-              <div className="text-white text-base mb-2"><b>Enviado em:</b> <span className="text-[#b0a8ff]">{new Date(success.sent_at).toLocaleString()}</span></div>
+              <div className="text-white text-base mb-2"><b>Enviado em:</b> <span className="text-[#b7abc9]">{new Date(success.sent_at).toLocaleString()}</span></div>
             )}
           </div>
           <button
             onClick={onClose}
-            className="mt-2 bg-gradient-to-r from-[#6205D5] to-[#4B0082] hover:from-[#4B0082] hover:to-[#6205D5] text-white font-bold py-2 px-8 rounded-lg shadow-lg transition-all duration-200"
+            className="mt-2 bg-gradient-to-r from-[#8b5cf6] to-[#7c3aed] hover:from-[#7c3aed] hover:to-[#8b5cf6] text-white font-bold py-2 px-8 rounded-lg shadow-lg transition-all duration-200"
           >Fechar</button>
         </div>
       )}
@@ -125,7 +125,7 @@ export const TestGenerateModal: React.FC<TestGenerateModalProps> = ({ onClose })
             <Timer className="w-8 h-8 text-yellow-400 animate-pulse" />
             <span className="text-xl font-bold text-yellow-300 drop-shadow">Aguarde para novo teste</span>
           </div>
-          <div className="bg-[#1a0628]/80 rounded-lg p-4 border border-yellow-400/30 shadow-inner w-full max-w-md">
+          <div className="bg-[#0c0a12]/80 rounded-lg p-4 border border-yellow-400/30 shadow-inner w-full max-w-md">
             <div className="text-yellow-200 text-base text-center">
               Você deve aguardar <b>{cooldown.hours_remaining} hora(s)</b> para gerar um novo teste gratuito.<br />
               Tente novamente após <b>{Math.ceil(cooldown.retry_after / 60)} minutos</b>.
@@ -144,7 +144,7 @@ export const TestGenerateModal: React.FC<TestGenerateModalProps> = ({ onClose })
         @keyframes fadeIn { from { opacity: 0; transform: translateY(16px);} to { opacity: 1; transform: none; } }
         .animate-shake { animation: shake 0.3s; }
         @keyframes shake { 10%, 90% { transform: translateX(-2px); } 20%, 80% { transform: translateX(4px); } 30%, 50%, 70% { transform: translateX(-8px); } 40%, 60% { transform: translateX(8px); } }
-        .loader { border: 3px solid #b0a8ff; border-top: 3px solid #6205D5; border-radius: 50%; width: 18px; height: 18px; animation: spin 0.7s linear infinite; display: inline-block; }
+        .loader { border: 3px solid #b7abc9; border-top: 3px solid #8b5cf6; border-radius: 50%; width: 18px; height: 18px; animation: spin 0.7s linear infinite; display: inline-block; }
         @keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }
       `}</style>
     </Modal>

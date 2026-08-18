@@ -1,19 +1,56 @@
 import { startConnection, stopConnection, getConnectionState } from './appFunctions';
 
-// Tipos para configuração do autoconecte
 export interface AutoConnectConfig {
-  fetchTimeout: number;     // Timeout do fetch (ms)
-  connectionTimeout: number; // Timeout da conexão (ms)
-  selectedCategories: number[]; // IDs das categorias selecionadas (vazio = todas)
-  configType: 'all' | 'ssh' | 'v2ray'; // Tipo de config a testar
+  fetchTimeout: number;
+  connectionTimeout: number;
+  selectedCategories: number[];
+  configType: 'all' | 'ssh' | 'v2ray';
 }
+
+export type AutoConnectPhase =
+  | 'select'
+  | 'connecting'
+  | 'wait_vpn'
+  | 'check_internet'
+  | 'next';
 
 export const DEFAULT_AUTO_CONNECT_CONFIG: AutoConnectConfig = {
   fetchTimeout: 4000,
   connectionTimeout: 10000,
   selectedCategories: [],
-  configType: 'all'
+  configType: 'all',
 };
+
+export function matchesConfigType(mode: string | undefined, configType: AutoConnectConfig['configType']): boolean {
+  if (configType === 'all') return true;
+  const m = (mode || '').toLowerCase();
+  if (configType === 'ssh') {
+    return m.includes('ssh') || m.includes('proxy') || m.includes('socks');
+  }
+  if (configType === 'v2ray') {
+    return m.includes('v2ray') || m.includes('vmess') || m.includes('vless');
+  }
+  return true;
+}
+
+export function filterConfigsForAutoConnect<T extends { category_id?: number; categoryId?: number; mode?: string }>(
+  configs: T[],
+  autoConnectConfig: AutoConnectConfig
+): T[] {
+  let filtered = configs;
+
+  if (autoConnectConfig.selectedCategories.length > 0) {
+    filtered = filtered.filter((config) =>
+      autoConnectConfig.selectedCategories.includes(config.category_id ?? config.categoryId ?? -1)
+    );
+  }
+
+  if (autoConnectConfig.configType !== 'all') {
+    filtered = filtered.filter((config) => matchesConfigType(config.mode, autoConnectConfig.configType));
+  }
+
+  return filtered;
+}
 
 async function testInternet(timeout = 4000): Promise<boolean> {
   try {
@@ -27,19 +64,20 @@ async function testInternet(timeout = 4000): Promise<boolean> {
   }
 }
 
-async function waitForConnectionState(targetState: string, timeout: number, cancelRef?: React.MutableRefObject<{ cancelled: boolean }>): Promise<boolean> {
+async function waitForConnectionState(
+  targetState: string,
+  timeout: number,
+  cancelRef?: React.MutableRefObject<{ cancelled: boolean }>
+): Promise<boolean> {
   const start = Date.now();
   while (Date.now() - start < timeout) {
     if (cancelRef?.current?.cancelled) return false;
     const state = getConnectionState();
     if (state === targetState) return true;
-    await new Promise(res => setTimeout(res, 500));
+    await new Promise((res) => setTimeout(res, 500));
   }
   return false;
 }
-
-// Remova qualquer execução automática do teste daqui. 
-// Apenas exporte a função, não execute nada ao importar este arquivo.
 
 export async function autoConnectTest({
   configs,
@@ -51,45 +89,27 @@ export async function autoConnectTest({
   setSuccess,
   cancelRef,
   onTestResult,
-  autoConnectConfig = DEFAULT_AUTO_CONNECT_CONFIG, 
+  onPhase,
+  autoConnectConfig = DEFAULT_AUTO_CONNECT_CONFIG,
 }: {
-  configs: any[],
-  setCurrentName: (name: string) => void,
-  setTested: (n: number) => void,
-  setActiveConfig: (id: any) => void,
-  setActiveConfigState: (cfg: any) => void,
-  setSelectedCategory: (cat: any) => void,
-  setSuccess: (name: string | null) => void,
-  cancelRef: React.MutableRefObject<{ cancelled: boolean }>,
-  onTestResult?: (configName: string, success: boolean, message?: string) => void,
-  autoConnectConfig?: AutoConnectConfig,
+  configs: any[];
+  setCurrentName: (name: string) => void;
+  setTested: (n: number) => void;
+  setActiveConfig: (id: any) => void;
+  setActiveConfigState: (cfg: any) => void;
+  setSelectedCategory: (cat: any) => void;
+  setSuccess: (name: string | null) => void;
+  cancelRef: React.MutableRefObject<{ cancelled: boolean }>;
+  onTestResult?: (configName: string, success: boolean, message?: string) => void;
+  onPhase?: (phase: AutoConnectPhase, configName: string) => void;
+  autoConnectConfig?: AutoConnectConfig;
 }): Promise<boolean> {
-  // Filtra configs baseado nas configurações
-  let filteredConfigs = configs;
-  
-  // Filtro por categoria (os configs já vêm com category_id quando flatMap é usado no hook)
-  if (autoConnectConfig.selectedCategories.length > 0) {
-    filteredConfigs = filteredConfigs.filter(config => 
-      autoConnectConfig.selectedCategories.includes(config.category_id || config.categoryId)
-    );
-  }
-  
-  // Filtro por tipo de configuração
-  if (autoConnectConfig.configType !== 'all') {
-    filteredConfigs = filteredConfigs.filter(config => {
-      const mode = config.mode?.toLowerCase() || '';
-      if (autoConnectConfig.configType === 'ssh') {
-        return mode.includes('ssh') || mode.includes('proxy') || mode.includes('socks');
-      } else if (autoConnectConfig.configType === 'v2ray') {
-        return mode.includes('v2ray') || mode.includes('vmess') || mode.includes('vless');
-      }
-      return true;
-    });
-  }
+  const filteredConfigs = filterConfigsForAutoConnect(configs, autoConnectConfig);
 
   for (let i = 0; i < filteredConfigs.length; i++) {
     if (cancelRef.current.cancelled) return false;
     const config = filteredConfigs[i];
+    onPhase?.('select', config.name);
     setCurrentName(config.name);
     setTested(i + 1);
 
@@ -97,28 +117,34 @@ export async function autoConnectTest({
     setActiveConfigState(config);
 
     try {
+      onPhase?.('connecting', config.name);
       startConnection();
 
-      const connected = await waitForConnectionState('CONNECTED', autoConnectConfig.connectionTimeout, cancelRef);
+      onPhase?.('wait_vpn', config.name);
+      const connected = await waitForConnectionState(
+        'CONNECTED',
+        autoConnectConfig.connectionTimeout,
+        cancelRef
+      );
 
       if (cancelRef.current.cancelled) return false;
 
       if (connected) {
+        onPhase?.('check_internet', config.name);
         const internetOk = await testInternet(autoConnectConfig.fetchTimeout);
         if (cancelRef.current.cancelled) return false;
-        
+
         if (internetOk) {
-          // Salva a config funcional como ativa
           setActiveConfig(config.id);
           setSuccess(config.name);
           setSelectedCategory(null);
-          onTestResult?.(config.name, true, 'Conexão bem-sucedida!');
+          onTestResult?.(config.name, true, 'Conexão bem-sucedida com internet');
           return true;
         } else {
-          onTestResult?.(config.name, false, 'Sem acesso à internet');
+          onTestResult?.(config.name, false, 'VPN conectou, mas sem acesso à internet');
         }
       } else {
-        onTestResult?.(config.name, false, 'Falha na conexão VPN');
+        onTestResult?.(config.name, false, 'Timeout aguardando estado CONNECTED');
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Erro desconhecido';
@@ -126,9 +152,11 @@ export async function autoConnectTest({
     }
 
     stopConnection();
-    // Removido o intervalo entre testes - prossegue imediatamente para o próximo
+    if (i < filteredConfigs.length - 1) {
+      onPhase?.('next', config.name);
+    }
   }
-  
+
   setSuccess(null);
   return false;
 }

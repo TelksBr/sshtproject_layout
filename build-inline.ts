@@ -72,7 +72,7 @@ const finalHtml = `<!DOCTYPE html>
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="theme-color" content="#2A0A3E" />
+    <meta name="theme-color" content="#14111c" />
     <meta name="mobile-web-app-capable" content="yes" />
     
     <!-- Meta tags específicas para WebView Android -->

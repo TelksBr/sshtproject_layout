@@ -30,7 +30,7 @@ export function ToastContainer() {
         return 'bg-yellow-600/90 border-yellow-500 text-white';
       case 'info':
       default:
-        return 'bg-[#6205D5]/90 border-[#6205D5] text-white';
+        return 'bg-[#8b5cf6]/90 border-[#8b5cf6] text-white';
     }
   };
 

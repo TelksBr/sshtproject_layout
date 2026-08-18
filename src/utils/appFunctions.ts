@@ -77,9 +77,12 @@ export function openDialogLogs(): void {
 export function getDefaultConfig(): ConfigItem | null {
   const sdk = getSdk();
   if (sdk?.config) {
-    return sdk.config.getDefaultConfig() as ConfigItem | null;
+    return (sdk.config.getDefaultConfig() || sdk.config.getSelectedConfig()) as ConfigItem | null;
   }
-  return callJson<ConfigItem>('DtGetDefaultConfig', 'execute');
+  return (
+    callJson<ConfigItem>('DtGetDefaultConfig', 'execute') ||
+    callJson<ConfigItem>('DtGetSelectedConfig', 'execute')
+  );
 }
 
 // User Credentials Functions (via sdk.config)
@@ -210,9 +213,13 @@ export function getLocalIP(): string | null {
 
 export function checkUserStatus(): void {
   const sdk = getSdk();
-  if (sdk?.main) {
-    sdk.main.startCheckUser();
-    return;
+  try {
+    if (typeof sdk?.main?.startCheckUser === 'function') {
+      sdk.main.startCheckUser();
+      return;
+    }
+  } catch {
+    /* fallback abaixo */
   }
   callVoid('DtStartCheckUser', 'execute');
 }
@@ -341,32 +348,35 @@ export function setActiveConfig(configId: number): boolean {
 
 export function getActiveConfig(): ConfigItem | null {
   try {
-    const sdk = getSdk();
-    if (sdk?.config) {
-      return sdk.config.getDefaultConfig() as ConfigItem | null;
-    }
-    return callJson<ConfigItem>('DtGetDefaultConfig', 'execute');
+    return getDefaultConfig();
   } catch {
     return null;
   }
+}
+
+function fieldRequired(
+  requiresFlag: boolean | undefined,
+  bakedValue: string | undefined,
+  fallback: boolean
+): boolean {
+  if (typeof requiresFlag === 'boolean') return requiresFlag;
+  if (bakedValue) return false;
+  return fallback;
 }
 
 export function shouldShowInput(type: 'username' | 'password' | 'uuid'): boolean {
   const config = getActiveConfig();
   if (!config) return true;
 
-  if (config.mode?.toLowerCase().startsWith('v2ray')) {
-    if (type === 'uuid') return !config.auth?.v2ray_uuid;
-    return false;
-  }
+  const isV2Ray = Boolean(config.mode?.toLowerCase().startsWith('v2ray'));
 
   switch (type) {
     case 'username':
-      return !config.auth?.username;
+      return fieldRequired(config.requires_username, config.auth?.username, !isV2Ray);
     case 'password':
-      return !config.auth?.password;
+      return fieldRequired(config.requires_password, config.auth?.password, !isV2Ray);
     case 'uuid':
-      return false;
+      return fieldRequired(config.requires_uuid, config.auth?.v2ray_uuid, isV2Ray);
     default:
       return true;
   }
@@ -424,11 +434,21 @@ export function openUrl(url: string): unknown {
 
 export function openExternalUrl(uri: string): unknown {
   const sdk = getSdk();
-  if (sdk?.android) {
+  if (typeof sdk?.android?.openExternalUrl === 'function') {
     sdk.android.openExternalUrl(uri);
     return null;
   }
-  return call('DtStartWebViewActivity', 'execute', [uri]);
+  return call('DtOpenExternalUrl', 'execute', [uri]);
+}
+
+export function getVpnLogs(): Record<string, string>[] {
+  const sdk = getSdk();
+  if (typeof sdk?.main?.getLogs === 'function') {
+    const logs = sdk.main.getLogs();
+    return Array.isArray(logs) ? logs : [];
+  }
+  const parsed = callJson<Record<string, string>[]>('DtGetLogs', 'execute');
+  return Array.isArray(parsed) ? parsed : [];
 }
 
 // Validação de credenciais setadas
@@ -468,4 +488,132 @@ export function verifyCredentialsSetted(
   }
 
   return result;
+}
+
+export function isVpnRunning(): boolean {
+  const sdk = getSdk();
+  if (typeof sdk?.main?.isVpnRunning === 'function') {
+    return Boolean(sdk.main.isVpnRunning());
+  }
+  return Boolean(call('DtIsVpnRunning', 'execute'));
+}
+
+export function getRemainingConnectionTime(): number | null {
+  const sdk = getSdk();
+  if (typeof sdk?.main?.getRemainingConnectionTime === 'function') {
+    const v = sdk.main.getRemainingConnectionTime();
+    return v == null ? null : Number(v);
+  }
+  const v = call('DtGetRemainingConnectionTime', 'execute');
+  return v == null ? null : Number(v);
+}
+
+export function getRemainingConnectionTimerText(): string | null {
+  const sdk = getSdk();
+  if (typeof sdk?.main?.getRemainingConnectionTimerText === 'function') {
+    const v = sdk.main.getRemainingConnectionTimerText();
+    return v == null ? null : String(v);
+  }
+  const v = call('DtGetRemainingConnectionTimerText', 'execute');
+  return v == null ? null : String(v);
+}
+
+export function getLastVpnError(): string | null {
+  const sdk = getSdk();
+  if (typeof sdk?.main?.getLastVpnError === 'function') {
+    const v = sdk.main.getLastVpnError();
+    return v == null ? null : String(v);
+  }
+  const v = call('DtGetLastVpnError', 'execute');
+  return v == null ? null : String(v);
+}
+
+export function getNetworkName(): string | null {
+  const sdk = getSdk();
+  if (typeof sdk?.main?.getNetworkName === 'function') {
+    const v = sdk.main.getNetworkName();
+    return v == null ? null : String(v);
+  }
+  const v = call('DtGetNetworkName', 'execute');
+  return v == null ? null : String(v);
+}
+
+export function showAdsRewardedDialog(): void {
+  const sdk = getSdk();
+  try {
+    if (typeof sdk?.main?.showAdsRewardedDialog === 'function') {
+      sdk.main.showAdsRewardedDialog();
+      return;
+    }
+  } catch {
+    /* fallback */
+  }
+  callVoid('DtShowDialogAdsRewarded', 'execute');
+}
+
+export function isAdsEnabled(): boolean {
+  const sdk = getSdk();
+  if (typeof sdk?.main?.isAdsEnabled === 'function') {
+    return Boolean(sdk.main.isAdsEnabled());
+  }
+  return Boolean(call('DtIsAdsEnabled', 'execute'));
+}
+
+export function copyToClipboard(text: string): void {
+  const sdk = getSdk();
+  try {
+    if (typeof sdk?.android?.copyToClipboard === 'function') {
+      sdk.android.copyToClipboard(text);
+      return;
+    }
+  } catch {
+    /* fallback */
+  }
+  callVoid('DtCopyToClipboard', 'execute', [text]);
+}
+
+export function getClipboardText(): string | null {
+  const sdk = getSdk();
+  if (typeof sdk?.android?.getClipboardText === 'function') {
+    const v = sdk.android.getClipboardText();
+    return v == null ? null : String(v);
+  }
+  const v = call('DtGetClipboardText', 'execute');
+  return v == null ? null : String(v);
+}
+
+export function showNativeToast(message: string): void {
+  const sdk = getSdk();
+  try {
+    if (typeof sdk?.android?.showToast === 'function') {
+      sdk.android.showToast(message);
+      return;
+    }
+  } catch {
+    /* fallback */
+  }
+  callVoid('DtShowToast', 'execute', [message]);
+}
+
+export function vibrate(durationMillis = 50): void {
+  const sdk = getSdk();
+  try {
+    if (typeof sdk?.android?.vibrate === 'function') {
+      sdk.android.vibrate(durationMillis);
+      return;
+    }
+  } catch {
+    /* fallback */
+  }
+  callVoid('DtVibrate', 'execute', [durationMillis]);
+}
+
+export function getDiagnosticReport(): string | null {
+  const sdk = getSdk();
+  if (typeof sdk?.android?.getDiagnosticReport === 'function') {
+    const v = sdk.android.getDiagnosticReport();
+    return v == null ? null : String(v);
+  }
+  const v = call('DtGetDiagnosticReport', 'execute');
+  return v == null ? null : String(v);
 }

@@ -6,15 +6,17 @@ import { validateEmail } from '../../utils/emailValidation';
 
 import usePaymentPolling from '../../hooks/usePaymentPolling';
 import { purchaseStorage, PendingPurchase } from '../../utils/purchaseStorageManager';
+import { applyPaidCredentials } from '../../utils/applyPaidCredentials';
 import { ShoppingCart } from '../../utils/icons';
 import { copyToClipboard } from '../../utils/nativeClipboard';
 import { navigateToUrl, reloadApp } from '../../utils/nativeNavigation';
 
 interface PurchaseModalProps {
   onClose: () => void;
+  onOpenCredentials?: () => void;
 }
 
-export function PurchaseModal({ onClose }: PurchaseModalProps) {
+export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps) {
   // Estados principais
   const [currentStep, setCurrentStep] = useState<PaymentStep>('plans');
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -32,6 +34,8 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
   const [qrCodeError, setQrCodeError] = useState<string | null>(null);
   const qrCanvasRef = useRef<HTMLCanvasElement>(null);
 
+  const appliedPaymentRef = useRef<string | null>(null);
+
   // Hook de polling simplificado para verificar credenciais
   const { 
     credentials: hookCredentials, 
@@ -42,25 +46,27 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
     resetPolling
   } = usePaymentPolling(purchaseData?.payment_id || null);
 
-  // Sincronizar credenciais do hook com estado local
   useEffect(() => {
-    // Só processa se realmente tiver credenciais E status completed/approved
-    if (hookCredentials && (hookCredentials.status === 'completed' || hookCredentials.status === 'approved')) {
-      setCredentials(hookCredentials);
-      
-      // 💾 Salvar credenciais quando modal está aberto
-      // purchaseStorage.saveCredentials verifica duplicação automaticamente
-      const label = selectedPlan?.name 
-        ? `Compra ${selectedPlan.name}` 
-        : 'Compra Recente';
-      
-      purchaseStorage.saveCredentials(hookCredentials, label);
-      
-      if (currentStep === 'payment') {
-        setCurrentStep('success');
-      }
+    if (!hookCredentials || (hookCredentials.status !== 'completed' && hookCredentials.status !== 'approved')) {
+      return;
     }
-  }, [hookCredentials, currentStep, selectedPlan]);
+
+    const paymentKey = String(hookCredentials.payment_id || purchaseData?.payment_id || '');
+    if (paymentKey && appliedPaymentRef.current === paymentKey) return;
+    appliedPaymentRef.current = paymentKey || 'applied';
+
+    setCredentials(hookCredentials);
+
+    const label = selectedPlan?.name
+      ? `Compra ${selectedPlan.name}`
+      : 'Compra Recente';
+
+    applyPaidCredentials(hookCredentials, 'sales', label).catch(() => undefined);
+
+    if (currentStep === 'payment') {
+      setCurrentStep('success');
+    }
+  }, [hookCredentials, currentStep, selectedPlan, purchaseData?.payment_id]);
 
   // Carregar planos ao montar o componente
   useEffect(() => {
@@ -160,7 +166,8 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
         customer_email: email.trim(),
         plan_name: selectedPlan.name,
         qr_code: response.qr_code,
-        ticket_url: response.ticket_url
+        ticket_url: response.ticket_url,
+        kind: 'purchase',
       };
       
       purchaseStorage.savePendingPurchase(pendingPurchase);
@@ -185,6 +192,7 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
     setError('');
     setPurchaseData(null);
     setCredentials(null);
+    appliedPaymentRef.current = null;
     
     resetPolling();
     
@@ -232,7 +240,7 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
             {/* Lista de planos */}
             {isLoading ? (
               <div className="flex justify-center py-8 sm:py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#6205D5] border-t-transparent"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#8b5cf6] border-t-transparent"></div>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-4 w-full">
@@ -246,8 +254,8 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
                       w-full text-left
                       p-3 sm:p-4
                       rounded-lg sm:rounded-xl
-                      border-2 border-[#6205D5]/30 hover:border-[#6205D5]/70
-                      bg-[#1a0533]/80 hover:bg-[#26074d]/95
+                      border-2 border-[#8b5cf6]/30 hover:border-[#8b5cf6]/70
+                      bg-[#14111c]/80 hover:bg-[#1a1624]/95
                       active:scale-95 hover:scale-105
                       transition-all duration-200
                       touch-manipulation
@@ -257,7 +265,7 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
                     "
                   >
                     {/* Gradiente de fundo ao passar */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#6205D5]/0 to-[#6205D5]/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#8b5cf6]/0 to-[#8b5cf6]/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
                     
                     {/* Conteúdo */}
                     <div className="relative z-10 flex flex-col h-full">
@@ -279,7 +287,7 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
                               key={protocol}
                               className="
                                 px-1.5 py-0.5 sm:px-2 sm:py-1
-                                bg-[#6205D5]/50 text-[#b0a8ff]
+                                bg-[#8b5cf6]/50 text-[#b7abc9]
                                 text-[10px] sm:text-xs font-medium
                                 rounded-md
                               "
@@ -288,14 +296,14 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
                             </span>
                           ))
                         ) : (
-                          <span className="px-1.5 py-0.5 sm:px-2 sm:py-1 bg-[#6205D5]/50 text-[#b0a8ff] text-[10px] sm:text-xs font-medium rounded-md">
+                          <span className="px-1.5 py-0.5 sm:px-2 sm:py-1 bg-[#8b5cf6]/50 text-[#b7abc9] text-[10px] sm:text-xs font-medium rounded-md">
                             SSH/V2RAY
                           </span>
                         )}
                       </div>
 
                       {/* Preço e duração */}
-                      <div className="flex items-baseline justify-between border-t border-[#6205D5]/20 pt-2 mt-auto">
+                      <div className="flex items-baseline justify-between border-t border-[#8b5cf6]/20 pt-2 mt-auto">
                         <div className="flex flex-col">
                           <span className="text-[10px] sm:text-xs text-gray-500 font-medium">
                             Por {(plan.duration_days || plan.validate || 30)}d
@@ -341,9 +349,9 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
                 className="
                   w-full min-h-[44px] sm:min-h-[48px]
                   px-3 sm:px-4 py-2
-                  bg-[#1a0533]/50 border-2 border-[#6205D5]/30
+                  bg-[#14111c]/50 border-2 border-[#8b5cf6]/30
                   rounded-lg text-white text-sm sm:text-base
-                  focus:outline-none focus:border-[#6205D5]/70 focus:bg-[#1a0533]/70
+                  focus:outline-none focus:border-[#8b5cf6]/70 focus:bg-[#14111c]/70
                   transition-all placeholder-gray-500
                 "
                 placeholder="João Silva"
@@ -363,9 +371,9 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
                 className="
                   w-full min-h-[44px] sm:min-h-[48px]
                   px-3 sm:px-4 py-2
-                  bg-[#1a0533]/50 border-2 border-[#6205D5]/30
+                  bg-[#14111c]/50 border-2 border-[#8b5cf6]/30
                   rounded-lg text-white text-sm sm:text-base
-                  focus:outline-none focus:border-[#6205D5]/70 focus:bg-[#1a0533]/70
+                  focus:outline-none focus:border-[#8b5cf6]/70 focus:bg-[#14111c]/70
                   transition-all placeholder-gray-500
                 "
                 placeholder="seu@email.com"
@@ -382,7 +390,7 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
                 className="
                   flex-1 min-h-[44px] sm:min-h-[48px]
                   px-3 sm:px-4
-                  bg-[#26074d]/80 hover:bg-[#26074d] border-2 border-[#6205D5]/30 hover:border-[#6205D5]/60
+                  bg-[#1a1624]/80 hover:bg-[#1a1624] border-2 border-[#8b5cf6]/30 hover:border-[#8b5cf6]/60
                   text-white text-sm sm:text-base font-medium
                   rounded-lg transition-all active:scale-95
                 "
@@ -394,7 +402,7 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
                 className="
                   flex-1 min-h-[44px] sm:min-h-[48px]
                   px-3 sm:px-4
-                  bg-[#6205D5] hover:bg-[#7a19eb] text-white text-sm sm:text-base font-medium
+                  bg-[#8b5cf6] hover:bg-[#8b5cf6] text-white text-sm sm:text-base font-medium
                   rounded-lg transition-all active:scale-95
                 "
               >
@@ -419,14 +427,14 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
 
             {/* Resumo do plano */}
             {selectedPlan && (
-              <div className="bg-[#1a0533]/50 border-2 border-[#6205D5]/30 p-3 sm:p-4 rounded-lg space-y-2 sm:space-y-3">
+              <div className="bg-[#14111c]/50 border-2 border-[#8b5cf6]/30 p-3 sm:p-4 rounded-lg space-y-2 sm:space-y-3">
                 <h4 className="font-semibold text-white text-sm sm:text-base">{selectedPlan.name}</h4>
                 <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-400">Preço:</span>
                     <span className="text-green-400 font-semibold">{formatPrice(selectedPlan.price)}</span>
                   </div>
-                  <div className="border-t border-[#6205D5]/20 pt-1.5 sm:pt-2 mt-1.5 sm:mt-2">
+                  <div className="border-t border-[#8b5cf6]/20 pt-1.5 sm:pt-2 mt-1.5 sm:mt-2">
                     <div className="grid grid-cols-2 gap-2 text-[10px] sm:text-xs">
                       <div>
                         <span className="text-gray-500">Duração:</span>
@@ -443,7 +451,7 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
                     </div>
                   </div>
                   
-                  <div className="border-t border-[#6205D5]/20 pt-1.5 sm:pt-2 mt-1.5 sm:mt-2 space-y-1.5">
+                  <div className="border-t border-[#8b5cf6]/20 pt-1.5 sm:pt-2 mt-1.5 sm:mt-2 space-y-1.5">
                     <div className="flex justify-between">
                       <span className="text-gray-500 text-[10px] sm:text-xs">Nome:</span>
                       <span className="text-white text-xs sm:text-sm font-medium truncate">{customerName}</span>
@@ -464,7 +472,7 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
                 className="
                   flex-1 min-h-[44px] sm:min-h-[48px]
                   px-3 sm:px-4
-                  bg-[#26074d]/80 hover:bg-[#26074d] border-2 border-[#6205D5]/30 hover:border-[#6205D5]/60
+                  bg-[#1a1624]/80 hover:bg-[#1a1624] border-2 border-[#8b5cf6]/30 hover:border-[#8b5cf6]/60
                   text-white text-sm sm:text-base font-medium
                   rounded-lg transition-all active:scale-95
                 "
@@ -531,7 +539,7 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
                         />
                         {!qrCodeReady && !qrCodeError && (
                           <div className="w-48 h-48 flex items-center justify-center bg-gray-100 rounded">
-                            <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#6205D5] border-t-transparent"></div>
+                            <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#8b5cf6] border-t-transparent"></div>
                           </div>
                         )}
                       </div>
@@ -566,9 +574,9 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
                 {/* SEPARADOR VISUAL */}
                 {purchaseData.qr_code && purchaseData.ticket_url && (
                   <div className="flex items-center gap-2 my-2 sm:my-3">
-                    <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#6205D5]/30 to-transparent"></div>
+                    <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#8b5cf6]/30 to-transparent"></div>
                     <span className="text-gray-400 font-semibold text-xs sm:text-sm px-2">OU</span>
-                    <div className="flex-1 h-px bg-gradient-to-l from-transparent via-[#6205D5]/30 to-transparent"></div>
+                    <div className="flex-1 h-px bg-gradient-to-l from-transparent via-[#8b5cf6]/30 to-transparent"></div>
                   </div>
                 )}
 
@@ -577,7 +585,7 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
                   <div className="bg-gradient-to-br from-[#1a3a1a]/50 to-[#0a2a0a]/50 p-2.5 sm:p-3 rounded-lg border-2 border-green-600/30">
                     <p className="text-white mb-2 font-semibold text-xs sm:text-sm">💳 PIX Copia e Cola</p>
                     
-                    <div className="bg-[#0a0a0a] p-2 sm:p-2.5 rounded border border-[#6205D5]/20 mb-2">
+                    <div className="bg-[#0a0a0a] p-2 sm:p-2.5 rounded border border-[#8b5cf6]/20 mb-2">
                       <div className="text-[10px] sm:text-xs text-gray-500 mb-1 uppercase tracking-wider">Código:</div>
                       <div className="font-mono text-[10px] sm:text-xs text-green-400 break-all leading-relaxed bg-[#0a0a0a] p-2 rounded border-l-2 border-green-500 max-h-16 overflow-auto custom-scrollbar">
                         {purchaseData.qr_code}
@@ -611,7 +619,7 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
                   <div className="bg-gradient-to-br from-[#3a2400]/50 to-[#1a1200]/50 p-2.5 sm:p-3 rounded-lg border-2 border-orange-600/30">
                     <p className="text-white mb-2 font-semibold text-xs sm:text-sm">🔗 Mercado Pago</p>
                     
-                    <div className="bg-[#0a0a0a] p-2 sm:p-2.5 rounded border border-[#6205D5]/20 mb-2">
+                    <div className="bg-[#0a0a0a] p-2 sm:p-2.5 rounded border border-[#8b5cf6]/20 mb-2">
                       <div className="text-[10px] sm:text-xs text-gray-500 mb-1 uppercase tracking-wider">Link:</div>
                       <div className="font-mono text-[10px] sm:text-xs text-orange-300 break-all leading-relaxed bg-[#0a0a0a] p-2 rounded border-l-2 border-orange-500 max-h-12 overflow-hidden">
                         {purchaseData.ticket_url.substring(0, 50)}...
@@ -636,7 +644,7 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
                 )}
 
                 {/* Informações do pagamento */}
-                <div className="bg-[#1a0533]/50 border-2 border-[#6205D5]/30 p-2.5 sm:p-3 rounded-lg text-xs sm:text-sm space-y-1">
+                <div className="bg-[#14111c]/50 border-2 border-[#8b5cf6]/30 p-2.5 sm:p-3 rounded-lg text-xs sm:text-sm space-y-1">
                   <div className="flex justify-between">
                     <span className="text-gray-500">💰 Valor:</span>
                     <span className="text-green-400 font-semibold">{formatPrice(purchaseData.amount)}</span>
@@ -653,7 +661,7 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
 
                 {/* Informações opcionais */}
                 {purchaseData.username && (
-                  <div className="bg-[#1a0533]/50 border-2 border-[#6205D5]/30 p-2.5 sm:p-3 rounded-lg">
+                  <div className="bg-[#14111c]/50 border-2 border-[#8b5cf6]/30 p-2.5 sm:p-3 rounded-lg">
                     <p className="text-white text-xs sm:text-sm">
                       <span className="text-gray-400">👤 Usuário:</span>
                       <span className="font-mono ml-1 text-green-400">{purchaseData.username}</span>
@@ -662,12 +670,12 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
                 )}
 
                 {/* Status do polling */}
-                <div className="bg-[#1a0533]/50 border-2 border-[#6205D5]/30 p-2.5 sm:p-3 rounded-lg">
+                <div className="bg-[#14111c]/50 border-2 border-[#8b5cf6]/30 p-2.5 sm:p-3 rounded-lg">
                   <div className="flex items-center justify-between mb-1 sm:mb-2">
                     <span className="text-gray-400 text-xs sm:text-sm font-semibold">Status:</span>
                     <div className="flex items-center gap-1.5 sm:gap-2">
                       {isPolling && (
-                        <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-2 border-[#6205D5] border-t-transparent"></div>
+                        <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-2 border-[#8b5cf6] border-t-transparent"></div>
                       )}
                       <span className={`font-semibold text-xs sm:text-sm ${
                         !credentials ? 'text-yellow-400' : 'text-green-400'
@@ -724,7 +732,7 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
                 className="
                   flex-1 min-h-[44px] sm:min-h-[48px]
                   px-3 sm:px-4
-                  bg-[#26074d]/80 hover:bg-[#26074d] border-2 border-[#6205D5]/30 hover:border-[#6205D5]/60
+                  bg-[#1a1624]/80 hover:bg-[#1a1624] border-2 border-[#8b5cf6]/30 hover:border-[#8b5cf6]/60
                   text-white text-sm sm:text-base font-medium
                   rounded-lg transition-all active:scale-95
                 "
@@ -741,7 +749,7 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
                 className="
                   flex-1 min-h-[44px] sm:min-h-[48px]
                   px-3 sm:px-4
-                  bg-[#6205D5] hover:bg-[#7a19eb] disabled:bg-[#6205D5]/50 disabled:opacity-60
+                  bg-[#8b5cf6] hover:bg-[#8b5cf6] disabled:bg-[#8b5cf6]/50 disabled:opacity-60
                   text-white text-sm sm:text-base font-medium
                   rounded-lg transition-all active:scale-95 flex items-center justify-center gap-1.5 sm:gap-2
                 "
@@ -891,17 +899,25 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
             )}
 
             {/* Botão Concluir */}
-            <button
-              onClick={handleClose}
-              className="
-                w-full min-h-[44px] sm:min-h-[48px]
-                px-3 sm:px-4
-                bg-green-600 hover:bg-green-500 text-white text-sm sm:text-base font-medium
-                rounded-lg transition-all active:scale-95
-              "
-            >
-              ✅ Concluir
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={handleClose}
+                className="flex-1 min-h-[44px] sm:min-h-[48px] px-3 rounded-xl btn-secondary text-sm font-semibold"
+              >
+                Fechar
+              </button>
+              <button
+                onClick={() => {
+                  resetPolling();
+                  if (onOpenCredentials) onOpenCredentials();
+                  else handleClose();
+                }}
+                className="flex-1 min-h-[44px] sm:min-h-[48px] px-3 rounded-xl text-white text-sm font-semibold"
+                style={{ background: 'var(--accent)' }}
+              >
+                Ver credenciais
+              </button>
+            </div>
           </div>
         );
 
@@ -923,16 +939,16 @@ export function PurchaseModal({ onClose }: PurchaseModalProps) {
               <Fragment key={step}>
                 <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium transition-colors ${
                   currentStep === step 
-                    ? 'bg-[#6205D5] text-white ring-2 ring-[#6205D5]/50' 
+                    ? 'bg-[#8b5cf6] text-white ring-2 ring-[#8b5cf6]/50' 
                     : index < currentStepIndex
                     ? 'bg-green-600/80 text-white'
-                    : 'bg-[#26074d] text-gray-400 border border-[#6205D5]/20'
+                    : 'bg-[#1a1624] text-gray-400 border border-[#8b5cf6]/20'
                 }`}>
                   {index + 1}
                 </div>
                 {index < 4 && (
                   <div className={`hidden sm:block w-6 lg:w-8 h-0.5 mx-0.5 ${
-                    index < currentStepIndex ? 'bg-green-600' : 'bg-[#26074d]'
+                    index < currentStepIndex ? 'bg-green-600' : 'bg-[#1a1624]'
                   }`} />
                 )}
               </Fragment>

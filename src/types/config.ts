@@ -21,7 +21,10 @@ export interface ConfigItem {
   icon: string | null;
   type?: string;
   auth?: ConfigAuth;
-  // Permite extensibilidade para campos dinâmicos
+  requires_username?: boolean;
+  requires_password?: boolean;
+  requires_uuid?: boolean;
+  category_id?: number;
   [key: string]: any;
 }
 

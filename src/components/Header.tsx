@@ -23,83 +23,59 @@ function getStateMessage(state: VpnState) {
 }
 
 const Header = memo(function Header({ onMenuClick, version, localIP, vpnState }: HeaderProps) {
-  // Memoizar cálculo de cor do status
   const statusColor = useMemo(() => {
     switch (vpnState) {
       case "CONNECTED":
-        return "bg-green-500";
+        return "bg-[var(--ok)]";
       case "CONNECTING":
       case "AUTH":
-        return "bg-yellow-500";
-      case "AUTH_FAILED":
-      case "NO_NETWORK":
-        return "bg-red-500";
+        return "bg-amber-400";
       default:
-        return "bg-red-500";
+        return "bg-[var(--danger)]";
     }
   }, [vpnState]);
 
-  // Memoizar mensagem de status
   const statusMessage = useMemo(() => getStateMessage(vpnState), [vpnState]);
 
   return (
-    <section className="
-      p-3 md:p-4 xl:p-5 2xl:p-6
-      rounded-xl 2xl:rounded-2xl
-      border border-[#6205D5]/30 bg-[#26074d]/80 shadow-lg
-    ">
-      {/* Layout Mobile: Vertical (2 linhas) | Desktop: Horizontal (1 linha) */}
-      <div className="flex flex-col md:flex-row md:items-center gap-3 xl:gap-4">
-        
-        {/* Linha 1 Mobile / Esquerda Desktop: Menu + Status */}
-        <div className="flex items-center gap-3 xl:gap-4 flex-1">
-          {/* Menu Button — hidden on lg+ (sidebar is fixed) */}
-          <button
-            onClick={onMenuClick}
-            className="
-              lg:hidden
-              p-2 rounded-lg hover:bg-[#6205D5]/20 active:bg-[#6205D5]/30
-              transition-colors duration-200 flex-shrink-0
-            "
-            aria-label="Abrir menu"
-          >
-            <Logs className="w-6 h-6 text-[#b0a8ff] opacity-90" id="open-menu" />
-          </button>
+    <section className="flex items-center gap-2 py-1">
+      <button
+        onClick={onMenuClick}
+        className="lg:hidden min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl flex-shrink-0 touch-manipulation"
+        style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+        aria-label="Abrir menu"
+      >
+        <Logs className="w-5 h-5" style={{ color: 'var(--text-muted)' }} id="open-menu" />
+      </button>
 
-          {/* Status */}
-          <div className="
-            flex items-center gap-2 xl:gap-3
-            bg-[#6205D5]/15 px-3 py-2 xl:px-4 xl:py-2.5 2xl:px-5 2xl:py-3 rounded-lg xl:rounded-xl flex-1 min-w-0 shadow-inner
-          ">
-            <div className={`w-2.5 h-2.5 xl:w-3 xl:h-3 rounded-full ${statusColor} shadow-md flex-shrink-0`} />
-            <span className="text-[#b0a8ff] text-sm xl:text-base 2xl:text-lg font-medium truncate" id="vpn-status">
-              {statusMessage}
-            </span>
-          </div>
-        </div>
+      <div
+        className="flex items-center gap-2 px-3 min-h-[44px] rounded-xl flex-1 min-w-0"
+        style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+      >
+        <div className={`w-2 h-2 rounded-full ${statusColor} flex-shrink-0`} />
+        <span className="text-sm font-medium truncate" id="vpn-status" style={{ color: 'var(--text)' }}>
+          {statusMessage}
+        </span>
+      </div>
 
-        {/* Linha 2 Mobile / Direita Desktop: IP + Version */}
-        <div className="flex items-center gap-3 xl:gap-4">
-          {/* IP */}
-          <div className="
-            flex items-center gap-2 bg-[#6205D5]/15 px-3 py-2 xl:px-4 xl:py-2.5 2xl:px-5 2xl:py-3 rounded-lg xl:rounded-xl shadow-inner flex-1 md:flex-initial min-w-0
-          ">
-            <EthernetPort className="w-4 h-4 xl:w-5 xl:h-5 text-[#b0a8ff] opacity-75 flex-shrink-0" />
-            <span className="text-[#b0a8ff] text-sm xl:text-base font-mono opacity-90 truncate" id="ip-status">
-              {localIP}
-            </span>
-          </div>
+      <div
+        className="flex items-center gap-1.5 px-2.5 min-h-[44px] rounded-xl min-w-0 max-w-[40%] md:max-w-none"
+        style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+      >
+        <EthernetPort className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+        <span className="text-xs font-mono truncate" id="ip-status" style={{ color: 'var(--text-muted)' }}>
+          {localIP}
+        </span>
+      </div>
 
-          {/* Version */}
-          <div className="
-            flex items-center gap-2 bg-[#6205D5]/15 px-3 py-2 xl:px-4 xl:py-2.5 2xl:px-5 2xl:py-3 rounded-lg xl:rounded-xl shadow-inner flex-shrink-0
-          ">
-            <GitFork className="w-4 h-4 xl:w-5 xl:h-5 text-[#b0a8ff] opacity-75" />
-            <span className="text-[#b0a8ff] text-sm xl:text-base font-medium opacity-90" id="version">
-              {version}
-            </span>
-          </div>
-        </div>
+      <div
+        className="flex items-center gap-1.5 px-2.5 min-h-[44px] rounded-xl flex-shrink-0"
+        style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+      >
+        <GitFork className="w-3.5 h-3.5" style={{ color: 'var(--text-muted)' }} />
+        <span className="text-xs font-medium" id="version" style={{ color: 'var(--text-muted)' }}>
+          {version}
+        </span>
       </div>
     </section>
   );

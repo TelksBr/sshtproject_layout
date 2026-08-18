@@ -1,11 +1,13 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Modal } from './Modal';
-import { checkRenewalUser, getPlans, purchaseRenewal } from '../../utils/salesUtils';
+import { checkRenewalUser, getPlans, purchaseRenewal, formatPrice } from '../../utils/salesUtils';
 import usePaymentPolling from '../../hooks/usePaymentPolling';
 import { navigateToUrl } from '../../utils/nativeNavigation';
 import { copyToClipboard } from '../../utils/nativeClipboard';
 import { RefreshCw, CheckCircle, XCircle, DollarSign } from '../../utils/icons';
+import { purchaseStorage, PendingPurchase } from '../../utils/purchaseStorageManager';
+import { applyPaidCredentials } from '../../utils/applyPaidCredentials';
 
 
 interface RenewalModalProps {
@@ -31,6 +33,12 @@ type RenewalData = {
 };
 
 
+function planDisplayName(name: string | undefined): string {
+  return String(name || 'Plano')
+    .replace(/\s*[-–]\s*R\$[:\s]*[\d.,]+\s*$/i, '')
+    .trim();
+}
+
 const RenewalModal: React.FC<RenewalModalProps> = ({ onClose, initialUsername }) => {
   const [identifier, setIdentifier] = useState(initialUsername || '');
   const [loading, setLoading] = useState(false);
@@ -46,6 +54,7 @@ const RenewalModal: React.FC<RenewalModalProps> = ({ onClose, initialUsername })
   const [qrCodeError, setQrCodeError] = useState<string | null>(null);
   const [credentials, setCredentials] = useState<any>(null);
   const qrCanvasRef = useRef<HTMLCanvasElement>(null);
+  const appliedPaymentRef = useRef<string | null>(null);
 
   // Polling para verificar pagamento
   const {
@@ -57,15 +66,22 @@ const RenewalModal: React.FC<RenewalModalProps> = ({ onClose, initialUsername })
     resetPolling
   } = usePaymentPolling(paymentData?.payment_id || null);
 
-  // Sincronizar credenciais do hook com estado local (igual PurchaseModal)
   useEffect(() => {
-    if (hookCredentials && (hookCredentials.status === 'completed' || hookCredentials.status === 'approved')) {
-      setCredentials(hookCredentials);
-      if (currentStep === 'payment') {
-        setCurrentStep('success');
-      }
+    if (!hookCredentials || (hookCredentials.status !== 'completed' && hookCredentials.status !== 'approved')) {
+      return;
     }
-  }, [hookCredentials, currentStep]);
+
+    const paymentKey = String(hookCredentials.payment_id || paymentData?.payment_id || '');
+    if (paymentKey && appliedPaymentRef.current === paymentKey) return;
+    appliedPaymentRef.current = paymentKey || 'applied';
+
+    setCredentials(hookCredentials);
+    applyPaidCredentials(hookCredentials, 'renewal', `Renovação ${identifier || ''}`.trim()).catch(() => undefined);
+
+    if (currentStep === 'payment') {
+      setCurrentStep('success');
+    }
+  }, [hookCredentials, currentStep, paymentData?.payment_id, identifier]);
 
   useEffect(() => {
     if (result && result.can_renew) {
@@ -113,9 +129,27 @@ const RenewalModal: React.FC<RenewalModalProps> = ({ onClose, initialUsername })
     try {
       const response = await purchaseRenewal(identifier, selectedPlan);
       if (response.success && response.data) {
-        setPaymentData(response.data);
+        const data = response.data;
+        setPaymentData(data);
         setCurrentStep('payment');
-        resetPolling(); // Reinicia polling para novo pagamento
+        resetPolling();
+
+        const pendingPurchase: PendingPurchase = {
+          order_id: String(data.order_id || data.invoice_id || data.payment_id),
+          payment_id: String(data.payment_id),
+          amount: data.amount || 0,
+          created_at: new Date().toISOString(),
+          expires_at: data.expires_in
+            ? new Date(Date.now() + data.expires_in * 60 * 1000).toISOString()
+            : new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+          status: 'pending',
+          customer_email: identifier,
+          plan_name: plans.find((plan) => String(plan.id) === String(selectedPlan))?.name,
+          qr_code: data.qr_code,
+          ticket_url: data.ticket_url,
+          kind: 'renewal',
+        };
+        purchaseStorage.savePendingPurchase(pendingPurchase);
       } else {
         setRenewResult({ success: false, message: response.message || 'Erro ao renovar login.' });
       }
@@ -163,7 +197,7 @@ const RenewalModal: React.FC<RenewalModalProps> = ({ onClose, initialUsername })
           <form onSubmit={handleSubmit} className="flex flex-col gap-6 p-4 animate-fade-in">
             <div className="flex flex-col gap-2">
               <label htmlFor="renew-identifier" className="text-white font-semibold text-base flex items-center gap-2">
-                <RefreshCw className="w-5 h-5 text-[#b0a8ff]" /> Usuário ou UUID para renovação:
+                <RefreshCw className="w-5 h-5 text-[#b7abc9]" /> Usuário ou UUID para renovação:
               </label>
               <input
                 id="renew-identifier"
@@ -173,7 +207,7 @@ const RenewalModal: React.FC<RenewalModalProps> = ({ onClose, initialUsername })
                 required
                 disabled={loading}
                 placeholder="Username SSH ou UUID V2Ray"
-                className="rounded-lg px-4 py-2 bg-[#1a0628] border-2 border-[#6205D5]/40 text-white focus:outline-none focus:ring-2 focus:ring-[#6205D5] shadow-sm transition-all"
+                className="rounded-lg px-4 py-2 bg-[#0c0a12] border-2 border-[#8b5cf6]/40 text-white focus:outline-none focus:ring-2 focus:ring-[#8b5cf6] shadow-sm transition-all"
                 style={{ width: '100%' }}
                 autoFocus
               />
@@ -181,7 +215,7 @@ const RenewalModal: React.FC<RenewalModalProps> = ({ onClose, initialUsername })
             <button
               type="submit"
               disabled={loading || !identifier}
-              className="flex items-center justify-center gap-2 bg-gradient-to-r from-[#6205D5] to-[#4B0082] hover:from-[#4B0082] hover:to-[#6205D5] text-white font-bold py-2 px-6 rounded-lg shadow-lg transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="flex items-center justify-center gap-2 bg-gradient-to-r from-[#8b5cf6] to-[#7c3aed] hover:from-[#7c3aed] hover:to-[#8b5cf6] text-white font-bold py-2 px-6 rounded-lg shadow-lg transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {loading && <span className="loader mr-2"></span>}
               {loading ? 'Verificando...' : 'Verificar Usuário'}
@@ -200,47 +234,79 @@ const RenewalModal: React.FC<RenewalModalProps> = ({ onClose, initialUsername })
               )}
               <span className={`text-xl font-bold drop-shadow ${result.can_renew ? 'text-green-300' : 'text-red-300'}`}>{result.can_renew ? 'Usuário pode renovar!' : 'Usuário não pode renovar'}</span>
             </div>
-            <div className="bg-[#1a0628]/80 rounded-lg p-4 border border-[#6205D5]/30 shadow-inner w-full max-w-md">
-              <div className="text-white text-base mb-2"><b>Tipo:</b> <span className="text-[#b0a8ff]">{result.user_type === 'both' ? 'SSH + V2Ray' : result.user_type === 'ssh' ? 'SSH' : 'V2Ray'}</span></div>
+            <div className="bg-[#0c0a12]/80 rounded-lg p-4 border border-[#8b5cf6]/30 shadow-inner w-full max-w-md">
+              <div className="text-white text-base mb-2"><b>Tipo:</b> <span className="text-[#b7abc9]">{result.user_type === 'both' ? 'SSH + V2Ray' : result.user_type === 'ssh' ? 'SSH' : 'V2Ray'}</span></div>
               {result.ssh && (
-                <div className="text-white text-base mb-2"><b>SSH:</b> <span className="text-[#b0a8ff]">{result.ssh.username}</span> <span className="text-gray-400 text-sm">(limite: {result.ssh.limit})</span></div>
+                <div className="text-white text-base mb-2"><b>SSH:</b> <span className="text-[#b7abc9]">{result.ssh.username}</span> <span className="text-gray-400 text-sm">(limite: {result.ssh.limit})</span></div>
               )}
               {result.v2ray && (
-                <div className="text-white text-base mb-2"><b>V2Ray:</b> <span className="text-[#b0a8ff] text-sm font-mono">{result.v2ray.uuid.substring(0, 16)}...</span> <span className="text-gray-400 text-sm">(limite: {result.v2ray.limit})</span></div>
+                <div className="text-white text-base mb-2"><b>V2Ray:</b> <span className="text-[#b7abc9] text-sm font-mono">{result.v2ray.uuid.substring(0, 16)}...</span> <span className="text-gray-400 text-sm">(limite: {result.v2ray.limit})</span></div>
               )}
               {result.current_expiration && (
-                <div className="text-white text-base mb-2"><b>Expiração atual:</b> <span className="text-[#b0a8ff]">{new Date(result.current_expiration).toLocaleString()}</span></div>
+                <div className="text-white text-base mb-2"><b>Expiração atual:</b> <span className="text-[#b7abc9]">{new Date(result.current_expiration).toLocaleString()}</span></div>
               )}
               {typeof result.is_expired !== 'undefined' && (
                 <div className="text-white text-base mb-2"><b>Status:</b> <span className={result.is_expired ? 'text-red-400' : 'text-green-400'}>{result.is_expired ? 'Expirado' : 'Ativo'}</span></div>
               )}
               {typeof result.days_until_expiration !== 'undefined' && (
-                <div className="text-white text-base mb-2"><b>Dias até expirar:</b> <span className="text-[#b0a8ff]">{result.days_until_expiration}</span></div>
+                <div className="text-white text-base mb-2"><b>Dias até expirar:</b> <span className="text-[#b7abc9]">{result.days_until_expiration}</span></div>
               )}
             </div>
             {result.can_renew && plans.length > 0 && (
               <div className="w-full max-w-md flex flex-col gap-2 mt-2">
-                <label className="text-white font-semibold flex items-center gap-2"><DollarSign className="w-5 h-5 text-[#b0a8ff]" />Selecione o plano para renovação:</label>
-                <select
-                  className="rounded-lg px-4 py-2 bg-[#1a0628] border-2 border-[#6205D5]/40 text-white focus:outline-none focus:ring-2 focus:ring-[#6205D5] shadow-sm transition-all"
-                  value={selectedPlan}
-                  onChange={e => setSelectedPlan(e.target.value)}
-                  disabled={renewLoading}
-                >
-                  <option value="">Selecione...</option>
-                  {plans.map(plan => (
-                    <option key={plan.id} value={plan.id}>
-                      {plan.name} - {plan.price ? plan.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : ''}
-                    </option>
-                  ))}
-                </select>
+                <label className="text-white font-semibold flex items-center gap-2">
+                  <DollarSign className="w-5 h-5 text-[#b7abc9]" />
+                  Selecione o plano para renovação
+                </label>
+                <div className="flex flex-col gap-2 max-h-[40vh] overflow-y-auto custom-scrollbar pr-0.5">
+                  {plans.map((plan) => {
+                    const selected = String(selectedPlan) === String(plan.id);
+                    const days = plan.duration_days || plan.validate;
+                    return (
+                      <button
+                        key={plan.id}
+                        type="button"
+                        disabled={renewLoading}
+                        onClick={() => setSelectedPlan(String(plan.id))}
+                        className="w-full text-left rounded-xl px-3 py-3 min-h-[56px] touch-manipulation disabled:opacity-60"
+                        style={{
+                          background: selected ? 'var(--accent-dim)' : 'var(--bg-elevated)',
+                          border: `1px solid ${selected ? 'var(--accent)' : 'var(--border)'}`,
+                        }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span
+                            className="h-5 w-5 rounded-full flex items-center justify-center shrink-0"
+                            style={{ border: `2px solid ${selected ? 'var(--accent)' : 'var(--text-muted)'}` }}
+                          >
+                            {selected && (
+                              <span className="h-2.5 w-2.5 rounded-full" style={{ background: 'var(--accent)' }} />
+                            )}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-semibold truncate" style={{ color: 'var(--text)' }}>
+                              {planDisplayName(plan.name)}
+                            </div>
+                            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                              {plan.limit ? `${plan.limit} dispositivo${plan.limit > 1 ? 's' : ''}` : 'Plano'}
+                              {days ? ` · ${days}d` : ''}
+                            </div>
+                          </div>
+                          <div className="text-sm font-bold text-green-400 shrink-0">
+                            {formatPrice(Number(plan.price) || 0)}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
             {result.can_renew && (
               <button
                 onClick={handleRenew}
                 disabled={!selectedPlan || renewLoading}
-                className="flex items-center justify-center gap-2 bg-gradient-to-r from-[#6205D5] to-[#4B0082] hover:from-[#4B0082] hover:to-[#6205D5] text-white font-bold py-2 px-8 rounded-lg shadow-lg transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+                className="flex items-center justify-center gap-2 bg-gradient-to-r from-[#8b5cf6] to-[#7c3aed] hover:from-[#7c3aed] hover:to-[#8b5cf6] text-white font-bold py-2 px-8 rounded-lg shadow-lg transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed mt-2"
               >
                 {renewLoading && <span className="loader mr-2"></span>}
                 {renewLoading ? 'Renovando...' : 'Renovar Login'}
@@ -251,7 +317,7 @@ const RenewalModal: React.FC<RenewalModalProps> = ({ onClose, initialUsername })
             )}
             <button
               onClick={onClose}
-              className="mt-2 bg-gradient-to-r from-[#6205D5] to-[#4B0082] hover:from-[#4B0082] hover:to-[#6205D5] text-white font-bold py-2 px-8 rounded-lg shadow-lg transition-all duration-200"
+              className="mt-2 bg-gradient-to-r from-[#8b5cf6] to-[#7c3aed] hover:from-[#7c3aed] hover:to-[#8b5cf6] text-white font-bold py-2 px-8 rounded-lg shadow-lg transition-all duration-200"
             >Fechar</button>
           </div>
         )}
@@ -293,7 +359,7 @@ const RenewalModal: React.FC<RenewalModalProps> = ({ onClose, initialUsername })
                 />
                 {!qrCodeReady && !qrCodeError && (
                   <div className="w-56 h-56 flex items-center justify-center bg-gray-100 rounded">
-                    <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#6205D5] border-t-transparent"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#8b5cf6] border-t-transparent"></div>
                   </div>
                 )}
               </div>
@@ -524,7 +590,7 @@ const RenewalModal: React.FC<RenewalModalProps> = ({ onClose, initialUsername })
         @keyframes fadeIn { from { opacity: 0; transform: translateY(16px);} to { opacity: 1; transform: none; } }
         .animate-shake { animation: shake 0.3s; }
         @keyframes shake { 10%, 90% { transform: translateX(-2px); } 20%, 80% { transform: translateX(4px); } 30%, 50%, 70% { transform: translateX(-8px); } 40%, 60% { transform: translateX(8px); } }
-        .loader { border: 3px solid #b0a8ff; border-top: 3px solid #6205D5; border-radius: 50%; width: 18px; height: 18px; animation: spin 0.7s linear infinite; display: inline-block; }
+        .loader { border: 3px solid #b7abc9; border-top: 3px solid #8b5cf6; border-radius: 50%; width: 18px; height: 18px; animation: spin 0.7s linear infinite; display: inline-block; }
         @keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }
       `}</style>
     </Modal>

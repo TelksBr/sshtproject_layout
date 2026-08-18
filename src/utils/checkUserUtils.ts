@@ -118,3 +118,41 @@ export async function fetchUserInfo(username: string, deviceId?: string): Promis
     throw error;
   }
 }
+
+function toNumber(value: unknown): number {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
+
+/** Normaliza o payload do evento nativo `checkUserResult` (SDK 2.0). */
+export function parseSdkCheckUserPayload(payload: unknown): UserInfo | null {
+  let data: unknown = payload;
+  if (typeof payload === 'string') {
+    const trimmed = payload.trim();
+    if (!trimmed) return null;
+    try {
+      data = JSON.parse(trimmed);
+    } catch {
+      return null;
+    }
+  }
+
+  if (!data || typeof data !== 'object') return null;
+  const d = data as Record<string, unknown>;
+  const username = String(d.username ?? '').trim();
+  if (!username) return null;
+
+  const limit_connections = toNumber(d.limit_connections ?? d.limit_connection ?? d.limit);
+  const count_connections = toNumber(d.count_connections ?? d.count_connection);
+  const expiration_days = toNumber(d.expiration_days);
+
+  return {
+    username,
+    password: typeof d.password === 'string' ? d.password : undefined,
+    limit: limit_connections,
+    limit_connections,
+    count_connections,
+    expiration_date: String(d.expiration_date ?? ''),
+    expiration_days,
+  };
+}

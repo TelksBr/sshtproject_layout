@@ -21,6 +21,7 @@ import TestGenerateModal from './TestGenerateModal';
 export interface ModalComponentProps {
   onClose: () => void;
   onAccept?: () => void;
+  onOpenCredentials?: () => void;
 }
 
 export const modalComponents: Record<Exclude<ModalType, null>, React.ComponentType<ModalComponentProps>> = {

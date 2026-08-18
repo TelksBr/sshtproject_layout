@@ -7,15 +7,14 @@ export default {
         '3xl': '1920px',
       },
       colors: {
-        // Paleta principal do app — usar ao invés de [#hex] inline
         app: {
-          bg: '#1A0628',        // Background raiz do app
-          surface: '#26074d',   // Cards, painéis, inputs
-          deep: '#100322',      // Áreas mais profundas (gradiente modal)
-          accent: '#6205D5',    // Botões, bordas, ícones — COR PRINCIPAL
-          'accent-light': '#7c4dff', // Hover/accent claro
-          text: '#b0a8ff',      // Texto secundário / labels
-          muted: '#4B0082',     // Bordas sutis, hover states
+          bg: '#0c0a12',
+          surface: '#1a1624',
+          deep: '#14111c',
+          accent: '#8b5cf6',
+          'accent-light': '#a78bfa',
+          text: '#b7abc9',
+          muted: '#7c3aed',
         },
       },
     },

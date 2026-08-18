@@ -1,69 +1,142 @@
-import { useState, useRef, useCallback } from 'react';
-import { getAllConfigs, setActiveConfig } from '../utils/appFunctions';
-import { autoConnectTest, AutoConnectConfig, DEFAULT_AUTO_CONNECT_CONFIG } from '../utils/autoConnectUtils';
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { getAllConfigs, setActiveConfig, getVpnLogs } from '../utils/appFunctions';
+import {
+  autoConnectTest,
+  AutoConnectConfig,
+  AutoConnectPhase,
+  DEFAULT_AUTO_CONNECT_CONFIG,
+  filterConfigsForAutoConnect,
+} from '../utils/autoConnectUtils';
 import { ConfigItem } from '../types/config';
+import { getStorageItem, setStorageItem } from '../utils/storageUtils';
+import { on } from '../utils/dtunnelEventBridge';
+
+const CONFIG_STORAGE_KEY = 'autoconnect-config';
+const HOME_ENABLED_KEY = 'autoconnect-home-enabled';
+const LOG_BUFFER_MAX = 200;
+
+export type TestLogSource = 'test' | 'sdk';
+export type TestLogStatus = 'testing' | 'success' | 'failed' | 'connecting' | 'timeout';
 
 export interface TestLog {
   id: number;
-  configName: string;
-  status: 'testing' | 'success' | 'failed' | 'connecting' | 'timeout';
+  source: TestLogSource;
+  configName?: string;
+  status?: TestLogStatus;
   duration?: number;
-  message?: string;
+  message: string;
   timestamp: Date;
+}
+
+export type AutoConnectPhaseLabel = AutoConnectPhase | null;
+
+const PHASE_MESSAGES: Record<AutoConnectPhase, string> = {
+  select: 'Selecionando configuração',
+  connecting: 'Iniciando conexão',
+  wait_vpn: 'Aguardando VPN',
+  check_internet: 'Testando internet',
+  next: 'Falhou, indo para a próxima',
+};
+
+function loadSavedConfig(): AutoConnectConfig {
+  const saved = getStorageItem<AutoConnectConfig>(CONFIG_STORAGE_KEY);
+  if (!saved) return DEFAULT_AUTO_CONNECT_CONFIG;
+  return {
+    ...DEFAULT_AUTO_CONNECT_CONFIG,
+    ...saved,
+    selectedCategories: Array.isArray(saved.selectedCategories) ? saved.selectedCategories : [],
+  };
+}
+
+function normalizeSdkLog(payload: unknown): string | null {
+  if (payload == null) return null;
+  if (typeof payload === 'string') {
+    const t = payload.trim();
+    return t || null;
+  }
+  if (typeof payload === 'object') {
+    const p = payload as Record<string, unknown>;
+    const raw = p.message ?? p.log ?? p.text ?? p.data;
+    if (typeof raw === 'string' && raw.trim()) return raw.trim();
+    try {
+      return JSON.stringify(payload);
+    } catch {
+      return String(payload);
+    }
+  }
+  return String(payload);
 }
 
 export function useAutoConnect() {
   const [open, setOpen] = useState(false);
   const [currentName, setCurrentName] = useState<string | null>(null);
+  const [phase, setPhase] = useState<AutoConnectPhaseLabel>(null);
   const [total, setTotal] = useState(0);
   const [tested, setTested] = useState(0);
   const [success, setSuccess] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
+  const [cancelled, setCancelled] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [logs, setLogs] = useState<TestLog[]>([]);
+  const [failedNames, setFailedNames] = useState<string[]>([]);
   const [currentTestDuration, setCurrentTestDuration] = useState(0);
-  const [autoConnectConfig, setAutoConnectConfig] = useState<AutoConnectConfig>(DEFAULT_AUTO_CONNECT_CONFIG);
-  const [showSettings, setShowSettings] = useState(false);
-  
+  const [autoConnectConfig, setAutoConnectConfigState] = useState<AutoConnectConfig>(loadSavedConfig);
+  const [homeEnabled, setHomeEnabledState] = useState(() => {
+    try {
+      return getStorageItem<boolean>(HOME_ENABLED_KEY) === true;
+    } catch {
+      return false;
+    }
+  });
+
   const cancelRef = useRef<{ cancelled: boolean }>({ cancelled: false });
   const logIdRef = useRef(0);
   const testStartTimeRef = useRef<number>(0);
-  const durationIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const durationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const runningRef = useRef(false);
+  const currentNameRef = useRef<string | null>(null);
 
-  const addLog = useCallback((configName: string, status: TestLog['status'], message?: string, duration?: number) => {
-    const newLog: TestLog = {
-      id: ++logIdRef.current,
-      configName,
-      status,
-      message,
-      duration,
-      timestamp: new Date(),
-    };
-    setLogs(prev => [...prev, newLog]);
+  runningRef.current = running;
+  currentNameRef.current = currentName;
+
+  const pushLog = useCallback((entry: Omit<TestLog, 'id' | 'timestamp'>) => {
+    setLogs((prev) => {
+      const next: TestLog[] = [
+        ...prev,
+        {
+          ...entry,
+          id: ++logIdRef.current,
+          timestamp: new Date(),
+        },
+      ];
+      return next.length > LOG_BUFFER_MAX ? next.slice(next.length - LOG_BUFFER_MAX) : next;
+    });
   }, []);
 
-  const updateLastLog = useCallback((status: TestLog['status'], message?: string, duration?: number) => {
-    setLogs(prev => {
-      if (prev.length === 0) return prev;
-      const updated = [...prev];
-      const lastLog = updated[updated.length - 1];
-      updated[updated.length - 1] = {
-        ...lastLog,
-        status,
-        message: message || lastLog.message,
-        duration: duration ?? lastLog.duration,
-      };
-      return updated;
-    });
+  const setAutoConnectConfig = useCallback((config: AutoConnectConfig) => {
+    setAutoConnectConfigState(config);
+    try {
+      setStorageItem(CONFIG_STORAGE_KEY, config);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  const setHomeEnabled = useCallback((enabled: boolean) => {
+    setHomeEnabledState(enabled);
+    try {
+      setStorageItem(HOME_ENABLED_KEY, enabled);
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   const startDurationTimer = useCallback(() => {
     testStartTimeRef.current = Date.now();
     setCurrentTestDuration(0);
-    
+    if (durationIntervalRef.current) clearInterval(durationIntervalRef.current);
     durationIntervalRef.current = setInterval(() => {
-      const elapsed = Date.now() - testStartTimeRef.current;
-      setCurrentTestDuration(elapsed);
+      setCurrentTestDuration(Date.now() - testStartTimeRef.current);
     }, 100);
   }, []);
 
@@ -72,163 +145,228 @@ export function useAutoConnect() {
       clearInterval(durationIntervalRef.current);
       durationIntervalRef.current = null;
     }
-    setCurrentTestDuration(0);
   }, []);
 
-  const openModal = () => {
+  const logCountRef = useRef(0);
+
+  useEffect(() => {
+    const unsubLog = on('newLog', () => {
+      if (!runningRef.current) return;
+      const logs = getVpnLogs();
+      const fresh = logs.slice(logCountRef.current);
+      logCountRef.current = logs.length;
+      for (const entry of fresh) {
+        const message = normalizeSdkLog(entry);
+        if (!message) continue;
+        pushLog({
+          source: 'sdk',
+          configName: currentNameRef.current || undefined,
+          message,
+        });
+      }
+    });
+
+    const unsubVpn = on('vpnState', (payload) => {
+      if (!runningRef.current) return;
+      const state =
+        typeof payload === 'string'
+          ? payload
+          : (payload as { state?: string })?.state || String(payload ?? '');
+      if (!state) return;
+      pushLog({
+        source: 'sdk',
+        configName: currentNameRef.current || undefined,
+        message: `VPN: ${state}`,
+        status:
+          state === 'CONNECTED'
+            ? 'success'
+            : state === 'AUTH_FAILED' || state === 'NO_NETWORK'
+              ? 'failed'
+              : 'connecting',
+      });
+    });
+
+    return () => {
+      unsubLog();
+      unsubVpn();
+    };
+  }, [pushLog]);
+
+  const openModal = useCallback(() => {
     setOpen(true);
     setSuccess(null);
     setError(null);
     setRunning(false);
+    setCancelled(false);
+    setPhase(null);
+    setFailedNames([]);
     setLogs([]);
     setCurrentTestDuration(0);
+    setTested(0);
     cancelRef.current.cancelled = false;
-  };
+  }, []);
 
-  const closeModal = () => {
+  const closeModal = useCallback(() => {
     cancelRef.current.cancelled = true;
     stopDurationTimer();
     setOpen(false);
     setRunning(false);
-  };
+    setPhase(null);
+  }, [stopDurationTimer]);
 
-  const cancelTest = () => {
+  const cancelTest = useCallback(() => {
     cancelRef.current.cancelled = true;
+    setCancelled(true);
     stopDurationTimer();
     setRunning(false);
-    addLog(currentName || 'Teste', 'failed', 'Cancelado pelo usuário');
-  };
+    setPhase(null);
+    pushLog({
+      source: 'test',
+      configName: currentNameRef.current || 'Teste',
+      status: 'failed',
+      message: 'Cancelado pelo usuário',
+    });
+  }, [pushLog, stopDurationTimer]);
 
-  const startAutoConnect = async () => {
+  const startAutoConnect = useCallback(async (overrides?: Partial<AutoConnectConfig>) => {
+    const runConfig: AutoConnectConfig = {
+      ...autoConnectConfig,
+      ...overrides,
+    };
+
     setRunning(true);
+    setCancelled(false);
     setSuccess(null);
     setError(null);
     setLogs([]);
+    setFailedNames([]);
+    setPhase(null);
     cancelRef.current.cancelled = false;
-    
+    logCountRef.current = getVpnLogs().length;
+
     const allConfigCategories = getAllConfigs();
-    const allConfigs: ConfigItem[] = allConfigCategories.flatMap(category => 
-      category.items.map(item => ({
+    const allConfigs: ConfigItem[] = allConfigCategories.flatMap((category) =>
+      category.items.map((item) => ({
         ...item,
         category_id: category.id,
         categoryName: category.name,
-        categoryColor: category.color
+        categoryColor: category.color,
       }))
     );
-    setTotal(allConfigs.length);
-    
-    // Aplica filtros das configurações
-    let filteredConfigs = allConfigs;
-    
-    // Filtro por categoria
-    if (autoConnectConfig.selectedCategories.length > 0) {
-      filteredConfigs = filteredConfigs.filter(config => 
-        autoConnectConfig.selectedCategories.includes(config.category_id)
-      );
-    }
-    
-    // Filtro por tipo de configuração
-    if (autoConnectConfig.configType !== 'all') {
-      filteredConfigs = filteredConfigs.filter(config => {
-        const mode = config.mode?.toLowerCase() || '';
-        if (autoConnectConfig.configType === 'ssh') {
-          return mode.includes('ssh') || mode.includes('proxy') || mode.includes('socks');
-        } else if (autoConnectConfig.configType === 'v2ray') {
-          return mode.includes('v2ray') || mode.includes('vmess') || mode.includes('vless');
-        }
-        return true;
-      });
-    }
-    
+
+    const filteredConfigs = filterConfigsForAutoConnect(allConfigs, runConfig);
     setTotal(filteredConfigs.length);
     setTested(0);
-    
-    const filterMessage = [];
-    if (autoConnectConfig.selectedCategories.length > 0) {
-      filterMessage.push(`${autoConnectConfig.selectedCategories.length} categoria(s)`);
-    }
-    if (autoConnectConfig.configType !== 'all') {
-      filterMessage.push(`tipo: ${autoConnectConfig.configType.toUpperCase()}`);
-    }
-    
-    const message = filterMessage.length > 0 
-      ? `Iniciando teste com ${filteredConfigs.length} configurações filtradas (${filterMessage.join(', ')})`
-      : `Iniciando teste com ${filteredConfigs.length} configurações`;
-    
-    addLog('Sistema', 'testing', message);
-    
+
+    pushLog({
+      source: 'test',
+      configName: 'Sistema',
+      status: 'testing',
+      message: `Iniciando teste com ${filteredConfigs.length} configuração(ões)`,
+    });
+
     try {
       const result = await autoConnectTest({
         configs: filteredConfigs,
         setCurrentName: (name: string) => {
           setCurrentName(name);
-          addLog(name, 'connecting', 'Iniciando conexão...');
           startDurationTimer();
         },
-        setTested: (n: number) => {
-          setTested(n);
-        },
-        setActiveConfig: (configId: number) => {
-          setActiveConfig(configId);
-        },
+        setTested: (n: number) => setTested(n),
+        setActiveConfig: (configId: number) => setActiveConfig(configId),
         setActiveConfigState: () => {},
         setSelectedCategory: () => {},
         setSuccess: (configName: string | null) => {
-          if (configName) {
-            const duration = Date.now() - testStartTimeRef.current;
-            updateLastLog('success', 'Conexão bem-sucedida!', duration);
-            setSuccess(configName);
-          }
+          if (configName) setSuccess(configName);
         },
         cancelRef,
-        onTestResult: (_, success: boolean, message?: string) => {
+        onPhase: (nextPhase, configName) => {
+          setPhase(nextPhase);
+          pushLog({
+            source: 'test',
+            configName,
+            status: nextPhase === 'next' ? 'failed' : 'connecting',
+            message: PHASE_MESSAGES[nextPhase],
+          });
+        },
+        onTestResult: (configName: string, ok: boolean, message?: string) => {
           const duration = Date.now() - testStartTimeRef.current;
           stopDurationTimer();
-          if (success) {
-            updateLastLog('success', message || 'Teste bem-sucedido', duration);
-          } else {
-            updateLastLog('failed', message || 'Teste falhou', duration);
+          if (!ok) {
+            setFailedNames((prev) => (prev.includes(configName) ? prev : [...prev, configName]));
           }
+          pushLog({
+            source: 'test',
+            configName,
+            status: ok ? 'success' : 'failed',
+            message: message || (ok ? 'Teste bem-sucedido' : 'Teste falhou'),
+            duration,
+          });
         },
-        autoConnectConfig,
+        autoConnectConfig: runConfig,
       });
-      
+
       setRunning(false);
+      setPhase(null);
       stopDurationTimer();
-      
-      if (!result && !cancelRef.current.cancelled) {
-        addLog('Sistema', 'failed', 'Teste concluído - Nenhuma configuração funcionou');
+
+      if (cancelRef.current.cancelled) {
+        setCancelled(true);
+        return;
+      }
+
+      if (!result) {
+        pushLog({
+          source: 'test',
+          configName: 'Sistema',
+          status: 'failed',
+          message: 'Nenhuma configuração funcionou',
+        });
         setSuccess(null);
-      } else if (result) {
-        addLog('Sistema', 'success', 'Teste concluído com sucesso!');
+      } else {
+        pushLog({
+          source: 'test',
+          configName: 'Sistema',
+          status: 'success',
+          message: 'Teste concluído com sucesso',
+        });
       }
     } catch (e) {
       const errorMsg = e instanceof Error ? e.message : 'Erro na conexão automática';
       setError(errorMsg);
-      addLog('Sistema', 'failed', errorMsg);
+      pushLog({ source: 'test', configName: 'Sistema', status: 'failed', message: errorMsg });
       setRunning(false);
+      setPhase(null);
       stopDurationTimer();
     }
-  };
+  }, [autoConnectConfig, pushLog, startDurationTimer, stopDurationTimer]);
+
+  const startHomeAutoConnect = useCallback(() => {
+    setOpen(true);
+    void startAutoConnect({ selectedCategories: [], configType: 'all' });
+  }, [startAutoConnect]);
 
   return {
     open,
     openModal,
     closeModal,
     currentName,
+    phase,
     total,
     tested,
     success,
     running,
+    cancelled,
     error,
     logs,
+    failedNames,
     currentTestDuration,
     startAutoConnect,
+    startHomeAutoConnect,
     cancelTest,
-    // Configurações
     autoConnectConfig,
     setAutoConnectConfig,
-    showSettings,
-    setShowSettings,
+    homeEnabled,
+    setHomeEnabled,
   };
 }

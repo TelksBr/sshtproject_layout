@@ -7,7 +7,8 @@ interface PaymentApprovedNotificationProps {
   planName?: string;
   orderId: string;
   onDismiss: (orderId: string) => void;
-  autoClose?: number; // ms antes de fechar automaticamente
+  onAccessCredentials?: () => void;
+  autoClose?: number;
 }
 
 export function PaymentApprovedNotification({
@@ -15,7 +16,8 @@ export function PaymentApprovedNotification({
   planName,
   orderId,
   onDismiss,
-  autoClose = 5000
+  onAccessCredentials,
+  autoClose = 8000
 }: PaymentApprovedNotificationProps) {
   const [isClosing, setIsClosing] = useState(false);
   const [progress, setProgress] = useState(100);
@@ -45,6 +47,11 @@ export function PaymentApprovedNotification({
     setTimeout(() => {
       onDismiss(orderId);
     }, 300);
+  };
+
+  const handleAccessCredentials = () => {
+    onAccessCredentials?.();
+    handleClose();
   };
 
   return (
@@ -114,7 +121,7 @@ export function PaymentApprovedNotification({
         {/* Ação rápida */}
         <div className="mt-3 sm:mt-4 text-center">
           <button
-            onClick={handleClose}
+            onClick={handleAccessCredentials}
             className="
               text-xs sm:text-sm
               px-3 sm:px-4 py-1.5 sm:py-2

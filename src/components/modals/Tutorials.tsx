@@ -100,21 +100,21 @@ export function Tutorials({ onClose }: { onClose: () => void }) {
           {tutorials.map((tutorial) => (
             <button
               key={tutorial.id}
-              className="w-full p-4 rounded-lg bg-[#26074d] border border-[#6205D5]/20 text-left hover:bg-[#26074d]/80 transition-colors"
+              className="w-full p-4 rounded-lg bg-[#1a1624] border border-[#8b5cf6]/20 text-left hover:bg-[#1a1624]/80 transition-colors"
               onClick={() => setSelectedTutorial(tutorial)}
             >
               <div className="flex items-center gap-3 mb-2">
-                <tutorial.icon className="w-6 h-6 text-[#b0a8ff]" />
-                <h3 className="text-[#b0a8ff] font-medium">{tutorial.title}</h3>
+                <tutorial.icon className="w-6 h-6 text-[#b7abc9]" />
+                <h3 className="text-[#b7abc9] font-medium">{tutorial.title}</h3>
               </div>
-              <p className="text-[#b0a8ff]/70 text-sm">{tutorial.description}</p>
+              <p className="text-[#b7abc9]/70 text-sm">{tutorial.description}</p>
             </button>
           ))}
         </div>
 
         {selectedTutorial && (
           <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-            <div className="bg-[#2A0A3E] rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-[#14111c] rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-2xl font-bold">{selectedTutorial.title}</h2>

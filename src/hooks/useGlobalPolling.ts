@@ -305,6 +305,9 @@ export function useGlobalPolling() {
   useDTunnelEvent('vpnState', handleVpnEvents);
   useDTunnelEvent('vpnStartedSuccess', handleVpnEvents);
   useDTunnelEvent('vpnStoppedSuccess', handleVpnEvents);
+  useDTunnelEvent('localIp', handleVpnEvents);
+  useDTunnelEvent('hotSpotState', handleVpnEvents);
+  useDTunnelEvent('airplaneState', handleVpnEvents);
   
   useEffect(() => {
     // Cria listener para este hook
