@@ -23,18 +23,6 @@ export function useSdkToastListener() {
     showToast(message, 'error');
   });
 
-  // Escuta eventos de notificação genérica do SDK
-  useDTunnelEvent('notification', (payload: any) => {
-    if (typeof payload === 'string') {
-      showToast(payload, 'info');
-      return;
-    }
-    const title = payload?.title ? String(payload.title) : '';
-    const body = payload?.message ? String(payload.message) : '';
-    const message = [title, body].filter(Boolean).join(' — ') || 'Notificação';
-    showToast(message, 'info');
-  });
-
   useDTunnelEvent('messageError', (payload: any) => {
     const message =
       typeof payload === 'string'

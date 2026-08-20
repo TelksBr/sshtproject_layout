@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { CalendarClock, User, Clock, Calendar, RefreshCw, AlertTriangle, Search } from '../../utils/icons';
+import { CalendarClock, RefreshCw, AlertTriangle, Search } from '../../utils/icons';
 import { Modal } from './Modal';
+import { CheckUserDetails } from './CheckUserDetails';
 import { fetchUserInfo, UserInfo } from '../../utils/checkUserUtils';
 import { purchaseStorage } from '../../utils/purchaseStorageManager';
 
@@ -71,7 +72,6 @@ export function CheckUser({ onClose }: CheckUserProps) {
   return (
     <Modal onClose={onClose} title="Consultar Usuário" icon={CalendarClock}>
       <div className="flex-1">
-
         {!userInfo ? (
           <div className="p-4 lg:p-5 2xl:p-6 rounded-lg glass-effect">
             <div className="flex gap-2 mb-4">
@@ -96,68 +96,19 @@ export function CheckUser({ onClose }: CheckUserProps) {
             </div>
           </div>
         ) : (
-          <div className="grid gap-4">
-            {/* User Info Card */}
-            <div className="p-4 rounded-lg glass-effect">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <User className="w-5 h-5 text-[#8b5cf6]" />
-                  <span className="text-[#b7abc9] font-medium">
-                    {userInfo.username}
-                  </span>
-                </div>
-                <button
-                  onClick={() => setUserInfo(null)}
-                  className="p-2 rounded-full hover:bg-[#8b5cf6]/10 transition-colors"
-                >
-                  <RefreshCw className="w-5 h-5 text-[#8b5cf6]" />
-                </button>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 rounded-lg bg-[#14111c]/50 border border-[#8b5cf6]/20">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Clock className="w-4 h-4 text-[#8b5cf6]" />
-                    <span className="text-sm text-[#b7abc9]/70">Dias Restantes</span>
-                  </div>
-                  <span className="text-xl font-bold text-[#b7abc9]">
-                    {userInfo.expiration_days}
-                  </span>
-                </div>
-
-                <div className="p-3 rounded-lg bg-[#14111c]/50 border border-[#8b5cf6]/20">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Calendar className="w-4 h-4 text-[#8b5cf6]" />
-                    <span className="text-sm text-[#b7abc9]/70">Expira em</span>
-                  </div>
-                  <span className="text-[#b7abc9]">
-                    {userInfo.expiration_date}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Connection Details */}
-            <div className="p-4 rounded-lg glass-effect">
-              <h3 className="text-[#b7abc9] font-medium mb-4">Detalhes da Conexão</h3>
-              
-              <div className="space-y-4">
-                <div className="flex justify-between items-center p-3 rounded-lg bg-[#14111c]/50 border border-[#8b5cf6]/20">
-                  <span className="text-[#b7abc9]/70">Limite de Dispositivos</span>
-                  <span className="text-[#b7abc9]">
-                    {userInfo.limit_connections}
-                  </span>
-                </div>
-
-                <div className="flex justify-between items-center p-3 rounded-lg bg-[#14111c]/50 border border-[#8b5cf6]/20">
-                  <span className="text-[#b7abc9]/70">Dispositivos Conectados</span>
-                  <span className="text-[#b7abc9]">
-                    {userInfo.count_connections}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
+          <CheckUserDetails
+            userInfo={userInfo}
+            headerAction={
+              <button
+                type="button"
+                onClick={() => setUserInfo(null)}
+                className="p-2 rounded-full hover:bg-[#8b5cf6]/10 transition-colors"
+                aria-label="Nova consulta"
+              >
+                <RefreshCw className="w-5 h-5 text-[#8b5cf6]" />
+              </button>
+            }
+          />
         )}
       </div>
     </Modal>

@@ -13,14 +13,21 @@ export function useAppLayout() {
     paddingBottom: 56,
   });
 
+  const applyInsets = useCallback((next: AppInsets) => {
+    const root = document.documentElement;
+    root.style.setProperty('--safe-top', `${next.paddingTop}px`);
+    root.style.setProperty('--safe-bottom', `${next.paddingBottom}px`);
+    setInsets(next);
+  }, []);
+
   const calculateLayout = useCallback(() => {
     const statusBarHeight = getStatusBarHeight();
     const navBarHeight = getNavBarHeight();
-    setInsets({
+    applyInsets({
       paddingTop: statusBarHeight + 8,
       paddingBottom: navBarHeight + 8,
     });
-  }, []);
+  }, [applyInsets]);
 
   const throttledResize = useThrottle(calculateLayout, 100);
 

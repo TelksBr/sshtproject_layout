@@ -474,7 +474,13 @@ function AddCredentialModal({ onClose, onAdd }: AddCredentialModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60] p-4">
+    <div
+      className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60] p-4"
+      style={{
+        paddingTop: 'var(--safe-top, 32px)',
+        paddingBottom: 'var(--safe-bottom, 48px)',
+      }}
+    >
       <div className="rounded-2xl p-4 sm:p-6 max-w-sm w-full max-h-[90vh] overflow-y-auto" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
         <h2 className="text-lg font-semibold mb-1" style={{ color: 'var(--text)' }}>Adicionar credencial</h2>
         <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>SSH e/ou V2Ray</p>

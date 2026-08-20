@@ -49,6 +49,7 @@ export {
   Shield,
   ShieldCheck,
   Key,
+  FileKey,
   
   // Ações CRUD
   Search,

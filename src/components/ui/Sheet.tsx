@@ -95,6 +95,10 @@ export function Sheet({
         ${open ? openTranslateClass : translateClass}
         ${panelClassName}
       `}
+      style={{
+        paddingTop: 'var(--safe-top, 32px)',
+        paddingBottom: 'var(--safe-bottom, 48px)',
+      }}
       onClick={(e) => e.stopPropagation()}
     >
       {render({ close: handleClose })}

@@ -52,7 +52,13 @@ export function ConfirmModal({
   const colors = getColors();
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[70] p-4">
+    <div
+      className="fixed inset-0 bg-black/70 flex items-center justify-center z-[70] p-4"
+      style={{
+        paddingTop: 'var(--safe-top, 32px)',
+        paddingBottom: 'var(--safe-bottom, 48px)',
+      }}
+    >
       <div 
         className={`rounded-2xl border ${colors.border} p-6 max-w-md w-full`}
         style={{ background: 'var(--surface)' }}

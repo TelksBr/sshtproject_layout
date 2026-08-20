@@ -1,10 +1,23 @@
-import React, { useState, useEffect, memo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, memo, useCallback, useRef, useMemo } from 'react';
 import { Settings, RefreshCw, CalendarClock, Wifi, AlertCircle, ChevronLeft, Search, Plane, Zap } from '../utils/icons';
 import { getAllConfigs, checkUserStatus, getAirplaneState, toggleAirplaneMode, checkForUpdates, setActiveConfig } from '../utils/appFunctions';
 import { Modal } from './modals/Modal';
 import { ConfigCategory, ConfigItem } from '../types/config';
 import { useActiveConfig } from '../context/ActiveConfigContext';
 import { useAutoConnectContext } from '../context/AutoConnectContext';
+
+function normalizeSearch(value: string | null | undefined): string {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+function textMatches(haystack: string | null | undefined, needle: string): boolean {
+  if (!needle) return true;
+  return normalizeSearch(haystack).includes(needle);
+}
 
 export function ServerSelector() {
   const [showConfigModal, setShowConfigModal] = useState(false);
@@ -101,6 +114,8 @@ export function ServerSelector() {
 
   const handleCategorySelect = (category: ConfigCategory) => {
     setSelectedCategory(category);
+    setSearchInput('');
+    setSearchTerm('');
   };
 
   const handleBack = useCallback(() => {
@@ -143,21 +158,38 @@ export function ServerSelector() {
 
 
 
-  const filteredConfigs = configs
-    .filter(category =>
-      (category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        category.items.some(item => item.name.toLowerCase().includes(searchTerm.toLowerCase())))
-      && category.items.length > 0 // <-- só exibe categorias com configs
+  const searchQuery = normalizeSearch(searchTerm);
+
+  const visibleCategories = useMemo(
+    () => configs.filter((category) => category.items.length > 0),
+    [configs]
+  );
+
+  const searchResults = useMemo(() => {
+    if (!searchQuery) {
+      return { categories: [] as ConfigCategory[], items: [] as Array<ConfigItem & { categoryName: string }> };
+    }
+
+    const categories = configs.filter(
+      (category) => category.items.length > 0 && textMatches(category.name, searchQuery)
     );
 
-  // Quando há pesquisa, cria lista plana de configs que correspondem ao termo
-  const flatFilteredItems: (ConfigItem & { categoryName: string })[] = searchTerm
-    ? configs.flatMap(category =>
-        category.items
-          .filter(item => item.name.toLowerCase().includes(searchTerm.toLowerCase()))
-          .map(item => ({ ...item, categoryName: category.name }))
-      )
-    : [];
+    const items = configs.flatMap((category) => {
+      const categoryMatches = textMatches(category.name, searchQuery);
+      return category.items
+        .filter((item) =>
+          categoryMatches ||
+          textMatches(item.name, searchQuery) ||
+          textMatches(item.description, searchQuery) ||
+          textMatches(item.mode, searchQuery)
+        )
+        .map((item) => ({ ...item, categoryName: category.name }));
+    });
+
+    return { categories, items };
+  }, [configs, searchQuery]);
+
+  const hasSearchHits = searchResults.categories.length > 0 || searchResults.items.length > 0;
 
   const activeCategory = configs.find(category =>
     category.items.some(item => item.id === activeConfig?.id)
@@ -329,7 +361,7 @@ export function ServerSelector() {
             <div className="flex items-center gap-2 mb-4">
               <input
                 type="text"
-                placeholder="Pesquisar..."
+                placeholder="Pesquisar config ou categoria..."
                 value={searchInput}
                 onChange={handleSearch}
                 className="flex-1 p-2 rounded-lg glass-effect"
@@ -341,84 +373,156 @@ export function ServerSelector() {
               <div className="flex items-center justify-center p-8">
                 <RefreshCw className="w-6 h-6 text-[#8b5cf6] animate-spin" />
               </div>
-            ) : searchTerm && flatFilteredItems.length > 0 ? (
-              <div className="grid gap-1.5">
-                {flatFilteredItems.map((config) => {
-                  const isActiveConfig = String(activeConfig?.id) === String(config.id);
-                  return (
-                    <button
-                      key={config.id}
-                      onClick={() => handleConfigSelect(config)}
-                      className={`
-                        w-full p-3 rounded-lg transition-colors duration-200 relative overflow-hidden
-                        ${isActiveConfig 
-                          ? 'border border-[#8b5cf6] bg-[#8b5cf6]/15'
-                          : 'glass-effect'
-                        }
-                      `}
-                    >
-                      <div className="flex items-center gap-3 relative z-10">
-                        <div className={`w-3 h-3 rounded-full flex-shrink-0 ${
-                          isActiveConfig 
-                            ? 'bg-[#8b5cf6]'
-                            : 'bg-[#8b5cf6]/20'
-                        }`} />
-
-                        {config.icon && (
-                          <img 
-                            src={config.icon} 
-                            alt="" 
-                            className={`w-6 h-6 rounded-lg object-cover ${
-                              isActiveConfig 
-                                ? 'ring-2 ring-[#8b5cf6]/60 shadow-md' 
-                                : 'bg-[#1a1624]'
-                            }`}
-                          />
-                        )}
-                        
-                        <div className="flex-1 text-left min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className={`text-sm font-medium truncate transition-colors ${
-                              isActiveConfig ? 'text-white' : 'text-[#b7abc9]'
-                            }`}>
-                              {config.name}
-                            </h3>
-                            {isActiveConfig && (
-                              <div className="px-2 py-0.5 rounded-full bg-[#8b5cf6] text-white text-[9px] font-bold flex-shrink-0">
-                                EM USO
+            ) : searchQuery && hasSearchHits ? (
+              <div className="space-y-4">
+                {searchResults.categories.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+                      Categorias
+                    </p>
+                    {searchResults.categories.map((category) => {
+                      const isActiveCategory = category.items.some(item => item.id === activeConfig?.id);
+                      return (
+                        <button
+                          key={`search-cat-${category.id}`}
+                          onClick={() => handleCategorySelect(category)}
+                          className={`w-full p-3 rounded-lg transition-colors duration-200 relative ${
+                            isActiveCategory
+                              ? 'glass-effect border border-[#8b5cf6]/50 bg-[#8b5cf6]/10'
+                              : 'glass-effect'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                              <div className={`w-3 h-3 rounded-full flex-shrink-0 ${
+                                isActiveCategory ? 'bg-[#8b5cf6]' : 'bg-[#8b5cf6]/20'
+                              }`} />
+                              <div className="flex-1 text-left min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <h3 className={`font-medium text-sm truncate ${
+                                    isActiveCategory ? 'text-white' : 'text-[#b7abc9]'
+                                  }`}>
+                                    {category.name}
+                                  </h3>
+                                  {isActiveCategory && (
+                                    <div className="px-2 py-0.5 rounded-full bg-[#8b5cf6] text-white text-[10px] font-bold">
+                                      ATIVA
+                                    </div>
+                                  )}
+                                </div>
+                                <p className={`text-xs mt-0.5 ${
+                                  isActiveCategory ? 'text-[#b7abc9]' : 'text-[#b7abc9]/70'
+                                }`}>
+                                  {category.items.length} configurações disponíveis
+                                </p>
                               </div>
-                            )}
+                            </div>
+                            <div className={`ml-2 ${isActiveCategory ? 'text-[#8b5cf6]' : 'text-[#b7abc9]/40'}`}>
+                              <ChevronLeft className="w-4 h-4 rotate-180" />
+                            </div>
                           </div>
-                          <p className={`text-[11px] truncate transition-colors ${
-                            isActiveConfig ? 'text-[#b7abc9]' : 'text-[#b7abc9]/70'
-                          }`}>
-                            {config.description}
-                          </p>
-                          <p className="text-[10px] text-[#b7abc9]/40 mt-0.5 truncate">
-                            {config.categoryName}
-                          </p>
-                        </div>
-                        
-                        <div className={`text-[10px] px-2 py-1 rounded-full border transition-colors flex-shrink-0 ${
-                          isActiveConfig 
-                            ? 'bg-[#8b5cf6] text-white border-[#8b5cf6]/60 shadow-md' 
-                            : 'text-[#b7abc9]/50 bg-[#14111c]/30 border-[#8b5cf6]/10'
-                        }`}>
-                          {config.mode?.toUpperCase()}
-                        </div>
-                      </div>
-                      
-                      {isActiveConfig && (
-                        <div className="absolute left-0 top-0 w-1 h-full bg-[#8b5cf6] rounded-l-lg" />
-                      )}
-                    </button>
-                  );
-                })}
+                          {isActiveCategory && (
+                            <div className="absolute left-0 top-0 w-1 h-full bg-[#8b5cf6] rounded-l-lg" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {searchResults.items.length > 0 && (
+                  <div className="grid gap-1.5">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+                      Configurações
+                    </p>
+                    {searchResults.items.map((config) => {
+                      const isActiveConfig = String(activeConfig?.id) === String(config.id);
+                      return (
+                        <button
+                          key={`search-item-${config.id}`}
+                          onClick={() => handleConfigSelect(config)}
+                          className={`
+                            w-full p-3 rounded-lg transition-colors duration-200 relative overflow-hidden
+                            ${isActiveConfig
+                              ? 'border border-[#8b5cf6] bg-[#8b5cf6]/15'
+                              : 'glass-effect'
+                            }
+                          `}
+                        >
+                          <div className="flex items-center gap-3 relative z-10">
+                            <div className={`w-3 h-3 rounded-full flex-shrink-0 ${
+                              isActiveConfig ? 'bg-[#8b5cf6]' : 'bg-[#8b5cf6]/20'
+                            }`} />
+
+                            {config.icon && (
+                              <img
+                                src={config.icon}
+                                alt=""
+                                className={`w-6 h-6 rounded-lg object-cover ${
+                                  isActiveConfig
+                                    ? 'ring-2 ring-[#8b5cf6]/60 shadow-md'
+                                    : 'bg-[#1a1624]'
+                                }`}
+                              />
+                            )}
+
+                            <div className="flex-1 text-left min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h3 className={`text-sm font-medium truncate transition-colors ${
+                                  isActiveConfig ? 'text-white' : 'text-[#b7abc9]'
+                                }`}>
+                                  {config.name}
+                                </h3>
+                                {isActiveConfig && (
+                                  <div className="px-2 py-0.5 rounded-full bg-[#8b5cf6] text-white text-[9px] font-bold flex-shrink-0">
+                                    EM USO
+                                  </div>
+                                )}
+                              </div>
+                              <p className={`text-[11px] truncate transition-colors ${
+                                isActiveConfig ? 'text-[#b7abc9]' : 'text-[#b7abc9]/70'
+                              }`}>
+                                {config.description}
+                              </p>
+                              <p className="text-[10px] text-[#b7abc9]/40 mt-0.5 truncate">
+                                {config.categoryName}
+                              </p>
+                            </div>
+
+                            <div className={`text-[10px] px-2 py-1 rounded-full border transition-colors flex-shrink-0 ${
+                              isActiveConfig
+                                ? 'bg-[#8b5cf6] text-white border-[#8b5cf6]/60 shadow-md'
+                                : 'text-[#b7abc9]/50 bg-[#14111c]/30 border-[#8b5cf6]/10'
+                            }`}>
+                              {config.mode?.toUpperCase()}
+                            </div>
+                          </div>
+
+                          {isActiveConfig && (
+                            <div className="absolute left-0 top-0 w-1 h-full bg-[#8b5cf6] rounded-l-lg" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-            ) : filteredConfigs.length > 0 ? (
+            ) : searchQuery && !hasSearchHits ? (
+              <div className="p-4 rounded-lg glass-effect text-center">
+                <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-[#1a1624]/50 flex items-center justify-center">
+                  <Search className="w-6 h-6 text-[#b7abc9]" />
+                </div>
+                <h3 className="text-base font-medium text-[#b7abc9] mb-2">
+                  Nenhum resultado
+                </h3>
+                <p className="text-sm text-[#b7abc9]/70">
+                  Nenhuma categoria ou configuração encontrada para “{searchInput.trim()}”.
+                </p>
+              </div>
+            ) : visibleCategories.length > 0 ? (
               <div className="space-y-2">
                 {!selectedCategory ? (
-                  filteredConfigs
+                  visibleCategories
                     .map((category) => {
                       const isActiveCategory = category.items.some(item => item.id === activeConfig?.id);
                       return (

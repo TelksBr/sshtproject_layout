@@ -6,6 +6,9 @@ export interface UserInfo {
   count_connections: number;
   expiration_date: string;
   expiration_days: number;
+  error?: boolean;
+  status?: string;
+  message?: string;
 }
 
 export interface CheckUserResponse {
@@ -37,39 +40,21 @@ export async function checkUser(identifier: string): Promise<CheckUserResponse> 
     }
     
     const result = await response.json();
-    
-    // API retorna dados diretamente (sem wrapper)
-    if (result && result.username) {
+    const info =
+      normalizeUserInfo(result) ||
+      (result?.success && result?.data ? normalizeUserInfo(result.data) : null);
+
+    if (info) {
       return {
         success: true,
-        message: 'Usuário validado com sucesso',
-        data: {
-          username: result.username,
-          password: result.password,
-          limit: result.limit_connections || result.limit,
-          limit_connections: result.limit_connections,
-          count_connections: result.count_connections,
-          expiration_date: result.expiration_date,
-          expiration_days: result.expiration_days
-        }
-      };
-    }
-    
-    // Fallback para formato com wrapper (compatibilidade)
-    if (result.success && result.data) {
-      return {
-        success: true,
-        message: 'Usuário validado com sucesso',
-        data: {
-          ...result.data,
-          limit: result.data.limit_connections || result.data.limit
-        }
+        message: info.message || 'Usuário validado com sucesso',
+        data: info,
       };
     }
     
     return {
       success: false,
-      message: result.error || 'Erro ao buscar dados do usuário',
+      message: result.error || result.message || 'Erro ao buscar dados do usuário',
       error: result.error
     };
   } catch (error) {
@@ -102,18 +87,13 @@ export async function fetchUserInfo(username: string, deviceId?: string): Promis
     }
     
     const result = await response.json();
-    
-    // API retorna dados diretamente (sem wrapper)
-    if (result && result.username) {
-      return result;
-    }
-    
-    // Fallback para formato com wrapper (compatibilidade)
-    if (result.success && result.data) {
-      return result.data;
-    }
-    
-    throw new Error(result.error || 'Erro ao buscar dados do usuário');
+    const info =
+      normalizeUserInfo(result) ||
+      (result?.success && result?.data ? normalizeUserInfo(result.data) : null);
+
+    if (info) return info;
+
+    throw new Error(result.error || result.message || 'Erro ao buscar dados do usuário');
   } catch (error) {
     throw error;
   }
@@ -122,6 +102,52 @@ export async function fetchUserInfo(username: string, deviceId?: string): Promis
 function toNumber(value: unknown): number {
   const n = Number(value);
   return Number.isFinite(n) ? n : 0;
+}
+
+function isTruthyFlag(value: unknown): boolean {
+  return value === true || value === 1 || value === '1' || value === 'true';
+}
+
+export function normalizeUserInfo(raw: Record<string, unknown>): UserInfo | null {
+  const username = String(raw.username ?? '').trim();
+  if (!username) return null;
+
+  const limit_connections = toNumber(raw.limit_connections ?? raw.limit_connection ?? raw.limit);
+  const status = typeof raw.status === 'string' ? raw.status.trim() : '';
+  const message = typeof raw.message === 'string' ? raw.message.trim() : '';
+
+  return {
+    username,
+    password: typeof raw.password === 'string' ? raw.password : undefined,
+    limit: limit_connections,
+    limit_connections,
+    count_connections: toNumber(raw.count_connections ?? raw.count_connection),
+    expiration_date: String(raw.expiration_date ?? ''),
+    expiration_days: toNumber(raw.expiration_days),
+    error: isTruthyFlag(raw.error),
+    status: status || undefined,
+    message: message || undefined,
+  };
+}
+
+/** Usuários a até este número de dias da validade veem o botão de renovar. */
+export const CHECKUSER_RENEWAL_SOON_DAYS = 7;
+
+export function isUserExpired(info: Pick<UserInfo, 'expiration_days' | 'error' | 'status'>): boolean {
+  if (info.error === true) return true;
+  const status = String(info.status || '').toLowerCase();
+  if (status === 'inactive' || status === 'expired') return true;
+  return Number(info.expiration_days) <= 0;
+}
+
+export function isUserNearExpiration(info: Pick<UserInfo, 'expiration_days' | 'error' | 'status'>): boolean {
+  if (isUserExpired(info)) return false;
+  const days = Number(info.expiration_days);
+  return Number.isFinite(days) && days > 0 && days <= CHECKUSER_RENEWAL_SOON_DAYS;
+}
+
+export function shouldOfferRenewal(info: Pick<UserInfo, 'expiration_days' | 'error' | 'status'>): boolean {
+  return isUserExpired(info) || isUserNearExpiration(info);
 }
 
 /** Normaliza o payload do evento nativo `checkUserResult` (SDK 2.0). */
@@ -138,21 +164,5 @@ export function parseSdkCheckUserPayload(payload: unknown): UserInfo | null {
   }
 
   if (!data || typeof data !== 'object') return null;
-  const d = data as Record<string, unknown>;
-  const username = String(d.username ?? '').trim();
-  if (!username) return null;
-
-  const limit_connections = toNumber(d.limit_connections ?? d.limit_connection ?? d.limit);
-  const count_connections = toNumber(d.count_connections ?? d.count_connection);
-  const expiration_days = toNumber(d.expiration_days);
-
-  return {
-    username,
-    password: typeof d.password === 'string' ? d.password : undefined,
-    limit: limit_connections,
-    limit_connections,
-    count_connections,
-    expiration_date: String(d.expiration_date ?? ''),
-    expiration_days,
-  };
+  return normalizeUserInfo(data as Record<string, unknown>);
 }

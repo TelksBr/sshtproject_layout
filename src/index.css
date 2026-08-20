@@ -15,6 +15,8 @@
     --text-muted: #b7abc9;
     --danger: #f87171;
     --ok: #34d399;
+    --safe-top: 32px;
+    --safe-bottom: 48px;
   }
 
   /* Correção para avisos CSS do Tailwind */
@@ -250,7 +252,7 @@
     /* Sidebar ajustes landscape */
     .sidebar-mobile-landscape {
       max-height: calc(var(--vh, 1vh) * 100);
-      overflow-y: auto;
+      overflow: hidden;
     }
   }
 
@@ -267,6 +269,162 @@
       min-width: 44px;
     }
   }
+}
+
+/* Drawer mobile: overflow fica só na lista interna. Transform no aside
+   após scroll travava no WebView (blur saía, painel ficava na tela). */
+.sidebar-drawer {
+  overflow: hidden;
+}
+
+@media (max-width: 1023px) {
+  .sidebar-drawer {
+    -webkit-transform: translate3d(-100%, 0, 0);
+    transform: translate3d(-100%, 0, 0);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+  }
+
+  .sidebar-drawer.is-open {
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+    pointer-events: auto;
+  }
+
+  .sidebar-drawer.is-closed-settled {
+    visibility: hidden;
+  }
+}
+
+.notification-html {
+  color: var(--text-muted);
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.notification-html b,
+.notification-html strong {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.notification-html i,
+.notification-html em {
+  font-style: italic;
+}
+
+.notification-html u {
+  text-decoration: underline;
+}
+
+.notification-html s,
+.notification-html strike,
+.notification-html del {
+  text-decoration: line-through;
+  opacity: 0.85;
+}
+
+.notification-html mark {
+  background: rgba(139, 92, 246, 0.35);
+  color: var(--text);
+  padding: 0 0.15em;
+  border-radius: 0.2em;
+}
+
+.notification-html code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.8em;
+  background: var(--bg-elevated);
+  color: var(--text);
+  padding: 0.1em 0.35em;
+  border-radius: 0.25rem;
+}
+
+.notification-html pre {
+  margin: 0.5rem 0;
+  padding: 0.6rem 0.75rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  overflow-x: auto;
+  font-size: 0.75rem;
+  color: var(--text);
+}
+
+.notification-html p {
+  margin: 0 0 0.5rem;
+}
+
+.notification-html p:last-child {
+  margin-bottom: 0;
+}
+
+.notification-html h1,
+.notification-html h2,
+.notification-html h3,
+.notification-html h4 {
+  color: var(--text);
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+  line-height: 1.3;
+}
+
+.notification-html h1 { font-size: 1.125rem; }
+.notification-html h2 { font-size: 1rem; }
+.notification-html h3 { font-size: 0.9375rem; }
+.notification-html h4 { font-size: 0.875rem; }
+
+.notification-html a {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.notification-html ul,
+.notification-html ol {
+  margin: 0.35rem 0 0.65rem;
+  padding-left: 1.25rem;
+}
+
+.notification-html li {
+  margin: 0.15rem 0;
+}
+
+.notification-html blockquote {
+  margin: 0.5rem 0;
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-dim);
+  border-radius: 0 0.5rem 0.5rem 0;
+  color: var(--text);
+}
+
+.notification-html hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 0.75rem 0;
+}
+
+.notification-html img {
+  display: block;
+  max-width: 100%;
+  max-height: 14rem;
+  object-fit: contain;
+  border-radius: 0.75rem;
+  margin: 0.5rem 0;
+  background: var(--bg-elevated);
+}
+
+.notification-html--compact h1,
+.notification-html--compact h2,
+.notification-html--compact h3,
+.notification-html--compact h4 {
+  font-size: 0.8125rem;
+  margin: 0 0 0.25rem;
+}
+
+.notification-html--compact img {
+  display: none;
 }
 
 .text-gradient {
@@ -309,33 +467,70 @@ input {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Range Input Styles */
-input[type="range"] {
+/* Range Input Styles — dark track + purple fill (WebView / Chrome / Firefox) */
+input[type="range"].layout-range {
   -webkit-appearance: none;
-  appearance: none; /* Propriedade padrão para compatibilidade */
-  height: 8px;
-  border-radius: 4px;
+  appearance: none;
+  width: 100%;
+  height: 28px;
+  margin: 0;
+  background: linear-gradient(
+    to right,
+    var(--accent) 0%,
+    var(--accent) var(--range-progress, 0%),
+    var(--surface-hover) var(--range-progress, 0%),
+    var(--surface-hover) 100%
+  );
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 6px;
+  border-radius: 999px;
   outline: none;
+  cursor: pointer;
+  accent-color: var(--accent);
 }
 
-input[type="range"]::-webkit-slider-thumb {
+input[type="range"].layout-range::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+}
+
+input[type="range"].layout-range::-webkit-slider-thumb {
   -webkit-appearance: none;
-  appearance: none; /* Propriedade padrão para compatibilidade */
-  width: 18px;
-  height: 18px;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  margin-top: -9px;
   border-radius: 50%;
   background: var(--accent);
+  border: 3px solid var(--bg-elevated);
+  box-shadow: 0 0 0 1px var(--accent), 0 2px 8px rgba(139, 92, 246, 0.45);
   cursor: pointer;
-  border: 2px solid white;
 }
 
-input[type="range"]::-moz-range-thumb {
-  width: 18px;
-  height: 18px;
+input[type="range"].layout-range::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface-hover);
+  border: 1px solid var(--border);
+}
+
+input[type="range"].layout-range::-moz-range-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+input[type="range"].layout-range::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border: 3px solid var(--bg-elevated);
   border-radius: 50%;
   background: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
   cursor: pointer;
-  border: 2px solid white;
 }
 
 /* Dropdown animations removidas - performance */

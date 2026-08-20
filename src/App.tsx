@@ -5,14 +5,17 @@ import ConnectionForm from './components/ConnectionForm';
 import { Sidebar } from './components/Sidebar';
 import { AnimatedLogo } from './components/AnimatedLogo';
 import { ToastContainer } from './components/Toast';
+import { IncomingNotificationHost } from './components/modals/IncomingNotificationModal';
 import { useSdkToastListener } from './hooks/useSdkToastListener';
 import { getConfigVersion } from './utils/appFunctions';
 import { getStorageItem } from './utils/storageUtils';
 import { getAppLogo, setAppLogo } from './utils/storageUtils';
+import { AppNotificationsProvider } from './context/AppNotificationsContext';
 import { ActiveConfigProvider } from './context/ActiveConfigContext';
 import { AutoConnectProvider } from './context/AutoConnectContext';
 import { AutoConnectModal } from './components/AutoConnectModal';
 import { SdkCheckUserModal } from './components/modals/SdkCheckUserModal';
+import { PlayStoreReviewHost } from './components/PlayStoreReviewHost';
 import { useAppLayout } from './hooks/useAppLayout';
 import { useModalRenderer } from './hooks/useModalRenderer';
 import { useGlobalPolling } from './hooks/useGlobalPolling';
@@ -137,6 +140,7 @@ function App() {
   }, []);
 
   return (
+    <AppNotificationsProvider>
     <ActiveConfigProvider>
       <AutoConnectProvider>
       <main
@@ -177,7 +181,9 @@ function App() {
         {getModal(currentModal, setCurrentModal)}
         <AutoConnectModal />
         <SdkCheckUserModal />
+        <PlayStoreReviewHost vpnState={vpnState} blockingModal={currentModal} />
         <ToastContainer />
+        <IncomingNotificationHost />
         
         {/* Notificações de pagamento aprovado */}
         <div className="fixed top-0 right-0 left-0 pointer-events-none z-[999]">
@@ -197,6 +203,7 @@ function App() {
       </main>
       </AutoConnectProvider>
     </ActiveConfigProvider>
+    </AppNotificationsProvider>
   );
 }
 

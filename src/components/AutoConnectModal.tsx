@@ -12,6 +12,12 @@ import { useAutoConnectContext } from '../context/AutoConnectContext';
 import {
   AutoConnectConfig,
   AutoConnectPhase,
+  CONNECTION_TIMEOUT_MAX,
+  CONNECTION_TIMEOUT_MIN,
+  FETCH_TIMEOUT_MAX,
+  FETCH_TIMEOUT_MIN,
+  TIMEOUT_STEP,
+  clampTimeout,
   filterConfigsForAutoConnect,
 } from '../utils/autoConnectUtils';
 import { getAllConfigs } from '../utils/appFunctions';
@@ -197,6 +203,58 @@ export function AutoConnectModal() {
   );
 }
 
+function TimeoutSlider({
+  label,
+  hint,
+  value,
+  min,
+  max,
+  onChange,
+}: {
+  label: string;
+  hint: string;
+  value: number;
+  min: number;
+  max: number;
+  onChange: (value: number) => void;
+}) {
+  const clamped = clampTimeout(value, min, max);
+  const progress = ((clamped - min) / (max - min)) * 100;
+
+  return (
+    <div
+      className="rounded-xl px-3 py-3"
+      style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+    >
+      <div className="flex items-center justify-between gap-2 mb-1">
+        <span className="text-sm text-[var(--text)]">{label}</span>
+        <span
+          className="text-xs font-semibold px-2 py-0.5 rounded-full text-white"
+          style={{ background: 'var(--accent)' }}
+        >
+          {(clamped / 1000).toFixed(0)}s
+        </span>
+      </div>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={TIMEOUT_STEP}
+        value={clamped}
+        onChange={(e) => onChange(clampTimeout(parseInt(e.target.value, 10), min, max))}
+        className="layout-range w-full touch-manipulation"
+        style={{ ['--range-progress' as string]: `${progress}%` }}
+        aria-label={label}
+      />
+      <div className="flex justify-between items-center text-[10px] text-[var(--text-muted)] mt-0.5">
+        <span>{min / 1000}s</span>
+        <span className="opacity-80">{hint}</span>
+        <span>{max / 1000}s</span>
+      </div>
+    </div>
+  );
+}
+
 function SetupStep({
   autoConnectConfig,
   updateConfig,
@@ -292,37 +350,23 @@ function SetupStep({
           {showAdvanced ? 'Ocultar tempos' : 'Ajustar tempos (avançado)'}
         </button>
         {showAdvanced && (
-          <div className="mt-3 space-y-4">
-            <label className="block">
-              <div className="flex justify-between text-xs text-[#b7abc9] mb-1">
-                <span>Timeout de conexão</span>
-                <span>{(autoConnectConfig.connectionTimeout / 1000).toFixed(0)}s</span>
-              </div>
-              <input
-                type="range"
-                min="3000"
-                max="15000"
-                step="1000"
-                value={autoConnectConfig.connectionTimeout}
-                onChange={(e) => updateConfig({ connectionTimeout: parseInt(e.target.value, 10) })}
-                className="w-full"
-              />
-            </label>
-            <label className="block">
-              <div className="flex justify-between text-xs text-[#b7abc9] mb-1">
-                <span>Timeout de internet</span>
-                <span>{(autoConnectConfig.fetchTimeout / 1000).toFixed(0)}s</span>
-              </div>
-              <input
-                type="range"
-                min="2000"
-                max="10000"
-                step="1000"
-                value={autoConnectConfig.fetchTimeout}
-                onChange={(e) => updateConfig({ fetchTimeout: parseInt(e.target.value, 10) })}
-                className="w-full"
-              />
-            </label>
+          <div className="mt-3 space-y-3">
+            <TimeoutSlider
+              label="Timeout de conexão"
+              hint="Tempo para a VPN conectar"
+              value={autoConnectConfig.connectionTimeout}
+              min={CONNECTION_TIMEOUT_MIN}
+              max={CONNECTION_TIMEOUT_MAX}
+              onChange={(v) => updateConfig({ connectionTimeout: v })}
+            />
+            <TimeoutSlider
+              label="Timeout de internet"
+              hint="Tempo para testar a internet"
+              value={autoConnectConfig.fetchTimeout}
+              min={FETCH_TIMEOUT_MIN}
+              max={FETCH_TIMEOUT_MAX}
+              onChange={(v) => updateConfig({ fetchTimeout: v })}
+            />
           </div>
         )}
       </div>

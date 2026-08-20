@@ -8,16 +8,19 @@ import {
   getPassword,
   getUUID,
   getActiveConfig,
-  openDialogLogs,
+  getAllConfigs,
   startConnection,
   stopConnection,
   buildHysteriaPassword,
   parseHysteriaPassword
 } from '../utils/appFunctions';
 import { useDTunnelEvent } from '../hooks/useDTunnelEvent';
-import { ConfigAuth } from '../types/config';
+import type { ConfigItem } from '../types/config';
 import { VpnState } from '../types/vpn';
 import { useAutoConnectContext } from '../context/AutoConnectContext';
+import { useActiveConfig } from '../context/ActiveConfigContext';
+import { getVisibleCredentialFields, mergeCredentialHints } from '../utils/configCredentials';
+import { LogsModal } from './modals/LogsModal';
 
 interface ConnectionFormProps {
   vpnState: VpnState;
@@ -25,17 +28,13 @@ interface ConnectionFormProps {
 
 export function ConnectionForm({ vpnState }: ConnectionFormProps) {
   const autoConnect = useAutoConnectContext();
+  const { activeConfig } = useActiveConfig();
   const [showPassword, setShowPassword] = useState(false);
   const [showUUID, setShowUUID] = useState(false);
   const [showUuidHelp, setShowUuidHelp] = useState(false);
-  const [mode, setMode] = useState('');
-  const [auth, setAuth] = useState<ConfigAuth>({});
-  const [requires, setRequires] = useState<{
-    username?: boolean;
-    password?: boolean;
-    uuid?: boolean;
-  }>({});
+  const [selectedConfig, setSelectedConfig] = useState<ConfigItem | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [showLogs, setShowLogs] = useState(false);
 
   // Estado local para controlar tentativa de conexão
   const [isTryingToConnect, setIsTryingToConnect] = useState(() => {
@@ -53,77 +52,36 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
   const [password, setPassword] = useState('');
   const [uuid, setUuid] = useState('');
 
-  // Carrega configuração inicial
-  useEffect(() => {
-    const loadInitialConfig = () => {
-      const config = getActiveConfig();
-      if (config) {
-        setMode(config.mode || '');
-        const authObj = config.auth || {};
-        // Sempre cria um novo objeto auth para garantir re-render
-        const newAuth: ConfigAuth = {
-          username: authObj.username || undefined,
-          password: authObj.password || undefined,
-          v2ray_uuid: authObj.v2ray_uuid || undefined,
-        };
-        setAuth(newAuth);
-        setRequires({
-          username: typeof config.requires_username === 'boolean' ? config.requires_username : undefined,
-          password: typeof config.requires_password === 'boolean' ? config.requires_password : undefined,
-          uuid: typeof config.requires_uuid === 'boolean' ? config.requires_uuid : undefined,
-        });
+  const applyConfig = useCallback((config: ConfigItem | null) => {
+    if (!config) return;
+    setSelectedConfig(mergeCredentialHints(config, getAllConfigs()));
+    setFormError(null);
 
-        // Carrega valores dos inputs das funções nativas
-        let loadedUsername = getUsername() || '';
-        let loadedPassword = getPassword() || '';
-        // Se for Hysteria e senha está concatenada, separar
-        if ((config.mode || '').toLowerCase().startsWith('hysteria') && loadedPassword.includes(':')) {
-          const [user, pass] = loadedPassword.split(':');
-          setUsername(user || '');
-          setPassword(pass || '');
-        } else {
-          setUsername(loadedUsername);
-          setPassword(loadedPassword);
-        }
-        setUuid(getUUID() || '');
-      }
-    };
-
-    loadInitialConfig();
-  }, []);
-
-  // Escuta eventos de mudança de configuração
-  const handleConfigChanged = useCallback(() => {
-    const config = getActiveConfig();
-    if (config) {
-      setMode(config.mode || '');
-      const authObj = config.auth || {};
-      const newAuth: ConfigAuth = {
-        username: authObj.username || undefined,
-        password: authObj.password || undefined,
-        v2ray_uuid: authObj.v2ray_uuid || undefined,
-      };
-      setAuth(newAuth);
-      setRequires({
-        username: typeof config.requires_username === 'boolean' ? config.requires_username : undefined,
-        password: typeof config.requires_password === 'boolean' ? config.requires_password : undefined,
-        uuid: typeof config.requires_uuid === 'boolean' ? config.requires_uuid : undefined,
-      });
-      setFormError(null);
-
-      let loadedUsername = getUsername() || '';
-      let loadedPassword = getPassword() || '';
-      if ((config.mode || '').toLowerCase().startsWith('hysteria') && loadedPassword.includes(':')) {
-        const [user, pass] = loadedPassword.split(':');
-        setUsername(user || '');
-        setPassword(pass || '');
-      } else {
-        setUsername(loadedUsername);
-        setPassword(loadedPassword);
-      }
-      setUuid(getUUID() || '');
+    const modeLower = (config.mode || '').toLowerCase();
+    const loadedUsername = getUsername() || '';
+    const loadedPassword = getPassword() || '';
+    if (modeLower.startsWith('hysteria') && loadedPassword.includes(':')) {
+      const parsed = parseHysteriaPassword(loadedPassword);
+      setUsername(parsed.username || '');
+      setPassword(parsed.password || '');
+    } else {
+      setUsername(loadedUsername);
+      setPassword(loadedPassword);
     }
+    setUuid(getUUID() || '');
   }, []);
+
+  useEffect(() => {
+    applyConfig(getActiveConfig());
+  }, [applyConfig]);
+
+  useEffect(() => {
+    if (activeConfig) applyConfig(activeConfig);
+  }, [activeConfig, applyConfig]);
+
+  const handleConfigChanged = useCallback(() => {
+    applyConfig(getActiveConfig());
+  }, [applyConfig]);
 
   useDTunnelEvent('newDefaultConfig', handleConfigChanged);
 
@@ -170,28 +128,19 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
     setUUIDApp(value);
   }, []);
 
-  // Lógica de exibição dos campos baseada no modo da config
-  const { isV2Ray, isHysteria } = useMemo(() => {
-    const modeLower = mode.toLowerCase();
+  const { isHysteria, isSSH } = useMemo(() => {
+    const modeLower = (selectedConfig?.mode || '').toLowerCase();
     return {
-      isV2Ray: modeLower.startsWith('v2ray'),
-      isHysteria: modeLower.startsWith('hysteria')
+      isHysteria: modeLower.startsWith('hysteria'),
+      isSSH: modeLower.startsWith('ssh'),
     };
-  }, [mode]);
-  const isSSH = mode.toLowerCase().startsWith('ssh');
-  const showUsernameInput =
-    autoConnect.homeEnabled ||
-    isHysteria ||
-    (typeof requires.username === 'boolean' ? requires.username : !isV2Ray && !auth.username);
-  const showPasswordInput =
-    autoConnect.homeEnabled ||
-    isHysteria ||
-    (typeof requires.password === 'boolean' ? requires.password : !isV2Ray && !auth.password);
-  const showUUIDInput =
-    autoConnect.homeEnabled ||
-    (typeof requires.uuid === 'boolean' ? requires.uuid : isV2Ray && !auth.v2ray_uuid);
+  }, [selectedConfig]);
+  const { username: showUsernameInput, password: showPasswordInput, uuid: showUUIDInput } = useMemo(
+    () => getVisibleCredentialFields(selectedConfig),
+    [selectedConfig]
+  );
+  const hasVisibleCredentialFields = showUsernameInput || showPasswordInput || showUUIDInput;
 
-  // Valores dos inputs: só mostram quando o input está visível
   const usernameValue = showUsernameInput ? username : '';
   const passwordValue = showPasswordInput ? password : '';
   const uuidValue = showUUIDInput ? uuid : '';
@@ -205,28 +154,22 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
     setShowUUID(prev => !prev);
   }, []);
 
-  // Validação antes de conectar
   const validateForm = () => {
-    if (autoConnect.homeEnabled) {
-      if (!auth.username && !username) return 'Usuário obrigatório';
-      if (!auth.password && !password) return 'Senha obrigatória';
-      return null;
-    }
-    if (showUsernameInput && !auth.username && !username) return 'Usuário obrigatório';
-    if (showPasswordInput && !auth.password && !password) return 'Senha obrigatória';
-    if (showUUIDInput && !auth.v2ray_uuid && !uuid) return 'UUID obrigatório para V2Ray';
+    if (showUsernameInput && !username.trim()) return 'Usuário obrigatório';
+    if (showPasswordInput && !password.trim()) return 'Senha obrigatória';
+    if (showUUIDInput && !uuid.trim()) return 'UUID obrigatório para V2Ray';
     return null;
   };
 
   const prepareCredentials = () => {
-    if (isHysteria) {
+    if (isHysteria && showUsernameInput && showPasswordInput) {
       if (!password.includes(':')) {
         setPasswordApp(buildHysteriaPassword(username, password));
       } else {
         setPasswordApp(password);
       }
     }
-    if (isSSH && password.includes(':')) {
+    if (isSSH && showPasswordInput && password.includes(':')) {
       const parsed = parseHysteriaPassword(password);
       setUsernameApp(parsed.username);
       setPasswordApp(parsed.password);
@@ -241,10 +184,12 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
       const originalUsername = username;
       prepareCredentials();
       startConnection();
-      setTimeout(() => {
-        setPasswordApp(originalPassword);
-        setUsernameApp(originalUsername);
-      }, 1000);
+      if (showUsernameInput || showPasswordInput) {
+        setTimeout(() => {
+          setPasswordApp(originalPassword);
+          setUsernameApp(originalUsername);
+        }, 1000);
+      }
     } catch (e) {
       setFormError(e instanceof Error ? e.message : 'Falha ao conectar');
       setIsTryingToConnect(false);
@@ -338,11 +283,17 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
   };
 
   return (
+    <>
     <section className="card p-3 md:p-6 xl:p-8 2xl:p-10">
       <h1 className="text-gradient text-base lg:text-lg xl:text-xl 2xl:text-2xl font-medium text-center mb-3 lg:mb-4 xl:mb-5 2xl:mb-6">
         Dados de Acesso
       </h1>
       <div className="space-y-3 md:space-y-4">
+        {!hasVisibleCredentialFields && (
+          <p className="text-xs lg:text-sm text-center" style={{ color: 'var(--text-muted)' }}>
+            Esta configuração já possui as credenciais definidas.
+          </p>
+        )}
         {showUsernameInput && (
           <div className="relative">
             <input
@@ -445,7 +396,7 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
         <div className="flex gap-2">
           <button
             className="w-1/2 min-h-[44px] xl:h-12 2xl:h-14 flex items-center justify-center gap-1 xl:gap-2 text-xs lg:text-sm xl:text-base 2xl:text-lg font-medium rounded-xl btn-secondary touch-manipulation"
-            onClick={openDialogLogs}
+            onClick={() => setShowLogs(true)}
           >
             <Scroll className="w-4 h-4" />
             <span className="font-medium">Registros</span>
@@ -461,6 +412,8 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
         </div>
       </div>
     </section>
+    {showLogs && <LogsModal onClose={() => setShowLogs(false)} />}
+    </>
   );
 }
 

@@ -14,12 +14,23 @@ export type AutoConnectPhase =
   | 'check_internet'
   | 'next';
 
+export const CONNECTION_TIMEOUT_MIN = 3000;
+export const CONNECTION_TIMEOUT_MAX = 60000;
+export const FETCH_TIMEOUT_MIN = 2000;
+export const FETCH_TIMEOUT_MAX = 30000;
+export const TIMEOUT_STEP = 1000;
+
 export const DEFAULT_AUTO_CONNECT_CONFIG: AutoConnectConfig = {
   fetchTimeout: 4000,
   connectionTimeout: 10000,
   selectedCategories: [],
   configType: 'all',
 };
+
+export function clampTimeout(value: number, min: number, max: number): number {
+  if (!Number.isFinite(value)) return min;
+  return Math.min(max, Math.max(min, Math.round(value / TIMEOUT_STEP) * TIMEOUT_STEP));
+}
 
 export function matchesConfigType(mode: string | undefined, configType: AutoConnectConfig['configType']): boolean {
   if (configType === 'all') return true;

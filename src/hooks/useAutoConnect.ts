@@ -4,7 +4,12 @@ import {
   autoConnectTest,
   AutoConnectConfig,
   AutoConnectPhase,
+  CONNECTION_TIMEOUT_MAX,
+  CONNECTION_TIMEOUT_MIN,
   DEFAULT_AUTO_CONNECT_CONFIG,
+  FETCH_TIMEOUT_MAX,
+  FETCH_TIMEOUT_MIN,
+  clampTimeout,
   filterConfigsForAutoConnect,
 } from '../utils/autoConnectUtils';
 import { ConfigItem } from '../types/config';
@@ -45,6 +50,16 @@ function loadSavedConfig(): AutoConnectConfig {
     ...DEFAULT_AUTO_CONNECT_CONFIG,
     ...saved,
     selectedCategories: Array.isArray(saved.selectedCategories) ? saved.selectedCategories : [],
+    connectionTimeout: clampTimeout(
+      saved.connectionTimeout ?? DEFAULT_AUTO_CONNECT_CONFIG.connectionTimeout,
+      CONNECTION_TIMEOUT_MIN,
+      CONNECTION_TIMEOUT_MAX
+    ),
+    fetchTimeout: clampTimeout(
+      saved.fetchTimeout ?? DEFAULT_AUTO_CONNECT_CONFIG.fetchTimeout,
+      FETCH_TIMEOUT_MIN,
+      FETCH_TIMEOUT_MAX
+    ),
   };
 }
 

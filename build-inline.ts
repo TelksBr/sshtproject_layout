@@ -14,6 +14,7 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
+    emptyOutDir: true,
     minify: 'esbuild',
     cssMinify: 'esbuild',
     cssCodeSplit: false,
@@ -63,7 +64,8 @@ if (cssFile) {
 
 // 3. Ler conteúdos dos arquivos
 const cssContent = cssFile ? readFileSync(join(assetsPath, cssFile), "utf8") : "";
-const jsContent = readFileSync(join(assetsPath, jsFile), "utf8");
+const jsContent = readFileSync(join(assetsPath, jsFile), "utf8")
+  .replace(/<\/script/gi, "<\\/script");
 
 // 4. Gerar novo HTML com tudo inline
 const finalHtml = `<!DOCTYPE html>

@@ -296,7 +296,13 @@ export function IpFinder({ onClose }: IpFinderProps) {
 
         {/* Modal de confirmação */}
         {showConfirmClose && (
-          <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+            style={{
+              paddingTop: 'var(--safe-top, 32px)',
+              paddingBottom: 'var(--safe-bottom, 48px)',
+            }}
+          >
             <div className="bg-[#0c0a12] border border-[#8b5cf6]/20 rounded-2xl max-w-sm w-full p-5 lg:p-6 shadow-2xl shadow-black/40">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-full bg-amber-500/15 flex items-center justify-center flex-shrink-0">

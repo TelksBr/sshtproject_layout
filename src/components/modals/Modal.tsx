@@ -7,9 +7,13 @@ interface ModalProps {
   allowClose?: boolean;
   title?: string;
   icon?: LucideIcon;
+  headerActions?: React.ReactNode;
+  bodyRef?: React.Ref<HTMLDivElement>;
+  onBodyScroll?: React.UIEventHandler<HTMLDivElement>;
+  overlayClassName?: string;
 }
 
-export function Modal({ children, onClose, allowClose = true, title, icon: Icon }: ModalProps) {
+export function Modal({ children, onClose, allowClose = true, title, icon: Icon, headerActions, bodyRef, onBodyScroll, overlayClassName }: ModalProps) {
   const [isClosing, setIsClosing] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [isDesktop, setIsDesktop] = useState(
@@ -48,12 +52,14 @@ export function Modal({ children, onClose, allowClose = true, title, icon: Icon 
 
   return (
     <div 
-      className={`fixed inset-0 z-50 flex ${isDesktop ? 'items-center justify-center p-2 sm:p-3 md:p-4 xl:p-6 2xl:p-8' : 'items-end justify-center p-0'}`}
+      className={`fixed inset-0 ${overlayClassName || 'z-50'} flex ${isDesktop ? 'items-center justify-center p-2 sm:p-3 md:p-4 xl:p-6 2xl:p-8' : 'items-end justify-center p-0'}`}
       style={{
         backgroundColor: show ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0)',
         transition: 'background-color 0.3s ease, opacity 0.3s ease',
         opacity: show ? 1 : 0,
         height: 'calc(var(--vh, 1vh) * 100)',
+        paddingTop: isDesktop ? undefined : 'var(--safe-top, 32px)',
+        paddingBottom: 'var(--safe-bottom, 48px)',
       }}
       onClick={(e) => allowClose && e.target === e.currentTarget && handleClose()}
     >
@@ -68,7 +74,7 @@ export function Modal({ children, onClose, allowClose = true, title, icon: Icon 
           border: '1px solid var(--border)',
           opacity: show ? 1 : 0,
           transition: 'opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          maxHeight: isDesktop ? 'calc(var(--vh, 1vh) * 85)' : 'calc(var(--vh, 1vh) * 90)',
+          maxHeight: isDesktop ? 'calc(var(--vh, 1vh) * 85)' : '100%',
           willChange: 'opacity',
           minHeight: '200px',
         }}
@@ -78,7 +84,7 @@ export function Modal({ children, onClose, allowClose = true, title, icon: Icon 
             <div className="w-10 h-1 rounded-full bg-white/25" />
           </div>
         )}
-        <div className="flex items-center justify-between p-3 sm:p-4 xl:p-5 2xl:p-6" style={{ borderBottom: '1px solid var(--border)' }}>
+        <div className="flex items-center justify-between gap-2 p-3 sm:p-4 xl:p-5 2xl:p-6" style={{ borderBottom: '1px solid var(--border)' }}>
           {(title || Icon) && (
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               {Icon && (
@@ -89,19 +95,26 @@ export function Modal({ children, onClose, allowClose = true, title, icon: Icon 
               {title && <h2 className="text-base sm:text-lg xl:text-xl 2xl:text-2xl font-semibold truncate" style={{ color: 'var(--text)' }}>{title}</h2>}
             </div>
           )}
-          {allowClose && (
-            <button
-              onClick={handleClose}
-              className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl ml-auto flex-shrink-0 touch-manipulation"
-              style={{ background: 'var(--bg-elevated)' }}
-              aria-label="Fechar"
-            >
-              <X className="w-5 h-5 sm:w-6 sm:h-6 xl:w-7 xl:h-7" style={{ color: 'var(--text-muted)' }} />
-            </button>
-          )}
+          <div className="flex items-center gap-1 ml-auto flex-shrink-0">
+            {headerActions}
+            {allowClose && (
+              <button
+                onClick={handleClose}
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl touch-manipulation"
+                style={{ background: 'var(--bg-elevated)' }}
+                aria-label="Fechar"
+              >
+                <X className="w-5 h-5 sm:w-6 sm:h-6 xl:w-7 xl:h-7" style={{ color: 'var(--text-muted)' }} />
+              </button>
+            )}
+          </div>
         </div>
         
-        <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
+        <div
+          ref={bodyRef}
+          onScroll={onBodyScroll}
+          className="flex-1 overflow-y-auto custom-scrollbar min-h-0"
+        >
           {children}
         </div>
 

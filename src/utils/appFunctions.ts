@@ -1,5 +1,6 @@
 import type { ConfigCategory, ConfigItem } from '../types/config';
 import type { VpnState } from '../types/vpn';
+import { configRequiresField } from './configCredentials';
 import { getSdk } from './sdkInstance';
 import { call, callJson, callVoid } from './dtunnelBridge';
 
@@ -83,6 +84,42 @@ export function getDefaultConfig(): ConfigItem | null {
     callJson<ConfigItem>('DtGetDefaultConfig', 'execute') ||
     callJson<ConfigItem>('DtGetSelectedConfig', 'execute')
   );
+}
+
+export function getImportPublicKey(): string | null {
+  const sdk = getSdk();
+  try {
+    if (typeof sdk?.config?.getImportPublicKey === 'function') {
+      const value = sdk.config.getImportPublicKey();
+      if (value == null) return null;
+      const text = String(value).trim();
+      return text || null;
+    }
+  } catch {
+    /* fallback */
+  }
+  const value = call('DtGetImportPublicKey', 'execute');
+  if (value == null) return null;
+  const text = String(value).trim();
+  return text || null;
+}
+
+export function copyImportPublicKey(): boolean {
+  const sdk = getSdk();
+  try {
+    if (typeof sdk?.config?.copyImportPublicKey === 'function') {
+      sdk.config.copyImportPublicKey();
+      return true;
+    }
+  } catch {
+    /* fallback */
+  }
+  try {
+    callVoid('DtCopyImportPublicKey', 'execute');
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 // User Credentials Functions (via sdk.config)
@@ -354,32 +391,8 @@ export function getActiveConfig(): ConfigItem | null {
   }
 }
 
-function fieldRequired(
-  requiresFlag: boolean | undefined,
-  bakedValue: string | undefined,
-  fallback: boolean
-): boolean {
-  if (typeof requiresFlag === 'boolean') return requiresFlag;
-  if (bakedValue) return false;
-  return fallback;
-}
-
 export function shouldShowInput(type: 'username' | 'password' | 'uuid'): boolean {
-  const config = getActiveConfig();
-  if (!config) return true;
-
-  const isV2Ray = Boolean(config.mode?.toLowerCase().startsWith('v2ray'));
-
-  switch (type) {
-    case 'username':
-      return fieldRequired(config.requires_username, config.auth?.username, !isV2Ray);
-    case 'password':
-      return fieldRequired(config.requires_password, config.auth?.password, !isV2Ray);
-    case 'uuid':
-      return fieldRequired(config.requires_uuid, config.auth?.v2ray_uuid, isV2Ray);
-    default:
-      return true;
-  }
+  return configRequiresField(getActiveConfig(), type);
 }
 
 // Tradução (via sdk.text)
@@ -441,14 +454,250 @@ export function openExternalUrl(uri: string): unknown {
   return call('DtOpenExternalUrl', 'execute', [uri]);
 }
 
-export function getVpnLogs(): Record<string, string>[] {
+export function getVpnLogs(): Array<Record<string, string> | string> {
   const sdk = getSdk();
   if (typeof sdk?.main?.getLogs === 'function') {
     const logs = sdk.main.getLogs();
     return Array.isArray(logs) ? logs : [];
   }
-  const parsed = callJson<Record<string, string>[]>('DtGetLogs', 'execute');
+  const parsed = callJson<Array<Record<string, string> | string>>('DtGetLogs', 'execute');
   return Array.isArray(parsed) ? parsed : [];
+}
+
+export function clearVpnLogs(): void {
+  const sdk = getSdk();
+  try {
+    if (typeof sdk?.main?.clearLogs === 'function') {
+      sdk.main.clearLogs();
+      return;
+    }
+  } catch {
+    /* fallback */
+  }
+  callVoid('DtClearLogs', 'execute');
+}
+
+export function formatVpnLogEntry(entry: unknown): string {
+  if (entry == null) return '';
+  if (typeof entry === 'string') return entry.trim();
+  if (typeof entry === 'object') {
+    const rec = entry as Record<string, unknown>;
+    const time = rec.time ?? rec.timestamp ?? rec.date ?? rec.hora;
+    const message = rec.message ?? rec.log ?? rec.text ?? rec.data ?? rec.msg ?? rec.content;
+    const timeText = time == null ? '' : String(time).trim();
+    const messageText = message == null ? '' : String(message).trim();
+    if (timeText && messageText) return `${timeText} - ${messageText}`;
+    if (messageText) return messageText;
+    if (timeText) return timeText;
+    const values = Object.values(rec)
+      .filter((value) => value != null && String(value).trim())
+      .map((value) => String(value).trim());
+    return values.join(' - ');
+  }
+  return String(entry).trim();
+}
+
+const LOG_HTML_ALLOWED = /^(br|b|i|em|strong|u|small)$/i;
+const NOTIFICATION_HTML_TAGS = new Set([
+  'br',
+  'b',
+  'i',
+  'em',
+  'strong',
+  'u',
+  's',
+  'strike',
+  'del',
+  'ins',
+  'mark',
+  'small',
+  'sub',
+  'sup',
+  'code',
+  'p',
+  'span',
+  'div',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'hr',
+  'blockquote',
+  'pre',
+  'ul',
+  'ol',
+  'li',
+  'a',
+  'img',
+]);
+
+function restoreAllowedHtmlTags(escaped: string, allowed: RegExp): string {
+  return escaped.replace(/&lt;(\/?)([a-z0-9]+)([^&]*?)\/?&gt;/gi, (_match, slash: string, tag: string) => {
+    if (!allowed.test(tag)) return '';
+    const name = tag.toLowerCase();
+    if (name === 'br') return '<br>';
+    return slash ? `</${name}>` : `<${name}>`;
+  });
+}
+
+export function isSafeHttpUrl(url: string): boolean {
+  const value = String(url || '').trim();
+  if (!value) return false;
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+/** URL de mídia do campo Imagem do painel (PNG, JPG, GIF, WebP). */
+export function normalizeNotificationMediaUrl(raw: string | undefined | null): string | undefined {
+  const value = String(raw || '').trim();
+  if (!value) return undefined;
+  if (isSafeHttpUrl(value)) return value;
+  if (/^data:image\/(png|jpe?g|gif|webp)[;,]/i.test(value)) return value;
+  if (value.startsWith('//') && isSafeHttpUrl(`https:${value}`)) return `https:${value}`;
+  return undefined;
+}
+
+function sanitizeNotificationTree(root: ParentNode): void {
+  for (const node of Array.from(root.childNodes)) {
+    if (node.nodeType === Node.COMMENT_NODE) {
+      node.parentNode?.removeChild(node);
+      continue;
+    }
+    if (node.nodeType === Node.TEXT_NODE) continue;
+    if (node.nodeType !== Node.ELEMENT_NODE) {
+      node.parentNode?.removeChild(node);
+      continue;
+    }
+
+    const el = node as HTMLElement;
+    const tag = el.tagName.toLowerCase();
+    const href = el.getAttribute('href');
+    const src = el.getAttribute('src');
+    const alt = el.getAttribute('alt');
+
+    if (!NOTIFICATION_HTML_TAGS.has(tag)) {
+      sanitizeNotificationTree(el);
+      const parent = el.parentNode;
+      if (!parent) continue;
+      while (el.firstChild) parent.insertBefore(el.firstChild, el);
+      parent.removeChild(el);
+      continue;
+    }
+
+    while (el.attributes.length > 0) {
+      el.removeAttribute(el.attributes[0].name);
+    }
+
+    if (tag === 'a') {
+      if (href && isSafeHttpUrl(href)) {
+        el.setAttribute('href', href);
+        el.setAttribute('rel', 'noopener noreferrer');
+        el.setAttribute('target', '_blank');
+      }
+    } else if (tag === 'img') {
+      if (src && isSafeHttpUrl(src)) {
+        el.setAttribute('src', src);
+        el.setAttribute('alt', alt || '');
+      } else {
+        el.parentNode?.removeChild(el);
+        continue;
+      }
+    }
+
+    sanitizeNotificationTree(el);
+  }
+}
+
+export function handleNotificationHtmlClick(event: {
+  target: EventTarget | null;
+  preventDefault: () => void;
+  stopPropagation: () => void;
+}): boolean {
+  const target = event.target as HTMLElement | null;
+  const anchor = target?.closest?.('a');
+  if (!anchor) return false;
+  const href = anchor.getAttribute('href') || '';
+  if (!isSafeHttpUrl(href)) return false;
+  event.preventDefault();
+  event.stopPropagation();
+  openExternalUrl(href);
+  return true;
+}
+
+export function stripLogHtml(html: string): string {
+  return String(html || '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function escapeHtml(raw: string): string {
+  return raw
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+/** Escapa o HTML e devolve só tags simples de log (`b`, `br`, `i`...). */
+export function sanitizeLogHtml(html: string): string {
+  const raw = String(html || '');
+  if (!raw) return '';
+  return restoreAllowedHtmlTags(escapeHtml(raw), LOG_HTML_ALLOWED);
+}
+
+/** HTML básico de notificação do painel (texto, listas, links, imagens/GIF). */
+export function sanitizeNotificationHtml(html: string): string {
+  const raw = String(html || '');
+  if (!raw) return '';
+
+  if (typeof document === 'undefined') {
+    return restoreAllowedHtmlTags(escapeHtml(raw), /^(br|b|i|em|strong|u|s|small|p|span|h1|h2|h3|h4|ul|ol|li|blockquote|code|pre|hr)$/i);
+  }
+
+  const template = document.createElement('template');
+  template.innerHTML = raw;
+  sanitizeNotificationTree(template.content);
+  return template.innerHTML;
+}
+
+export function formatVpnLogsText(logs?: Array<Record<string, string> | string>): string {
+  const entries = logs ?? getVpnLogs();
+  return entries.map(formatVpnLogEntry).map(stripLogHtml).filter(Boolean).join('\n');
+}
+
+export type ShareTextResult = 'shared' | 'copied' | 'aborted' | 'failed';
+
+export async function shareText(text: string, title = 'SSH T PROJECT'): Promise<ShareTextResult> {
+  const content = String(text || '').trim();
+  if (!content) return 'failed';
+
+  try {
+    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+      await navigator.share({ title, text: content });
+      return 'shared';
+    }
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') return 'aborted';
+  }
+
+  try {
+    copyToClipboard(content);
+    return 'copied';
+  } catch {
+    return 'failed';
+  }
 }
 
 // Validação de credenciais setadas

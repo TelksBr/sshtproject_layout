@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { CalendarClock, User, Clock, Calendar, RefreshCw, AlertTriangle } from '../../utils/icons';
+import { CalendarClock, RefreshCw, AlertTriangle } from '../../utils/icons';
 import { Modal } from './Modal';
+import { CheckUserDetails } from './CheckUserDetails';
 import { useSdkCheckUserListener } from '../../hooks/useSdkCheckUserListener';
 import { parseSdkCheckUserPayload, UserInfo } from '../../utils/checkUserUtils';
 import { purchaseStorage } from '../../utils/purchaseStorageManager';
@@ -99,55 +100,8 @@ export function SdkCheckUserModal() {
 
   return (
     <Modal onClose={handleClose} title="Check User" icon={CalendarClock}>
-      <div className="grid gap-4 p-1">
-        <div className="p-4 rounded-lg glass-effect">
-          <div className="flex items-center gap-3 mb-4">
-            <User className="w-5 h-5" style={{ color: 'var(--accent)' }} />
-            <span className="font-medium" style={{ color: 'var(--text)' }}>
-              {userInfo.username}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-3 rounded-lg" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
-              <div className="flex items-center gap-2 mb-2">
-                <Clock className="w-4 h-4" style={{ color: 'var(--accent)' }} />
-                <span className="text-sm" style={{ color: 'var(--text-muted)' }}>Dias restantes</span>
-              </div>
-              <span className="text-xl font-bold" style={{ color: 'var(--text)' }}>
-                {userInfo.expiration_days}
-              </span>
-            </div>
-
-            <div className="p-3 rounded-lg" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
-              <div className="flex items-center gap-2 mb-2">
-                <Calendar className="w-4 h-4" style={{ color: 'var(--accent)' }} />
-                <span className="text-sm" style={{ color: 'var(--text-muted)' }}>Expira em</span>
-              </div>
-              <span style={{ color: 'var(--text)' }}>{userInfo.expiration_date || '—'}</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-4 rounded-lg glass-effect">
-          <h3 className="font-medium mb-4" style={{ color: 'var(--text)' }}>Detalhes da conexão</h3>
-          <div className="space-y-3">
-            <div
-              className="flex justify-between items-center p-3 rounded-lg"
-              style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}
-            >
-              <span style={{ color: 'var(--text-muted)' }}>Limite de dispositivos</span>
-              <span style={{ color: 'var(--text)' }}>{userInfo.limit_connections}</span>
-            </div>
-            <div
-              className="flex justify-between items-center p-3 rounded-lg"
-              style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}
-            >
-              <span style={{ color: 'var(--text-muted)' }}>Dispositivos conectados</span>
-              <span style={{ color: 'var(--text)' }}>{userInfo.count_connections}</span>
-            </div>
-          </div>
-        </div>
+      <div className="p-1">
+        <CheckUserDetails userInfo={userInfo} />
       </div>
     </Modal>
   );
