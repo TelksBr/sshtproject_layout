@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { X, type LucideIcon } from '../../utils/icons';
+import { X, ChevronLeft, type LucideIcon } from '../../utils/icons';
 
 interface ModalProps {
   children: React.ReactNode;
@@ -7,13 +7,14 @@ interface ModalProps {
   allowClose?: boolean;
   title?: string;
   icon?: LucideIcon;
+  onBack?: () => void;
   headerActions?: React.ReactNode;
   bodyRef?: React.Ref<HTMLDivElement>;
   onBodyScroll?: React.UIEventHandler<HTMLDivElement>;
   overlayClassName?: string;
 }
 
-export function Modal({ children, onClose, allowClose = true, title, icon: Icon, headerActions, bodyRef, onBodyScroll, overlayClassName }: ModalProps) {
+export function Modal({ children, onClose, allowClose = true, title, icon: Icon, onBack, headerActions, bodyRef, onBodyScroll, overlayClassName }: ModalProps) {
   const [isClosing, setIsClosing] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [isDesktop, setIsDesktop] = useState(
@@ -85,13 +86,23 @@ export function Modal({ children, onClose, allowClose = true, title, icon: Icon,
           </div>
         )}
         <div className="flex items-center justify-between gap-2 p-3 sm:p-4 xl:p-5 2xl:p-6" style={{ borderBottom: '1px solid var(--border)' }}>
-          {(title || Icon) && (
+          {(title || Icon || onBack) && (
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-              {Icon && (
+              {onBack ? (
+                <button
+                  type="button"
+                  onClick={onBack}
+                  className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl touch-manipulation flex-shrink-0"
+                  style={{ background: 'var(--bg-elevated)' }}
+                  aria-label="Voltar"
+                >
+                  <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: 'var(--text-muted)' }} />
+                </button>
+              ) : Icon ? (
                 <div className="w-7 h-7 sm:w-8 sm:h-8 xl:w-10 xl:h-10 2xl:w-12 2xl:h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'var(--accent-dim)' }}>
                   <Icon className="w-4 h-4 sm:w-5 sm:h-5 xl:w-6 xl:h-6 2xl:w-7 2xl:h-7" style={{ color: 'var(--accent)' }} />
                 </div>
-              )}
+              ) : null}
               {title && <h2 className="text-base sm:text-lg xl:text-xl 2xl:text-2xl font-semibold truncate" style={{ color: 'var(--text)' }}>{title}</h2>}
             </div>
           )}
