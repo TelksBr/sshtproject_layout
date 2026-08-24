@@ -1,10 +1,14 @@
 import React, { useState, useEffect, memo, useCallback, useRef, useMemo } from 'react';
 import { Settings, RefreshCw, CalendarClock, Wifi, AlertCircle, ChevronLeft, Search, Plane, Zap } from '../utils/icons';
-import { getAllConfigs, checkUserStatus, getAirplaneState, toggleAirplaneMode, checkForUpdates, setActiveConfig } from '../utils/appFunctions';
+import { getAllConfigs, checkUserStatus, getAirplaneState, toggleAirplaneMode, checkForUpdates, setActiveConfig, getUUID } from '../utils/appFunctions';
 import { Modal } from './modals/Modal';
 import { ConfigCategory, ConfigItem } from '../types/config';
 import { useActiveConfig } from '../context/ActiveConfigContext';
 import { useAutoConnectContext } from '../context/AutoConnectContext';
+import { useToast } from '../hooks/useToast';
+import { configRequiresField } from '../utils/configCredentials';
+import { ConfigIcon } from './ConfigIcon';
+import { syncIconCache } from '../utils/iconCache';
 
 function normalizeSearch(value: string | null | undefined): string {
   return String(value || '')
@@ -34,6 +38,20 @@ export function ServerSelector() {
 
   const { activeConfig, setActiveConfigId, refreshActiveConfig } = useActiveConfig();
   const { homeEnabled, setHomeEnabled } = useAutoConnectContext();
+  const { showToast } = useToast();
+
+  const handleToggleAutoConnect = useCallback(() => {
+    const nextState = !homeEnabled;
+    setHomeEnabled(nextState);
+    if (nextState) {
+      const allConfigs = configs.flatMap((category) => category.items);
+      const hasV2Ray = allConfigs.some((config) => configRequiresField(config, 'uuid'));
+      const currentUuid = getUUID() || '';
+      if (hasV2Ray && !currentUuid.trim()) {
+        showToast('Preencha seu UUID V2Ray no formulário para incluir servidores V2Ray no teste', 'info');
+      }
+    }
+  }, [homeEnabled, setHomeEnabled, configs, showToast]);
 
   useEffect(() => {
     loadConfigs();
@@ -62,6 +80,7 @@ export function ServerSelector() {
     try {
       const allConfigs = getAllConfigs();
       setConfigs(allConfigs);
+      syncIconCache(allConfigs);
       
       refreshActiveConfig(); // Atualiza a configuração ativa a partir do contexto
     } catch (e) {
@@ -203,7 +222,7 @@ export function ServerSelector() {
           <button
             className="flex-shrink-0 min-w-[44px] flex items-center justify-center touch-manipulation"
             type="button"
-            onClick={() => setHomeEnabled(!homeEnabled)}
+            onClick={handleToggleAutoConnect}
             aria-pressed={homeEnabled}
             aria-label={homeEnabled ? 'Desativar Auto Conect' : 'Ativar Auto Conect'}
             style={homeEnabled ? { background: 'var(--accent-dim)' } : undefined}
@@ -455,7 +474,7 @@ export function ServerSelector() {
                             }`} />
 
                             {config.icon && (
-                              <img
+                              <ConfigIcon
                                 src={config.icon}
                                 alt=""
                                 className={`w-6 h-6 rounded-lg object-cover ${
@@ -606,7 +625,7 @@ export function ServerSelector() {
 
                             {/* Ícone da configuração */}
                             {config.icon && (
-                              <img 
+                              <ConfigIcon 
                                 src={config.icon} 
                                 alt="" 
                                 className={`w-6 h-6 rounded-lg object-cover ${

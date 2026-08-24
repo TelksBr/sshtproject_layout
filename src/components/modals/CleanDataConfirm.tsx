@@ -1,6 +1,7 @@
 import { AlertTriangle, Wifi, Trash2 } from '../../utils/icons';
 import { Modal } from './Modal';
 import { cleanAppData } from '../../utils/appFunctions';
+import { clearIconCache } from '../../utils/iconCache';
 
 interface CleanDataConfirmProps {
   onClose: () => void;
@@ -8,6 +9,7 @@ interface CleanDataConfirmProps {
 
 export function CleanDataConfirm({ onClose }: CleanDataConfirmProps) {
   const handleCleanData = () => {
+    clearIconCache();
     cleanAppData();
     onClose();
   };

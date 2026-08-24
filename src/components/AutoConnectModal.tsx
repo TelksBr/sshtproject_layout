@@ -20,7 +20,8 @@ import {
   clampTimeout,
   filterConfigsForAutoConnect,
 } from '../utils/autoConnectUtils';
-import { getAllConfigs } from '../utils/appFunctions';
+import { getAllConfigs, getUUID } from '../utils/appFunctions';
+import { configRequiresField } from '../utils/configCredentials';
 import { TestLog } from '../hooks/useAutoConnect';
 
 type WizardStep = 'setup' | 'confirm' | 'run' | 'result';
@@ -75,12 +76,20 @@ export function AutoConnectModal() {
 
   const allCategories = useMemo(() => getAllConfigs(), [open]);
 
-  const filteredCount = useMemo(() => {
+  const filteredConfigs = useMemo(() => {
     const flat = allCategories.flatMap((cat) =>
       cat.items.map((item) => ({ ...item, category_id: cat.id }))
     );
-    return filterConfigsForAutoConnect(flat, autoConnectConfig).length;
+    return filterConfigsForAutoConnect(flat, autoConnectConfig);
   }, [allCategories, autoConnectConfig]);
+
+  const filteredCount = filteredConfigs.length;
+
+  const hasV2RayWithoutUuid = useMemo(() => {
+    const hasV2 = filteredConfigs.some((cfg) => configRequiresField(cfg, 'uuid'));
+    const currentUuid = getUUID() || '';
+    return hasV2 && !currentUuid.trim();
+  }, [filteredConfigs]);
 
   useEffect(() => {
     if (!open) return;
@@ -166,6 +175,7 @@ export function AutoConnectModal() {
             connectionTimeout={autoConnectConfig.connectionTimeout}
             fetchTimeout={autoConnectConfig.fetchTimeout}
             filteredCount={filteredCount}
+            hasV2RayWithoutUuid={hasV2RayWithoutUuid}
             onBack={() => setStep('setup')}
             onStart={handleStart}
           />
@@ -394,6 +404,7 @@ function ConfirmStep({
   connectionTimeout,
   fetchTimeout,
   filteredCount,
+  hasV2RayWithoutUuid,
   onBack,
   onStart,
 }: {
@@ -402,6 +413,7 @@ function ConfirmStep({
   connectionTimeout: number;
   fetchTimeout: number;
   filteredCount: number;
+  hasV2RayWithoutUuid?: boolean;
   onBack: () => void;
   onStart: () => void;
 }) {
@@ -430,6 +442,19 @@ function ConfirmStep({
           {filteredCount} configs
         </li>
       </ul>
+
+      {hasV2RayWithoutUuid && (
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-300">
+          <div className="font-semibold flex items-center gap-1.5 mb-1">
+            <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+            Atenção: UUID V2Ray não preenchido
+          </div>
+          <p className="opacity-90">
+            O teste inclui configurações V2Ray. Caso queira testá-las com sucesso, certifique-se de preencher o UUID V2Ray no formulário da tela inicial.
+          </p>
+        </div>
+      )}
+
       <div className="mt-auto flex gap-2">
         <button
           type="button"

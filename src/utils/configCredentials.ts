@@ -12,8 +12,9 @@ function hasBakedValue(value: unknown): boolean {
   return typeof value === 'string' && value.trim().length > 0;
 }
 
-function isV2RayMode(mode?: string): boolean {
-  return (mode || '').toLowerCase().startsWith('v2ray');
+export function isV2RayMode(mode?: string): boolean {
+  const m = (mode || '').toLowerCase();
+  return m.includes('v2ray') || m.includes('vmess') || m.includes('vless');
 }
 
 /**
@@ -95,3 +96,27 @@ export function getVisibleCredentialFields(config: ConfigItem | null | undefined
     uuid: configRequiresField(config, 'uuid'),
   };
 }
+
+/**
+ * Retorna os campos de credenciais necessários para o conjunto de configurações
+ * que serão executadas no Auto Conect.
+ */
+export function getAutoConnectCredentialFields(configs: ConfigItem[]): {
+  username: boolean;
+  password: boolean;
+  uuid: boolean;
+} {
+  let username = false;
+  let password = false;
+  let uuid = false;
+
+  for (const config of configs) {
+    if (!username && configRequiresField(config, 'username')) username = true;
+    if (!password && configRequiresField(config, 'password')) password = true;
+    if (!uuid && configRequiresField(config, 'uuid')) uuid = true;
+    if (username && password && uuid) break;
+  }
+
+  return { username, password, uuid };
+}
+

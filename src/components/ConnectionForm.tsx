@@ -19,7 +19,7 @@ import type { ConfigItem } from '../types/config';
 import { VpnState } from '../types/vpn';
 import { useAutoConnectContext } from '../context/AutoConnectContext';
 import { useActiveConfig } from '../context/ActiveConfigContext';
-import { getVisibleCredentialFields, mergeCredentialHints } from '../utils/configCredentials';
+import { getVisibleCredentialFields, getAutoConnectCredentialFields, mergeCredentialHints } from '../utils/configCredentials';
 import { LogsModal } from './modals/LogsModal';
 
 interface ConnectionFormProps {
@@ -135,10 +135,15 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
       isSSH: modeLower.startsWith('ssh'),
     };
   }, [selectedConfig]);
-  const { username: showUsernameInput, password: showPasswordInput, uuid: showUUIDInput } = useMemo(
-    () => getVisibleCredentialFields(selectedConfig),
-    [selectedConfig]
-  );
+
+  const { username: showUsernameInput, password: showPasswordInput, uuid: showUUIDInput } = useMemo(() => {
+    if (autoConnect.homeEnabled) {
+      const allConfigs = getAllConfigs().flatMap((category) => category.items);
+      return getAutoConnectCredentialFields(allConfigs);
+    }
+    return getVisibleCredentialFields(selectedConfig);
+  }, [autoConnect.homeEnabled, selectedConfig]);
+
   const hasVisibleCredentialFields = showUsernameInput || showPasswordInput || showUUIDInput;
 
   const usernameValue = showUsernameInput ? username : '';
@@ -162,6 +167,9 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
   };
 
   const prepareCredentials = () => {
+    if (showUUIDInput && uuid.trim()) {
+      setUUIDApp(uuid.trim());
+    }
     if (isHysteria && showUsernameInput && showPasswordInput) {
       if (!password.includes(':')) {
         setPasswordApp(buildHysteriaPassword(username, password));

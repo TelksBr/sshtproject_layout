@@ -8,7 +8,7 @@ export default defineConfig({
 
     server: {
     host: '::', // aceita IPv6 (e normalmente IPv4 também)
-    port: 80,
+    port: 8080,
     allowedHosts: ['talkera.sshtproject.com']
 
   },
