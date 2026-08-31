@@ -406,7 +406,7 @@ function SetupStep({
   return (
     <div className="flex flex-col gap-4 flex-1">
       <div>
-        <p className="text-xs text-[#b7abc9]/70 mb-2 font-medium">Tipo de configuração</p>
+        <p className="text-xs mb-2 font-medium" style={{ color: 'var(--text-muted)' }}>Tipo de configuração</p>
         <div className="flex flex-wrap gap-2">
           {(
             [
@@ -597,14 +597,14 @@ function SetupStep({
           )}
         </div>
       ) : filteredCount > 0 ? (
-        <div className="p-2.5 rounded-lg bg-green-500/10 border border-green-500/20 flex items-center gap-2 text-xs text-green-300">
-          <CheckCircle className="w-4 h-4 flex-shrink-0 text-green-400" />
+        <div className="p-2.5 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center gap-2 text-xs text-emerald-400 font-medium">
+          <CheckCircle className="w-4 h-4 flex-shrink-0 text-emerald-400" />
           <span>As configurações selecionadas já possuem credenciais pré-configuradas.</span>
         </div>
       ) : null}
 
       {validationError && (
-        <p className="text-xs text-red-400 text-center font-medium bg-red-500/10 p-2 rounded-lg border border-red-500/20">
+        <p className="text-xs text-rose-400 text-center font-medium bg-rose-500/15 p-2.5 rounded-xl border border-rose-500/30">
           {validationError}
         </p>
       )}
@@ -613,7 +613,8 @@ function SetupStep({
         <button
           type="button"
           onClick={() => setShowAdvanced(!showAdvanced)}
-          className="text-xs text-[#b7abc9]/80 underline touch-manipulation min-h-[32px]"
+          className="text-xs underline touch-manipulation min-h-[32px] font-medium"
+          style={{ color: 'var(--text-muted)' }}
         >
           {showAdvanced ? 'Ocultar tempos' : 'Ajustar tempos (avançado)'}
         </button>
@@ -640,14 +641,15 @@ function SetupStep({
       </div>
 
       <div className="mt-auto pt-2">
-        <p className="text-sm text-[#b7abc9]/80 mb-2 text-center">
+        <p className="text-sm mb-2 text-center font-medium" style={{ color: 'var(--text-muted)' }}>
           {filteredCount} configuração(ões) serão testadas
         </p>
         <button
           type="button"
           disabled={filteredCount === 0}
           onClick={onContinue}
-          className="w-full min-h-[44px] rounded-xl bg-[#8b5cf6] text-white font-semibold disabled:opacity-40 touch-manipulation"
+          className="w-full min-h-[48px] rounded-xl text-white font-bold text-sm disabled:opacity-40 touch-manipulation transition-all active:scale-[0.98]"
+          style={{ background: 'var(--accent)' }}
         >
           Continuar
         </button>
@@ -683,50 +685,50 @@ function ConfirmStep({
 }) {
   return (
     <div className="flex flex-col gap-4 flex-1">
-      <p className="text-sm text-[#b7abc9] font-medium">Confira antes de iniciar:</p>
-      <ul className="space-y-2 text-sm text-white bg-[#1a1624]/50 rounded-lg p-3">
+      <p className="text-sm font-semibold" style={{ color: 'var(--text-muted)' }}>Confira antes de iniciar:</p>
+      <ul className="space-y-2 text-sm rounded-xl p-3.5 space-y-2" style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}>
         <li>
-          <span className="text-[#b7abc9]/70">Tipo: </span>
-          {typeLabel}
+          <span style={{ color: 'var(--text-muted)' }}>Tipo: </span>
+          <strong>{typeLabel}</strong>
         </li>
         <li>
-          <span className="text-[#b7abc9]/70">Categorias: </span>
-          {categoriesLabel}
+          <span style={{ color: 'var(--text-muted)' }}>Categorias: </span>
+          <strong>{categoriesLabel}</strong>
         </li>
         <li>
-          <span className="text-[#b7abc9]/70">Timeout VPN: </span>
-          {connectionTimeout / 1000}s
+          <span style={{ color: 'var(--text-muted)' }}>Timeout VPN: </span>
+          <strong>{connectionTimeout / 1000}s</strong>
         </li>
         <li>
-          <span className="text-[#b7abc9]/70">Timeout internet: </span>
-          {fetchTimeout / 1000}s
+          <span style={{ color: 'var(--text-muted)' }}>Timeout internet: </span>
+          <strong>{fetchTimeout / 1000}s</strong>
         </li>
         <li>
-          <span className="text-[#b7abc9]/70">Total: </span>
-          {filteredCount} configs
+          <span style={{ color: 'var(--text-muted)' }}>Total: </span>
+          <strong>{filteredCount} configs</strong>
         </li>
         {requiredCredentials.username && (
           <li>
-            <span className="text-[#b7abc9]/70">Usuário SSH: </span>
-            <span className="text-white font-mono">{username || 'Não informado'}</span>
+            <span style={{ color: 'var(--text-muted)' }}>Usuário SSH: </span>
+            <span className="font-mono font-bold" style={{ color: 'var(--text)' }}>{username || 'Não informado'}</span>
           </li>
         )}
         {requiredCredentials.password && (
           <li>
-            <span className="text-[#b7abc9]/70">Senha SSH: </span>
-            <span className="text-white">{password ? '••••••••' : 'Não informada'}</span>
+            <span style={{ color: 'var(--text-muted)' }}>Senha SSH: </span>
+            <span className="font-bold" style={{ color: 'var(--text)' }}>{password ? '••••••••' : 'Não informada'}</span>
           </li>
         )}
         {requiredCredentials.uuid && (
           <li>
-            <span className="text-[#b7abc9]/70">UUID V2Ray: </span>
-            <span className="text-white font-mono">{uuid ? `${uuid.substring(0, 8)}...` : 'Não informado'}</span>
+            <span style={{ color: 'var(--text-muted)' }}>UUID V2Ray: </span>
+            <span className="font-mono font-bold" style={{ color: 'var(--text)' }}>{uuid ? `${uuid.substring(0, 8)}...` : 'Não informado'}</span>
           </li>
         )}
         {!requiredCredentials.username && !requiredCredentials.password && !requiredCredentials.uuid && (
           <li>
-            <span className="text-[#b7abc9]/70">Credenciais: </span>
-            <span className="text-green-400 font-medium">Pré-configuradas na config</span>
+            <span style={{ color: 'var(--text-muted)' }}>Credenciais: </span>
+            <span className="text-emerald-400 font-bold">Pré-configuradas na config</span>
           </li>
         )}
       </ul>
@@ -735,7 +737,8 @@ function ConfirmStep({
         <button
           type="button"
           onClick={onBack}
-          className="min-h-[44px] px-4 rounded-lg border border-[#8b5cf6]/30 text-[#b7abc9] flex items-center gap-1 touch-manipulation"
+          className="min-h-[48px] px-4 rounded-xl font-semibold text-sm flex items-center gap-1 touch-manipulation transition-all active:scale-[0.98]"
+          style={{ background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--border)' }}
         >
           <ChevronLeft className="w-4 h-4" />
           Voltar
@@ -743,7 +746,8 @@ function ConfirmStep({
         <button
           type="button"
           onClick={onStart}
-          className="flex-1 min-h-[44px] rounded-xl bg-[#8b5cf6] text-white font-semibold touch-manipulation"
+          className="flex-1 min-h-[48px] rounded-xl text-white font-bold text-sm touch-manipulation transition-all active:scale-[0.98]"
+          style={{ background: 'var(--accent)' }}
         >
           Iniciar teste
         </button>
@@ -774,25 +778,28 @@ function RunStep({
   const pct = total > 0 ? Math.min(100, (tested / total) * 100) : 0;
   return (
     <div className="flex flex-col gap-3 flex-1 min-h-0">
-      <div className="bg-[#1a1624]/50 rounded-lg p-3 border border-[#8b5cf6]/20">
-        <p className="text-white text-sm font-medium truncate">{currentName || 'Preparando…'}</p>
-        <p className="text-xs text-[#b7abc9]/80 mt-0.5">
+      <div className="rounded-xl p-3.5 space-y-2" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+        <p className="text-sm font-semibold truncate" style={{ color: 'var(--text)' }}>{currentName || 'Preparando…'}</p>
+        <p className="text-xs mt-0.5 font-medium" style={{ color: 'var(--text-muted)' }}>
           {phase ? PHASE_LABEL[phase] : 'Iniciando'} · {formatDuration(duration)}
         </p>
         <div className="flex items-center gap-2 mt-2">
-          <div className="flex-1 h-1.5 rounded-full bg-[#14111c] overflow-hidden">
+          <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
             <div
-              className="h-full bg-[#8b5cf6] transition-all"
-              style={{ width: `${pct}%` }}
+              className="h-full transition-all rounded-full"
+              style={{ width: `${pct}%`, background: 'var(--accent)' }}
             />
           </div>
-          <span className="text-xs text-white font-mono">
+          <span className="text-xs font-mono font-bold" style={{ color: 'var(--text)' }}>
             {tested}/{total}
           </span>
         </div>
       </div>
 
-      <div className="flex-1 min-h-[240px] max-h-[380px] sm:max-h-[460px] overflow-y-auto rounded-xl bg-black/50 p-3 font-mono text-[11px] custom-scrollbar border border-white/5 space-y-1">
+      <div
+        className="flex-1 min-h-[240px] max-h-[380px] sm:max-h-[460px] overflow-y-auto rounded-xl p-3 font-mono text-[11px] custom-scrollbar space-y-1"
+        style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}
+      >
         {logs.map((log) => (
           <LogLine key={log.id} log={log} />
         ))}
@@ -802,7 +809,7 @@ function RunStep({
       <button
         type="button"
         onClick={onCancel}
-        className="w-full min-h-[44px] rounded-lg bg-red-600/80 text-white font-bold flex items-center justify-center gap-2 touch-manipulation"
+        className="w-full min-h-[48px] rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm flex items-center justify-center gap-2 touch-manipulation transition-all active:scale-[0.98]"
       >
         <XCircle className="w-4 h-4" />
         Parar
@@ -813,13 +820,14 @@ function RunStep({
 
 function LogLine({ log }: { log: TestLog }) {
   const sanitizedMessage = sanitizeLogHtml(log.message);
-  const prefix = log.configName ? `<strong class="text-white font-semibold">${log.configName}: </strong>` : '';
+  const prefix = log.configName ? `<strong style="color: var(--text)" class="font-semibold">${log.configName}: </strong>` : '';
 
   return (
-    <div className="flex items-start gap-2 py-0.5 text-[#b7abc9]/90 leading-snug">
-      <span className="text-[#b7abc9]/40 shrink-0 font-mono select-none">{formatTime(log.timestamp)}</span>
+    <div className="flex items-start gap-2 py-0.5 leading-snug" style={{ color: 'var(--text-muted)' }}>
+      <span className="shrink-0 font-mono select-none text-[10px] opacity-70" style={{ color: 'var(--text-muted)' }}>{formatTime(log.timestamp)}</span>
       <span
         className="break-words whitespace-pre-wrap flex-1 allow-select font-mono text-[11px]"
+        style={{ color: 'var(--text)' }}
         dangerouslySetInnerHTML={{ __html: prefix + sanitizedMessage }}
       />
     </div>
@@ -848,21 +856,21 @@ function ResultStep({
   return (
     <div className="flex flex-col gap-4 flex-1">
       {success ? (
-        <div className="rounded-lg border border-green-400/40 bg-green-500/10 p-4">
-          <div className="flex items-center gap-2 text-green-400 font-bold mb-1">
+        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/15 p-4">
+          <div className="flex items-center gap-2 text-emerald-400 font-bold mb-1 text-sm">
             <CheckCircle className="w-5 h-5" />
             Conexão ativa
           </div>
-          <p className="text-white font-mono text-sm break-all">{success}</p>
+          <p className="font-mono text-xs break-all font-semibold" style={{ color: 'var(--text)' }}>{success}</p>
         </div>
       ) : (
-        <div className="rounded-lg border border-red-400/40 bg-red-500/10 p-4">
-          <div className="flex items-center gap-2 text-red-400 font-bold mb-1">
+        <div className="rounded-xl border border-rose-500/30 bg-rose-500/15 p-4">
+          <div className="flex items-center gap-2 text-rose-400 font-bold mb-1 text-sm">
             <AlertCircle className="w-5 h-5" />
             {cancelled ? 'Teste cancelado' : error || 'Nenhuma configuração funcionou'}
           </div>
           {failedNames.length > 0 && (
-            <ul className="mt-2 text-xs text-[#b7abc9] space-y-1 max-h-24 overflow-y-auto">
+            <ul className="mt-2 text-xs space-y-1 max-h-24 overflow-y-auto custom-scrollbar" style={{ color: 'var(--text-muted)' }}>
               {failedNames.slice(0, 8).map((name) => (
                 <li key={name} className="truncate">
                   {name}
@@ -875,7 +883,10 @@ function ResultStep({
       )}
 
       {logs.length > 0 && (
-        <div className="max-h-56 sm:max-h-72 overflow-y-auto rounded-xl bg-black/50 p-3 font-mono text-[11px] custom-scrollbar border border-white/5 space-y-1">
+        <div
+          className="max-h-56 sm:max-h-72 overflow-y-auto rounded-xl p-3 font-mono text-[11px] custom-scrollbar space-y-1"
+          style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}
+        >
           {logs.slice(-40).map((log) => (
             <LogLine key={log.id} log={log} />
           ))}
@@ -887,7 +898,8 @@ function ResultStep({
           <button
             type="button"
             onClick={onClose}
-            className="w-full min-h-[44px] rounded-xl bg-[#8b5cf6] text-white font-semibold touch-manipulation"
+            className="w-full min-h-[48px] rounded-xl text-white font-bold text-sm touch-manipulation transition-all active:scale-[0.98]"
+            style={{ background: 'var(--accent)' }}
           >
             Fechar
           </button>
@@ -896,7 +908,8 @@ function ResultStep({
             <button
               type="button"
               onClick={onRetry}
-              className="w-full min-h-[44px] rounded-xl bg-[#8b5cf6] text-white font-semibold flex items-center justify-center gap-2 touch-manipulation"
+              className="w-full min-h-[48px] rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 touch-manipulation transition-all active:scale-[0.98]"
+              style={{ background: 'var(--accent)' }}
             >
               <RefreshCw className="w-4 h-4" />
               Testar de novo
@@ -904,7 +917,8 @@ function ResultStep({
             <button
               type="button"
               onClick={onAdjust}
-              className="w-full min-h-[44px] rounded-lg border border-[#8b5cf6]/30 text-[#b7abc9] touch-manipulation"
+              className="w-full min-h-[48px] rounded-xl font-semibold text-sm touch-manipulation transition-all active:scale-[0.98]"
+              style={{ background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--border)' }}
             >
               Ajustar filtros
             </button>
