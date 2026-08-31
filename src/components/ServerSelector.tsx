@@ -489,36 +489,37 @@ export function ServerSelector() {
                               <div className="flex items-center gap-2 mb-1">
                                 <h3 className={`text-sm font-medium truncate transition-colors ${
                                   isActiveConfig ? 'text-white' : 'text-[#b7abc9]'
-                                }`}>
+                                }`} style={{ color: isActiveConfig ? 'var(--text)' : 'var(--text)' }}>
                                   {config.name}
                                 </h3>
                                 {isActiveConfig && (
-                                  <div className="px-2 py-0.5 rounded-full bg-[#8b5cf6] text-white text-[9px] font-bold flex-shrink-0">
+                                  <div className="px-2 py-0.5 rounded-full bg-[var(--accent)] text-white text-[9px] font-bold flex-shrink-0">
                                     EM USO
                                   </div>
                                 )}
                               </div>
-                              <p className={`text-[11px] truncate transition-colors ${
-                                isActiveConfig ? 'text-[#b7abc9]' : 'text-[#b7abc9]/70'
-                              }`}>
+                              <p className="text-[11px] truncate transition-colors font-medium" style={{ color: 'var(--text-muted)' }}>
                                 {config.description}
                               </p>
-                              <p className="text-[10px] text-[#b7abc9]/40 mt-0.5 truncate">
+                              <p className="text-[10px] mt-0.5 truncate" style={{ color: 'var(--text-muted)', opacity: 0.7 }}>
                                 {config.categoryName}
                               </p>
                             </div>
 
-                            <div className={`text-[10px] px-2 py-1 rounded-full border transition-colors flex-shrink-0 ${
-                              isActiveConfig
-                                ? 'bg-[#8b5cf6] text-white border-[#8b5cf6]/60 shadow-md'
-                                : 'text-[#b7abc9]/50 bg-[#14111c]/30 border-[#8b5cf6]/10'
-                            }`}>
+                            <div
+                              className="text-[10px] font-bold px-2.5 py-1 rounded-full border transition-colors flex-shrink-0"
+                              style={{
+                                background: isActiveConfig ? 'var(--accent)' : 'var(--bg-elevated)',
+                                color: isActiveConfig ? '#ffffff' : 'var(--text-muted)',
+                                borderColor: isActiveConfig ? 'var(--accent)' : 'var(--border)',
+                              }}
+                            >
                               {config.mode?.toUpperCase()}
                             </div>
                           </div>
 
                           {isActiveConfig && (
-                            <div className="absolute left-0 top-0 w-1 h-full bg-[#8b5cf6] rounded-l-lg" />
+                            <div className="absolute left-0 top-0 w-1 h-full bg-[var(--accent)] rounded-l-lg" />
                           )}
                         </button>
                       );
@@ -527,14 +528,14 @@ export function ServerSelector() {
                 )}
               </div>
             ) : searchQuery && !hasSearchHits ? (
-              <div className="p-4 rounded-lg glass-effect text-center">
-                <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-[#1a1624]/50 flex items-center justify-center">
-                  <Search className="w-6 h-6 text-[#b7abc9]" />
+              <div className="p-4 rounded-lg text-center" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+                <div className="w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
+                  <Search className="w-6 h-6" style={{ color: 'var(--text-muted)' }} />
                 </div>
-                <h3 className="text-base font-medium text-[#b7abc9] mb-2">
+                <h3 className="text-base font-semibold mb-2" style={{ color: 'var(--text)' }}>
                   Nenhum resultado
                 </h3>
-                <p className="text-sm text-[#b7abc9]/70">
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
                   Nenhuma categoria ou configuração encontrada para “{searchInput.trim()}”.
                 </p>
               </div>
@@ -550,17 +551,21 @@ export function ServerSelector() {
                           onClick={() => handleCategorySelect(category)}
                           className={`w-full p-3 rounded-lg transition-colors duration-200 relative ${
                             isActiveCategory 
-                              ? 'glass-effect border border-[#8b5cf6]/50 bg-[#8b5cf6]/10'
-                              : 'glass-effect'
+                              ? 'border border-[var(--accent)] bg-[var(--accent-dim)]'
+                              : ''
                           }`}
+                          style={{
+                            background: isActiveCategory ? undefined : 'var(--surface)',
+                            border: isActiveCategory ? undefined : '1px solid var(--border)',
+                          }}
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3 flex-1">
                               {/* Indicador visual da categoria ativa */}
                               <div className={`w-3 h-3 rounded-full flex-shrink-0 ${
                                 isActiveCategory 
-                                  ? 'bg-[#8b5cf6]'
-                                  : 'bg-[#8b5cf6]/20'
+                                  ? 'bg-[var(--accent)]'
+                                  : 'bg-[var(--accent)]/20'
                               }`} />
                               
                               <div className="flex-1 text-left">
@@ -605,9 +610,13 @@ export function ServerSelector() {
                             w-full p-3 rounded-lg transition-colors duration-200 relative overflow-hidden
                             ${isActiveConfig 
                               ? 'border border-[var(--accent)] bg-[var(--accent-dim)]'
-                              : 'glass-effect'
+                              : ''
                             }
                           `}
+                          style={{
+                            background: isActiveConfig ? undefined : 'var(--surface)',
+                            border: isActiveConfig ? undefined : '1px solid var(--border)',
+                          }}
                         >
                           <div className="flex items-center gap-3 relative z-10">
                             {/* Indicador visual da config ativa */}
@@ -641,26 +650,27 @@ export function ServerSelector() {
                                   </div>
                                 )}
                               </div>
-                              <p className={`text-[11px] truncate transition-colors ${
-                                isActiveConfig ? 'text-[#b7abc9]' : 'text-[#b7abc9]/70'
-                              }`}>
+                              <p className="text-[11px] truncate transition-colors font-medium" style={{ color: 'var(--text-muted)' }}>
                                 {config.description}
                               </p>
                             </div>
                             
                             {/* Badge do modo */}
-                            <div className={`text-[10px] px-2 py-1 rounded-full border transition-colors flex-shrink-0 ${
-                              isActiveConfig 
-                                ? 'bg-[#8b5cf6] text-white border-[#8b5cf6]/60 shadow-md' 
-                                : 'text-[#b7abc9]/50 bg-[#14111c]/30 border-[#8b5cf6]/10'
-                            }`}>
+                            <div
+                              className="text-[10px] font-bold px-2.5 py-1 rounded-full border transition-colors flex-shrink-0"
+                              style={{
+                                background: isActiveConfig ? 'var(--accent)' : 'var(--bg-elevated)',
+                                color: isActiveConfig ? '#ffffff' : 'var(--text-muted)',
+                                borderColor: isActiveConfig ? 'var(--accent)' : 'var(--border)',
+                              }}
+                            >
                               {config.mode?.toUpperCase()}
                             </div>
                           </div>
                           
                           {/* Linha de destaque e efeito de brilho para config ativa */}
                           {isActiveConfig && (
-                            <div className="absolute left-0 top-0 w-1 h-full bg-[#8b5cf6] rounded-l-lg" />
+                            <div className="absolute left-0 top-0 w-1 h-full bg-[var(--accent)] rounded-l-lg" />
                           )}
                         </button>
                       );
