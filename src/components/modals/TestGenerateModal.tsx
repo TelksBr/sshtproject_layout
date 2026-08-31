@@ -63,8 +63,8 @@ export const TestGenerateModal: React.FC<TestGenerateModalProps> = ({ onClose })
       {!success && !cooldown && (
         <form onSubmit={handleSubmit} className="flex flex-col gap-6 p-4 animate-fade-in">
           <div className="flex flex-col gap-2">
-            <label htmlFor="test-email" className="text-white font-semibold text-base flex items-center gap-2">
-              <Mail className="w-5 h-5 text-[#b7abc9]" /> Email para receber as credenciais:
+            <label htmlFor="test-email" className="font-semibold text-sm flex items-center gap-2" style={{ color: 'var(--text)' }}>
+              <Mail className="w-4 h-4 text-[var(--accent)]" /> Email para receber as credenciais:
             </label>
             <input
               id="test-email"
@@ -74,47 +74,49 @@ export const TestGenerateModal: React.FC<TestGenerateModalProps> = ({ onClose })
               required
               disabled={loading}
               placeholder="seu@email.com"
-              className="rounded-lg px-4 py-2 bg-[#0c0a12] border-2 border-[#8b5cf6]/40 text-white focus:outline-none focus:ring-2 focus:ring-[#8b5cf6] shadow-sm transition-all"
-              style={{ width: '100%' }}
+              className="rounded-xl px-4 py-2.5 text-sm outline-none shadow-sm transition-all allow-select"
+              style={{ width: '100%', background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--border)' }}
               autoFocus
             />
           </div>
           <button
             type="submit"
             disabled={loading || !email}
-            className="flex items-center justify-center gap-2 bg-gradient-to-r from-[#8b5cf6] to-[#7c3aed] hover:from-[#7c3aed] hover:to-[#8b5cf6] text-white font-bold py-2 px-6 rounded-lg shadow-lg transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-2 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed active:scale-95"
+            style={{ background: 'var(--accent)' }}
           >
             {loading && <span className="loader mr-2"></span>}
             {loading ? 'Enviando...' : 'Gerar e Enviar'}
           </button>
-          {error && <div className="text-red-400 text-sm mt-2 text-center animate-shake">{error}</div>}
+          {error && <div className="text-rose-400 text-sm mt-2 text-center animate-shake font-medium">{error}</div>}
         </form>
       )}
 
       {success && (
         <div className="flex flex-col items-center gap-5 p-6 animate-fade-in">
           <div className="flex items-center gap-3 mb-2">
-            <Mail className="w-8 h-8 text-[#a78bfa] animate-bounce" />
-            <span className="text-xl font-bold text-white drop-shadow">Credenciais enviadas!</span>
+            <Mail className="w-8 h-8 text-[var(--accent)] animate-bounce" />
+            <span className="text-xl font-bold drop-shadow" style={{ color: 'var(--text)' }}>Credenciais enviadas!</span>
           </div>
-          <div className="bg-[#0c0a12]/80 rounded-lg p-4 border border-[#8b5cf6]/30 shadow-inner w-full max-w-md">
-            <div className="text-white text-base mb-2"><b>Email:</b> <span className="text-[#b7abc9]">{success.email}</span></div>
+          <div className="rounded-xl p-4 shadow-inner w-full max-w-md space-y-2" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+            <div className="text-base" style={{ color: 'var(--text)' }}><b>Email:</b> <span style={{ color: 'var(--text-muted)' }}>{success.email}</span></div>
             {success.credentials_type?.length > 0 && (
-              <div className="text-white text-base mb-2"><b>Tipos:</b> <span className="text-[#b7abc9]">{success.credentials_type.join(', ')}</span></div>
+              <div className="text-base" style={{ color: 'var(--text)' }}><b>Tipos:</b> <span style={{ color: 'var(--text-muted)' }}>{success.credentials_type.join(', ')}</span></div>
             )}
             {success.expires_in_hours && (
-              <div className="text-white text-base mb-2"><b>Expira em:</b> <span className="text-[#b7abc9]">{success.expires_in_hours} hora(s)</span></div>
+              <div className="text-base" style={{ color: 'var(--text)' }}><b>Expira em:</b> <span style={{ color: 'var(--text-muted)' }}>{success.expires_in_hours} hora(s)</span></div>
             )}
             {success.expiration_date && (
-              <div className="text-white text-base mb-2"><b>Validade:</b> <span className="text-[#b7abc9]">{new Date(success.expiration_date).toLocaleString()}</span></div>
+              <div className="text-base" style={{ color: 'var(--text)' }}><b>Validade:</b> <span style={{ color: 'var(--text-muted)' }}>{new Date(success.expiration_date).toLocaleString()}</span></div>
             )}
             {success.sent_at && (
-              <div className="text-white text-base mb-2"><b>Enviado em:</b> <span className="text-[#b7abc9]">{new Date(success.sent_at).toLocaleString()}</span></div>
+              <div className="text-base" style={{ color: 'var(--text)' }}><b>Enviado em:</b> <span style={{ color: 'var(--text-muted)' }}>{new Date(success.sent_at).toLocaleString()}</span></div>
             )}
           </div>
           <button
             onClick={onClose}
-            className="mt-2 bg-gradient-to-r from-[#8b5cf6] to-[#7c3aed] hover:from-[#7c3aed] hover:to-[#8b5cf6] text-white font-bold py-2 px-8 rounded-lg shadow-lg transition-all duration-200"
+            className="mt-2 text-white font-bold py-2.5 px-8 rounded-xl shadow-lg transition-all duration-200 active:scale-95"
+            style={{ background: 'var(--accent)' }}
           >Fechar</button>
         </div>
       )}
@@ -122,18 +124,19 @@ export const TestGenerateModal: React.FC<TestGenerateModalProps> = ({ onClose })
       {cooldown && (
         <div className="flex flex-col items-center gap-5 p-6 animate-fade-in">
           <div className="flex items-center gap-3 mb-2">
-            <Timer className="w-8 h-8 text-yellow-400 animate-pulse" />
-            <span className="text-xl font-bold text-yellow-300 drop-shadow">Aguarde para novo teste</span>
+            <Timer className="w-8 h-8 text-amber-500 animate-pulse" />
+            <span className="text-xl font-bold drop-shadow" style={{ color: 'var(--text)' }}>Aguarde para novo teste</span>
           </div>
-          <div className="bg-[#0c0a12]/80 rounded-lg p-4 border border-yellow-400/30 shadow-inner w-full max-w-md">
-            <div className="text-yellow-200 text-base text-center">
+          <div className="rounded-xl p-4 shadow-inner w-full max-w-md" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+            <div className="text-base text-center" style={{ color: 'var(--text)' }}>
               Você deve aguardar <b>{cooldown.hours_remaining} hora(s)</b> para gerar um novo teste gratuito.<br />
               Tente novamente após <b>{Math.ceil(cooldown.retry_after / 60)} minutos</b>.
             </div>
           </div>
           <button
             onClick={onClose}
-            className="mt-2 bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-600 hover:to-yellow-400 text-white font-bold py-2 px-8 rounded-lg shadow-lg transition-all duration-200"
+            className="mt-2 text-white font-bold py-2.5 px-8 rounded-xl shadow-lg transition-all duration-200 active:scale-95"
+            style={{ background: 'var(--accent)' }}
           >Fechar</button>
         </div>
       )}

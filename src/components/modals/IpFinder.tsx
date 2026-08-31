@@ -144,13 +144,13 @@ export function IpFinder({ onClose }: IpFinderProps) {
       <div className="w-full p-3 md:p-5 lg:p-6 2xl:p-8 space-y-4 lg:space-y-5">
         
         {/* Banner informativo */}
-        <div className="bg-[#8b5cf6]/10 border border-[#8b5cf6]/20 rounded-xl lg:rounded-2xl p-3 md:p-4 lg:p-5">
-          <p className="text-sm md:text-base lg:text-lg text-[#b7abc9] leading-relaxed">
+        <div className="rounded-xl lg:rounded-2xl p-3 md:p-4 lg:p-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+          <p className="text-sm md:text-base lg:text-lg leading-relaxed" style={{ color: 'var(--text)' }}>
             Insira intervalos de endereços IP separados por vírgula para buscar automaticamente via modo avião.
           </p>
           <div className="flex items-start gap-2 mt-2 lg:mt-3">
             <span className="text-amber-400 text-base lg:text-lg flex-shrink-0">⚠️</span>
-            <p className="text-xs md:text-sm lg:text-base text-amber-400/80">
+            <p className="text-xs md:text-sm lg:text-base" style={{ color: 'var(--text-muted)' }}>
               É preciso ter ativa a permissão de assistente para uso do modo avião.
             </p>
           </div>
@@ -159,12 +159,13 @@ export function IpFinder({ onClose }: IpFinderProps) {
         {/* Input + Botões */}
         <div className="space-y-3">
           <div className="relative">
-            <Search className="absolute left-3 lg:left-4 top-1/2 -translate-y-1/2 w-4 h-4 lg:w-5 lg:h-5 text-[#b7abc9]/40 pointer-events-none" />
+            <Search className="absolute left-3 lg:left-4 top-1/2 -translate-y-1/2 w-4 h-4 lg:w-5 lg:h-5 pointer-events-none" style={{ color: 'var(--text-muted)' }} />
             <input
               type="text"
               value={ipRange}
               onChange={(e) => setIpRange(e.target.value)}
-              className="w-full pl-10 lg:pl-12 pr-4 py-3 lg:py-4 rounded-xl lg:rounded-2xl bg-[#1a1624]/80 border border-[#8b5cf6]/30 text-white text-sm lg:text-base 2xl:text-lg placeholder-[#b7abc9]/30 focus:border-[#8b5cf6]/60 focus:ring-1 focus:ring-[#8b5cf6]/30 outline-none transition-all duration-200 allow-select"
+              className="w-full pl-10 lg:pl-12 pr-4 py-3 lg:py-4 rounded-xl lg:rounded-2xl text-sm lg:text-base 2xl:text-lg outline-none transition-all duration-200 allow-select"
+              style={{ background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--border)' }}
               placeholder="Ex: 192.168.0, 10.0.0, 100.64"
             />
           </div>
@@ -175,16 +176,13 @@ export function IpFinder({ onClose }: IpFinderProps) {
                 flex-1 flex items-center justify-center gap-2 lg:gap-3 
                 font-semibold py-3 lg:py-4 px-5 rounded-xl lg:rounded-2xl 
                 shadow-lg transition-all duration-200 active:scale-[0.98]
-                text-sm lg:text-base 2xl:text-lg
-                ${isSearching 
-                  ? 'bg-red-500/20 border border-red-500/40 text-red-300 hover:bg-red-500/30' 
-                  : 'bg-gradient-to-r from-[#8b5cf6] to-[#7c3aed] hover:from-[#a78bfa] hover:to-[#8b5cf6] text-white shadow-[#8b5cf6]/20'
-                }
+                text-sm lg:text-base 2xl:text-lg text-white
               `}
+              style={{ background: isSearching ? '#dc2626' : 'var(--accent)' }}
             >
               {isSearching ? (
                 <>
-                  <div className="w-4 h-4 lg:w-5 lg:h-5 border-2 border-red-300 border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 lg:w-5 lg:h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   Parar Busca
                 </>
               ) : (
@@ -194,30 +192,31 @@ export function IpFinder({ onClose }: IpFinderProps) {
             <button
               onClick={saveIpList}
               disabled={!ipRange.trim()}
-              className="flex items-center justify-center gap-2 border border-[#8b5cf6]/40 text-[#b7abc9] font-semibold py-3 lg:py-4 px-4 lg:px-5 rounded-xl lg:rounded-2xl bg-[#8b5cf6]/5 hover:bg-[#8b5cf6]/15 transition-all duration-200 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed text-sm lg:text-base"
+              className="flex items-center justify-center gap-2 font-semibold py-3 lg:py-4 px-4 lg:px-5 rounded-xl lg:rounded-2xl transition-all duration-200 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed text-sm lg:text-base"
+              style={{ background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--border)' }}
             >
-              <Save className="w-4 h-4 lg:w-5 lg:h-5" />
+              <Save className="w-4 h-4 lg:w-5 lg:h-5 text-[var(--accent)]" />
               <span className="hidden sm:inline">Salvar</span>
             </button>
           </div>
         </div>
 
         {/* Logs */}
-        <div className="bg-[#14111c] border border-[#8b5cf6]/15 rounded-xl lg:rounded-2xl overflow-hidden">
-          <div className="flex items-center justify-between px-4 lg:px-5 py-2.5 lg:py-3 border-b border-[#8b5cf6]/15 bg-[#8b5cf6]/5">
-            <h3 className="text-sm lg:text-base 2xl:text-lg font-semibold text-white flex items-center gap-2">
-              <span className="text-[#b7abc9]/60">📋</span> Logs
+        <div className="rounded-xl lg:rounded-2xl overflow-hidden" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+          <div className="flex items-center justify-between px-4 lg:px-5 py-2.5 lg:py-3 border-b bg-[var(--bg-elevated)]" style={{ borderColor: 'var(--border)' }}>
+            <h3 className="text-sm lg:text-base 2xl:text-lg font-semibold flex items-center gap-2" style={{ color: 'var(--text)' }}>
+              <span>📋</span> Logs
             </h3>
             {isSearching && (
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                <span className="text-xs lg:text-sm text-green-400/80">Buscando...</span>
+                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-xs lg:text-sm text-emerald-500 font-semibold">Buscando...</span>
               </div>
             )}
           </div>
           <div className="max-h-48 lg:max-h-64 overflow-y-auto custom-scrollbar p-3 lg:p-4 space-y-1.5">
             {logs.length === 0 ? (
-              <p className="text-[#b7abc9]/30 text-xs lg:text-sm text-center py-6 lg:py-8">
+              <p className="text-xs lg:text-sm text-center py-6 lg:py-8" style={{ color: 'var(--text-muted)' }}>
                 Nenhum log ainda. Inicie uma busca para ver os resultados.
               </p>
             ) : (
@@ -228,13 +227,12 @@ export function IpFinder({ onClose }: IpFinderProps) {
                 return (
                   <div 
                     key={index} 
-                    className={`
-                      flex items-start gap-2 px-2.5 lg:px-3 py-1.5 lg:py-2 rounded-lg text-xs lg:text-sm font-mono
-                      ${isDentro ? 'bg-green-500/10 text-green-300' : ''}
-                      ${isFora ? 'bg-[#8b5cf6]/5 text-[#b7abc9]/70' : ''}
-                      ${isValores ? 'bg-[#8b5cf6]/10 text-[#b7abc9]' : ''}
-                      ${!isDentro && !isFora && !isValores ? 'text-[#b7abc9]/60' : ''}
-                    `}
+                    className="flex items-start gap-2 px-2.5 lg:px-3 py-1.5 lg:py-2 rounded-lg text-xs lg:text-sm font-mono"
+                    style={{
+                      background: isDentro ? 'rgba(52,211,153,0.15)' : 'var(--bg-elevated)',
+                      color: isDentro ? '#34d399' : 'var(--text)',
+                      border: '1px solid var(--border)',
+                    }}
                   >
                     <span className="flex-shrink-0 mt-0.5">
                       {isDentro ? '✅' : isFora ? '❌' : isValores ? '🔍' : '•'}
@@ -249,39 +247,41 @@ export function IpFinder({ onClose }: IpFinderProps) {
 
         {/* Listas Salvas */}
         {savedLists.length > 0 && (
-          <div className="bg-[#14111c] border border-[#8b5cf6]/15 rounded-xl lg:rounded-2xl overflow-hidden">
-            <div className="px-4 lg:px-5 py-2.5 lg:py-3 border-b border-[#8b5cf6]/15 bg-[#8b5cf6]/5">
-              <h3 className="text-sm lg:text-base 2xl:text-lg font-semibold text-white flex items-center gap-2">
-                <span className="text-[#b7abc9]/60">💾</span> Listas Salvas
-                <span className="ml-auto text-xs lg:text-sm text-[#b7abc9]/40 font-normal">{savedLists.length}</span>
+          <div className="rounded-xl lg:rounded-2xl overflow-hidden" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+            <div className="px-4 lg:px-5 py-2.5 lg:py-3 border-b bg-[var(--bg-elevated)]" style={{ borderColor: 'var(--border)' }}>
+              <h3 className="text-sm lg:text-base 2xl:text-lg font-semibold flex items-center gap-2" style={{ color: 'var(--text)' }}>
+                <span>💾</span> Listas Salvas
+                <span className="ml-auto text-xs lg:text-sm font-normal" style={{ color: 'var(--text-muted)' }}>{savedLists.length}</span>
               </h3>
             </div>
             <div className="max-h-48 lg:max-h-64 overflow-y-auto custom-scrollbar p-3 lg:p-4 space-y-2 lg:space-y-3">
               {savedLists.map((list, index) => (
                 <div 
                   key={index} 
-                  className="bg-[#1a1624]/50 border border-[#8b5cf6]/10 rounded-xl p-3 lg:p-4 hover:border-[#8b5cf6]/25 transition-colors duration-200"
+                  className="rounded-xl p-3 lg:p-4 transition-colors duration-200"
+                  style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs lg:text-sm text-[#b7abc9]/50 truncate">
+                      <p className="text-xs lg:text-sm truncate" style={{ color: 'var(--text-muted)' }}>
                         {list.name.replace('list-', '#')}
                       </p>
-                      <p className="text-sm lg:text-base text-white font-mono mt-0.5 truncate">
+                      <p className="text-sm lg:text-base font-mono mt-0.5 truncate" style={{ color: 'var(--text)' }}>
                         {list.value}
                       </p>
                     </div>
                     <div className="flex gap-2 flex-shrink-0">
                       <button
                         onClick={() => handleSearchFromList(list)}
-                        className="flex items-center justify-center gap-1.5 bg-[#8b5cf6]/15 hover:bg-[#8b5cf6]/25 text-[#b7abc9] font-medium py-2 px-3 lg:px-4 rounded-lg lg:rounded-xl transition-all duration-200 active:scale-[0.96] text-xs lg:text-sm"
+                        className="flex items-center justify-center gap-1.5 font-medium py-2 px-3 lg:px-4 rounded-lg lg:rounded-xl transition-all duration-200 active:scale-[0.96] text-xs lg:text-sm text-white"
+                        style={{ background: 'var(--accent)' }}
                       >
                         <Play className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
                         <span className="hidden sm:inline">Buscar</span>
                       </button>
                       <button
                         onClick={() => deleteIpList(list.name)}
-                        className="flex items-center justify-center bg-red-500/10 hover:bg-red-500/20 text-red-400 py-2 px-2.5 lg:px-3 rounded-lg lg:rounded-xl transition-all duration-200 active:scale-[0.96]"
+                        className="flex items-center justify-center bg-rose-500/15 text-rose-400 py-2 px-2.5 lg:px-3 rounded-lg lg:rounded-xl transition-all duration-200 active:scale-[0.96]"
                         aria-label="Excluir lista"
                       >
                         <Trash2 className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
@@ -303,26 +303,27 @@ export function IpFinder({ onClose }: IpFinderProps) {
               paddingBottom: 'var(--safe-bottom, 48px)',
             }}
           >
-            <div className="bg-[#0c0a12] border border-[#8b5cf6]/20 rounded-2xl max-w-sm w-full p-5 lg:p-6 shadow-2xl shadow-black/40">
+            <div className="rounded-2xl max-w-sm w-full p-5 lg:p-6 shadow-2xl" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-full bg-amber-500/15 flex items-center justify-center flex-shrink-0">
                   <span className="text-lg">⚠️</span>
                 </div>
-                <h2 className="text-lg lg:text-xl font-bold text-white">Parar Busca?</h2>
+                <h2 className="text-lg lg:text-xl font-bold" style={{ color: 'var(--text)' }}>Parar Busca?</h2>
               </div>
-              <p className="text-sm lg:text-base text-[#b7abc9]/70 mb-5 leading-relaxed">
+              <p className="text-sm lg:text-base mb-5 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
                 A busca de IP está em andamento. Deseja parar e fechar?
               </p>
               <div className="flex gap-3">
                 <button
                   onClick={cancelClose}
-                  className="flex-1 border border-[#8b5cf6]/30 text-[#b7abc9] font-semibold py-3 rounded-xl bg-[#8b5cf6]/5 hover:bg-[#8b5cf6]/15 transition-all duration-200 active:scale-[0.98] text-sm lg:text-base"
+                  className="flex-1 font-semibold py-3 rounded-xl transition-all duration-200 active:scale-[0.98] text-sm lg:text-base"
+                  style={{ background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--border)' }}
                 >
                   Continuar
                 </button>
                 <button
                   onClick={confirmClose}
-                  className="flex-1 bg-red-500/20 border border-red-500/30 text-red-300 font-semibold py-3 rounded-xl hover:bg-red-500/30 transition-all duration-200 active:scale-[0.98] text-sm lg:text-base"
+                  className="flex-1 bg-rose-600 text-white font-semibold py-3 rounded-xl hover:bg-rose-500 transition-all duration-200 active:scale-[0.98] text-sm lg:text-base"
                 >
                   Parar e Fechar
                 </button>

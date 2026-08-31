@@ -98,13 +98,13 @@ export function RecoveryModal({ onClose }: RecoveryModalProps) {
       <div className="p-6">
         <div className="space-y-4">
           <div className="text-center">
-            <h3 className="text-xl font-semibold text-white mb-2">Recuperar Credenciais</h3>
-            <p className="text-gray-300">Digite seu email para receber suas credenciais</p>
+            <h3 className="text-xl font-semibold mb-2" style={{ color: 'var(--text)' }}>Recuperar Credenciais</h3>
+            <p style={{ color: 'var(--text-muted)' }}>Digite seu email para receber suas credenciais</p>
           </div>
 
-          <div className="bg-blue-900/30 border border-blue-600 p-4 rounded-lg">
-            <div className="text-blue-300 text-sm">
-              <div className="font-semibold mb-2">ℹ️ Como funciona:</div>
+          <div className="p-4 rounded-xl" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+            <div className="text-sm" style={{ color: 'var(--text-muted)' }}>
+              <div className="font-semibold mb-2" style={{ color: 'var(--accent)' }}>ℹ️ Como funciona:</div>
               <div className="space-y-1 text-xs">
                 <div>• Digite o email usado na compra</div>
                 <div>• Receba um email com suas credenciais</div>
@@ -114,7 +114,7 @@ export function RecoveryModal({ onClose }: RecoveryModalProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-muted)' }}>
               Email da Compra
             </label>
             <input
@@ -122,12 +122,17 @@ export function RecoveryModal({ onClose }: RecoveryModalProps) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleRecoverySubmit()}
-              className="w-full px-3 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+              className="w-full px-3 py-3 rounded-xl text-sm outline-none allow-select"
+              style={{
+                background: 'var(--bg-elevated)',
+                color: 'var(--text)',
+                border: '1px solid var(--border)',
+              }}
               placeholder="seu@email.com"
               disabled={isLoading}
             />
             {emailError && (
-              <p className="text-red-400 text-sm mt-1">{emailError}</p>
+              <p className="text-rose-400 text-sm mt-1 font-medium">{emailError}</p>
             )}
           </div>
 
@@ -135,10 +140,11 @@ export function RecoveryModal({ onClose }: RecoveryModalProps) {
             <button
               onClick={handleRecoverySubmit}
               disabled={isLoading || !email.trim()}
-              className="flex-1 py-3 px-4 bg-gradient-to-r from-[#8b5cf6] to-[#7c3aed] hover:from-[#7c3aed] hover:to-[#8b5cf6] disabled:bg-gray-500 text-white rounded-lg transition-all duration-200 flex items-center justify-center font-semibold shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
+              className="flex-1 py-3 px-4 text-white rounded-xl transition-all duration-200 flex items-center justify-center font-semibold shadow-lg disabled:opacity-60 disabled:cursor-not-allowed active:scale-95"
+              style={{ background: 'var(--accent)' }}
             >
               {isLoading ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
               ) : (
                 <>
                   <Mail className="w-4 h-4 mr-2" />

@@ -21,7 +21,7 @@ export const FETCH_TIMEOUT_MAX = 30000;
 export const TIMEOUT_STEP = 1000;
 
 export const DEFAULT_AUTO_CONNECT_CONFIG: AutoConnectConfig = {
-  fetchTimeout: 4000,
+  fetchTimeout: 7000,
   connectionTimeout: 10000,
   selectedCategories: [],
   configType: 'all',

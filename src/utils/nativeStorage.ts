@@ -13,15 +13,15 @@
 const STORAGE_PREFIX = '@sshtproject:' as const;
 
 /**
- * Tipos de dados suportados
+ * Tipos de dados suportados (qualquer valor serializável em JSON)
  */
-export type StorageValue = string | number | boolean | Record<string, any> | null;
+export type StorageValue = unknown;
 
 /**
  * Salva um valor no storage (com namespace sshtproject)
  * ✅ Usa: localStorage do browser
  */
-export function saveData<T extends StorageValue>(key: string, value: T): void {
+export function saveData<T = unknown>(key: string, value: T): void {
   try {
     localStorage.setItem(`${STORAGE_PREFIX}${key}`, JSON.stringify(value));
   } catch (error) {
@@ -33,7 +33,7 @@ export function saveData<T extends StorageValue>(key: string, value: T): void {
  * Lê um valor do storage
  * ✅ Usa: localStorage do browser
  */
-export function loadData<T extends StorageValue>(key: string, defaultValue?: T): T | null {
+export function loadData<T = unknown>(key: string, defaultValue?: T): T | null {
   try {
     const item = localStorage.getItem(`${STORAGE_PREFIX}${key}`);
     if (!item) return defaultValue ?? null;

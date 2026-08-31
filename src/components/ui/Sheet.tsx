@@ -90,14 +90,17 @@ export function Sheet({
       className={`
         fixed inset-y-0 z-[9999]
         ${side === 'left' ? 'left-0' : 'right-0'}
-        w-[280px] xs:w-[300px] sm:w-[320px] max-w-[90vw] sm:max-w-[85vw]
+        w-[280px] xs:w-[300px] sm:w-[320px] max-w-[85%] sm:max-w-[80%]
         transform transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
         ${open ? openTranslateClass : translateClass}
         ${panelClassName}
       `}
       style={{
-        paddingTop: 'var(--safe-top, 32px)',
-        paddingBottom: 'var(--safe-bottom, 48px)',
+        background: 'var(--surface)',
+        borderRight: side === 'left' ? '1px solid var(--border)' : undefined,
+        borderLeft: side === 'right' ? '1px solid var(--border)' : undefined,
+        paddingTop: 'var(--safe-top, 16px)',
+        paddingBottom: 'var(--safe-bottom, 16px)',
       }}
       onClick={(e) => e.stopPropagation()}
     >

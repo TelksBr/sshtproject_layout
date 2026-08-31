@@ -23,14 +23,16 @@ export function getStatusBarHeight(): number {
     const sdk = getSdk();
     if (sdk?.android) {
       const v = sdk.android.getStatusBarHeight();
-      return Number(v ?? 0);
+      if (v !== undefined && v !== null && !isNaN(Number(v))) {
+        return Number(v);
+      }
     }
   } catch (error) {
     console.warn('SDK getStatusBarHeight não disponível:', error);
   }
 
-  // Fallback padrão
-  return 24;
+  // No browser / preview web, não há barra nativa (retorna 0)
+  return 0;
 }
 
 /**
@@ -43,14 +45,16 @@ export function getNavBarHeight(): number {
     const sdk = getSdk();
     if (sdk?.android) {
       const v = sdk.android.getNavigationBarHeight();
-      return Number(v ?? 0);
+      if (v !== undefined && v !== null && !isNaN(Number(v))) {
+        return Number(v);
+      }
     }
   } catch (error) {
     console.warn('SDK getNavigationBarHeight não disponível:', error);
   }
 
-  // Fallback padrão
-  return 48;
+  // No browser / preview web, não há barra nativa (retorna 0)
+  return 0;
 }
 
 /**

@@ -118,8 +118,8 @@ export function useBackgroundMonitor(options?: BackgroundMonitorOptions): Backgr
       purchaseMonitor.start(callbacks);
     }
 
-    // Solicitar permissão para notificações (apenas se enabled !== false)
-    if (options?.enabled !== false && 'Notification' in window && Notification.permission === 'default') {
+    // Solicitar permissão para notificações
+    if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission();
     }
 

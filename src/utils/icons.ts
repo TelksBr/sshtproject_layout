@@ -87,6 +87,9 @@ export {
   Smartphone,
   Plane,
   PlaneLanding,
+  Bug,
+  Terminal,
+  Activity,
   
   // Energia e velocidade
   Zap,
@@ -100,6 +103,12 @@ export {
   // Social
   Share2,
   Star,
+  Sparkles,
+
+  // Temas (Modo Claro / Escuro)
+  Sun,
+  Moon,
+  SunMoon,
 } from 'lucide-react';
 
 // Exporta o tipo para componentes que recebem ícones como props

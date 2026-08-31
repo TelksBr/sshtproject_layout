@@ -565,36 +565,30 @@ export function ServerSelector() {
                               
                               <div className="flex-1 text-left">
                                 <div className="flex items-center gap-2">
-                                  <h3 className={`font-medium text-sm transition-colors ${
-                                    isActiveCategory ? 'text-white' : 'text-[#b7abc9]'
-                                  }`}>
+                                  <h3 className="font-semibold text-sm transition-colors" style={{ color: 'var(--text)' }}>
                                     {category.name}
                                   </h3>
                                   {isActiveCategory && (
-                                    <div className="px-2 py-0.5 rounded-full bg-[#8b5cf6] text-white text-[10px] font-bold">
+                                    <div className="px-2 py-0.5 rounded-full bg-[var(--accent)] text-white text-[10px] font-bold">
                                       ATIVA
                                     </div>
                                   )}
                                 </div>
-                                <p className={`text-xs mt-0.5 transition-colors ${
-                                  isActiveCategory ? 'text-[#b7abc9]' : 'text-[#b7abc9]/70'
-                                }`}>
+                                <p className="text-xs mt-0.5 font-medium transition-colors" style={{ color: 'var(--text-muted)' }}>
                                   {category.items.length} configurações disponíveis
                                 </p>
                               </div>
                             </div>
                             
                             {/* Seta indicativa */}
-                            <div className={`ml-2 transition-colors duration-200 ${
-                              isActiveCategory ? 'text-[#8b5cf6]' : 'text-[#b7abc9]/40'
-                            }`}>
+                            <div className="ml-2 transition-colors duration-200" style={{ color: isActiveCategory ? 'var(--accent)' : 'var(--text-muted)' }}>
                               <ChevronLeft className="w-4 h-4 rotate-180" />
                             </div>
                           </div>
                           
                           {/* Linha de destaque para categoria ativa */}
                           {isActiveCategory && (
-                            <div className="absolute left-0 top-0 w-1 h-full bg-[#8b5cf6] rounded-l-lg" />
+                            <div className="absolute left-0 top-0 w-1 h-full bg-[var(--accent)] rounded-l-lg" />
                           )}
                         </button>
                       );
@@ -610,7 +604,7 @@ export function ServerSelector() {
                           className={`
                             w-full p-3 rounded-lg transition-colors duration-200 relative overflow-hidden
                             ${isActiveConfig 
-                              ? 'border border-[#8b5cf6] bg-[#8b5cf6]/15'
+                              ? 'border border-[var(--accent)] bg-[var(--accent-dim)]'
                               : 'glass-effect'
                             }
                           `}
@@ -619,8 +613,8 @@ export function ServerSelector() {
                             {/* Indicador visual da config ativa */}
                             <div className={`w-3 h-3 rounded-full flex-shrink-0 ${
                               isActiveConfig 
-                                ? 'bg-[#8b5cf6]'
-                                : 'bg-[#8b5cf6]/20'
+                                ? 'bg-[var(--accent)]'
+                                : 'bg-[var(--accent)]/20'
                             }`} />
 
                             {/* Ícone da configuração */}
@@ -630,21 +624,19 @@ export function ServerSelector() {
                                 alt="" 
                                 className={`w-6 h-6 rounded-lg object-cover ${
                                   isActiveConfig 
-                                    ? 'ring-2 ring-[#8b5cf6]/60 shadow-md' 
-                                    : 'bg-[#1a1624]'
+                                    ? 'ring-2 ring-[var(--accent)]/60 shadow-md' 
+                                    : 'bg-[var(--bg-elevated)]'
                                 }`}
                               />
                             )}
                             
                             <div className="flex-1 text-left min-w-0">
                               <div className="flex items-center gap-2 mb-1">
-                                <h3 className={`text-sm font-medium truncate transition-colors ${
-                                  isActiveConfig ? 'text-white' : 'text-[#b7abc9]'
-                                }`}>
+                                <h3 className="text-sm font-semibold truncate transition-colors" style={{ color: 'var(--text)' }}>
                                   {config.name}
                                 </h3>
                                 {isActiveConfig && (
-                                  <div className="px-2 py-0.5 rounded-full bg-[#8b5cf6] text-white text-[9px] font-bold flex-shrink-0">
+                                  <div className="px-2 py-0.5 rounded-full bg-[var(--accent)] text-white text-[9px] font-bold flex-shrink-0">
                                     EM USO
                                   </div>
                                 )}

@@ -58,9 +58,10 @@ export function Modal({ children, onClose, allowClose = true, title, icon: Icon,
         backgroundColor: show ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0)',
         transition: 'background-color 0.3s ease, opacity 0.3s ease',
         opacity: show ? 1 : 0,
-        height: 'calc(var(--vh, 1vh) * 100)',
-        paddingTop: isDesktop ? undefined : 'var(--safe-top, 32px)',
-        paddingBottom: 'var(--safe-bottom, 48px)',
+        height: '100%',
+        maxHeight: '100vh',
+        paddingTop: isDesktop ? undefined : 'var(--safe-top, 16px)',
+        paddingBottom: isDesktop ? undefined : 'var(--safe-bottom, 16px)',
       }}
       onClick={(e) => allowClose && e.target === e.currentTarget && handleClose()}
     >

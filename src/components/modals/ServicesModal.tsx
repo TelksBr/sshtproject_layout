@@ -42,48 +42,53 @@ const services = [
 export function ServicesModal({ onClose }: { onClose: () => void }) {
   return (
     <Modal onClose={onClose} title="Serviços" icon={BriefcaseBusiness}>
-      <div className="max-w-md mx-auto p-4">
-        <div className="max-w-md mx-auto">
+      <div className="max-w-md mx-auto p-3 sm:p-4">
+        <div className="max-w-md mx-auto space-y-6">
           {/* Hero Section */}
-          <div className="text-center mb-8">
-            <div className="flex justify-center mb-4">
-              <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center">
-                <BriefcaseBusiness className="w-6 h-6 text-purple-400" />
+          <div className="text-center">
+            <div className="flex justify-center mb-3">
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
+                <BriefcaseBusiness className="w-6 h-6 text-[var(--accent)]" />
               </div>
             </div>
-            <p className="text-lg text-gray-300 mb-4">
+            <h3 className="text-base sm:text-lg font-bold mb-1" style={{ color: 'var(--text)' }}>
               Nossos Serviços
-            </p>
-            <p className="text-lg text-gray-300">
+            </h3>
+            <p className="text-xs sm:text-sm font-medium leading-relaxed" style={{ color: 'var(--text-muted)' }}>
               Soluções profissionais para todas as suas necessidades de infraestrutura digital
             </p>
           </div>
 
           {/* Services Grid */}
-          <div className="grid gap-4 mb-8">
+          <div className="grid gap-4 mb-4">
             {services.map((service, index) => (
-              <div key={index} className="card p-4">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
-                    <service.icon className="w-5 h-5 text-purple-400" />
+              <div
+                key={index}
+                className="p-4 sm:p-5 rounded-2xl shadow-sm space-y-4 transition-all"
+                style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
+                    <service.icon className="w-5 h-5 text-[var(--accent)]" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold">{service.title}</h3>
-                    <p className="text-purple-400 text-sm">{service.price}</p>
+                    <h3 className="text-base font-bold" style={{ color: 'var(--text)' }}>{service.title}</h3>
+                    <p className="text-xs font-semibold" style={{ color: 'var(--accent)' }}>{service.price}</p>
                   </div>
                 </div>
-                <p className="text-gray-300 text-sm mb-4">{service.description}</p>
-                <ul className="space-y-2 mb-4">
+                <p className="text-xs sm:text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>{service.description}</p>
+                <ul className="space-y-2">
                   {service.features.map((feature, featureIndex) => (
-                    <li key={featureIndex} className="flex items-center gap-2 text-sm">
-                      <CheckCircle className="w-4 h-4 text-purple-400" />
-                      <span className="text-gray-300">{feature}</span>
+                    <li key={featureIndex} className="flex items-center gap-2 text-xs sm:text-sm">
+                      <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                      <span style={{ color: 'var(--text)' }}>{feature}</span>
                     </li>
                   ))}
                 </ul>
                 <button
                   onClick={() => openExternalUrl(service.link)}
-                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#8b5cf6] to-[#7c3aed] hover:from-[#7c3aed] hover:to-[#8b5cf6] text-white font-bold py-2 px-6 rounded-lg shadow-lg transition-all duration-200 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full flex items-center justify-center gap-2 text-white font-bold py-2.5 px-6 rounded-xl shadow-md transition-all duration-200 text-xs sm:text-sm active:scale-95 touch-manipulation"
+                  style={{ background: 'var(--accent)' }}
                 >
                   Saiba Mais
                   <ArrowRight className="w-4 h-4" />

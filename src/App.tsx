@@ -7,12 +7,12 @@ import { AnimatedLogo } from './components/AnimatedLogo';
 import { ToastContainer } from './components/Toast';
 import { IncomingNotificationHost } from './components/modals/IncomingNotificationModal';
 import { useSdkToastListener } from './hooks/useSdkToastListener';
-import { getConfigVersion } from './utils/appFunctions';
 import { getStorageItem } from './utils/storageUtils';
 import { getAppLogo, setAppLogo } from './utils/storageUtils';
 import { AppNotificationsProvider } from './context/AppNotificationsContext';
 import { ActiveConfigProvider } from './context/ActiveConfigContext';
 import { AutoConnectProvider } from './context/AutoConnectContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { AutoConnectModal } from './components/AutoConnectModal';
 import { SdkCheckUserModal } from './components/modals/SdkCheckUserModal';
 import { PlayStoreReviewHost } from './components/PlayStoreReviewHost';
@@ -23,12 +23,14 @@ import { useBackgroundMonitor } from './hooks/useBackgroundMonitor';
 import { usePurchaseNotifications } from './hooks/usePurchaseNotifications';
 import { useViewportHeight } from './hooks/useViewportHeight';
 import PaymentApprovedNotification from './components/modals/PaymentApprovedNotification';
+import { LogsModal } from './components/modals/LogsModal';
 
 export type ModalType = 'buy' | 'recovery' | 'tutorials' | 'support' | 'speedtest' | 'terms' | 'privacy' | 'checkuser' | 'cleandata' | 'hotspot' | 'services' | 'ipfinder' | 'faq' | 'testgenerate' | 'renewal' | 'credentials' | null;
 
 function App() {
   const [showMenu, setShowMenu] = useState(false);
   const [currentModal, setCurrentModal] = useState<ModalType>(null);
+  const [showDebugLogs, setShowDebugLogs] = useState(false);
   
   // 🚀 OTIMIZAÇÃO: Hook global que substitui todos os pollings
   const { vpnState, localIP } = useGlobalPolling();
@@ -50,8 +52,6 @@ function App() {
   // 📢 EVENTOS SDK: Hook que escuta eventos de toast nativos do SDK
   useSdkToastListener();
   
-  // Memoizar valores que não mudam frequentemente
-  const version = useMemo(() => getConfigVersion() || '1.0', []);
   const { insets } = useAppLayout();
   const containerStyleMemo = useMemo(
     () => ({
@@ -140,12 +140,13 @@ function App() {
   }, []);
 
   return (
+    <ThemeProvider>
     <AppNotificationsProvider>
     <ActiveConfigProvider>
       <AutoConnectProvider>
       <main
-        className="w-full flex flex-col lg:flex-row relative overflow-hidden"
-        style={{ height: 'calc(var(--vh, 1vh) * 100)', background: 'var(--bg)' }}
+        className="w-full h-full min-h-full flex flex-col lg:flex-row relative overflow-hidden"
+        style={{ height: '100%', minHeight: '100vh', background: 'var(--bg)' }}
       >
         <Sidebar 
           isOpen={showMenu}
@@ -165,9 +166,9 @@ function App() {
             <div className="flex-1 flex flex-col gap-2 sm:gap-3 lg:gap-5 xl:gap-6 2xl:gap-8 lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl">
               <Header 
                 onMenuClick={handleMenuClick}
-                version={version}
                 localIP={localIP}
                 vpnState={vpnState}
+                onOpenDebug={() => setShowDebugLogs(true)}
               />
 
               {logo && <AnimatedLogo logo={logo} />}
@@ -184,6 +185,9 @@ function App() {
         <PlayStoreReviewHost vpnState={vpnState} blockingModal={currentModal} />
         <ToastContainer />
         <IncomingNotificationHost />
+        {showDebugLogs && (
+          <LogsModal initialTab="debug" onClose={() => setShowDebugLogs(false)} />
+        )}
         
         {/* Notificações de pagamento aprovado */}
         <div className="fixed top-0 right-0 left-0 pointer-events-none z-[999]">
@@ -204,6 +208,7 @@ function App() {
       </AutoConnectProvider>
     </ActiveConfigProvider>
     </AppNotificationsProvider>
+    </ThemeProvider>
   );
 }
 

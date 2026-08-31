@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Modal } from './modals/Modal';
 import {
   RefreshCw,
@@ -7,6 +7,11 @@ import {
   AlertCircle,
   Zap,
   ChevronLeft,
+  Eye,
+  EyeOff,
+  HelpCircle,
+  Copy,
+  Key,
 } from '../utils/icons';
 import { useAutoConnectContext } from '../context/AutoConnectContext';
 import {
@@ -20,8 +25,18 @@ import {
   clampTimeout,
   filterConfigsForAutoConnect,
 } from '../utils/autoConnectUtils';
-import { getAllConfigs, getUUID } from '../utils/appFunctions';
-import { configRequiresField } from '../utils/configCredentials';
+import {
+  getAllConfigs,
+  getUUID,
+  setUUID as setUUIDApp,
+  getUsername,
+  setUsername as setUsernameApp,
+  getPassword,
+  setPassword as setPasswordApp,
+  sanitizeLogHtml,
+} from '../utils/appFunctions';
+import { getAutoConnectCredentialFields } from '../utils/configCredentials';
+import { readFromClipboard } from '../utils/nativeClipboard';
 import { TestLog } from '../hooks/useAutoConnect';
 
 type WizardStep = 'setup' | 'confirm' | 'run' | 'result';
@@ -74,6 +89,12 @@ export function AutoConnectModal() {
   const logsEndRef = useRef<HTMLDivElement | null>(null);
   const wasRunningRef = useRef(false);
 
+  // Estados locais para credenciais
+  const [username, setUsername] = useState(() => getUsername() || '');
+  const [password, setPassword] = useState(() => getPassword() || '');
+  const [uuid, setUuid] = useState(() => getUUID() || '');
+  const [validationError, setValidationError] = useState<string | null>(null);
+
   const allCategories = useMemo(() => getAllConfigs(), [open]);
 
   const filteredConfigs = useMemo(() => {
@@ -85,16 +106,20 @@ export function AutoConnectModal() {
 
   const filteredCount = filteredConfigs.length;
 
-  const hasV2RayWithoutUuid = useMemo(() => {
-    const hasV2 = filteredConfigs.some((cfg) => configRequiresField(cfg, 'uuid'));
-    const currentUuid = getUUID() || '';
-    return hasV2 && !currentUuid.trim();
+  const requiredCredentials = useMemo(() => {
+    return getAutoConnectCredentialFields(filteredConfigs);
   }, [filteredConfigs]);
 
+  // Recarrega credenciais do SDK quando o modal é aberto
   useEffect(() => {
-    if (!open) return;
-    setStep(running ? 'run' : 'setup');
-  }, [open]);
+    if (open) {
+      setUsername(getUsername() || '');
+      setPassword(getPassword() || '');
+      setUuid(getUUID() || '');
+      setValidationError(null);
+      setStep(running ? 'run' : 'setup');
+    }
+  }, [open, running]);
 
   useEffect(() => {
     if (running) {
@@ -117,16 +142,59 @@ export function AutoConnectModal() {
 
   const updateConfig = (updates: Partial<AutoConnectConfig>) => {
     if (running) return;
+    setValidationError(null);
     setAutoConnectConfig({ ...autoConnectConfig, ...updates });
   };
 
   const toggleCategory = (categoryId: number) => {
     if (running) return;
+    setValidationError(null);
     const current = autoConnectConfig.selectedCategories;
     const updated = current.includes(categoryId)
       ? current.filter((id) => id !== categoryId)
       : [...current, categoryId];
     updateConfig({ selectedCategories: updated });
+  };
+
+  const handleUsernameChange = (val: string) => {
+    setUsername(val);
+    setUsernameApp(val);
+    setValidationError(null);
+  };
+
+  const handlePasswordChange = (val: string) => {
+    setPassword(val);
+    setPasswordApp(val);
+    setValidationError(null);
+  };
+
+  const handleUuidChange = (val: string) => {
+    setUuid(val);
+    setUUIDApp(val);
+    setValidationError(null);
+  };
+
+  const validateCredentials = (): boolean => {
+    if (requiredCredentials.username && !username.trim()) {
+      setValidationError('Informe o Usuário para testar as configurações SSH.');
+      return false;
+    }
+    if (requiredCredentials.password && !password.trim()) {
+      setValidationError('Informe a Senha para testar as configurações SSH.');
+      return false;
+    }
+    if (requiredCredentials.uuid && !uuid.trim()) {
+      setValidationError('Informe o UUID V2Ray para testar as configurações V2Ray.');
+      return false;
+    }
+    setValidationError(null);
+    return true;
+  };
+
+  const handleContinue = () => {
+    if (filteredCount === 0) return;
+    if (!validateCredentials()) return;
+    setStep('confirm');
   };
 
   const selectedCategoryNames =
@@ -139,9 +207,9 @@ export function AutoConnectModal() {
 
   const title =
     step === 'setup'
-      ? 'Filtros'
+      ? 'Filtros e Acesso'
       : step === 'confirm'
-        ? 'Confirmar'
+        ? 'Confirmar Teste'
         : step === 'run'
           ? `Testando ${tested}/${total}`
           : success
@@ -149,6 +217,13 @@ export function AutoConnectModal() {
             : 'Resultado';
 
   const handleStart = () => {
+    if (!validateCredentials()) {
+      setStep('setup');
+      return;
+    }
+    if (requiredCredentials.uuid && uuid.trim()) setUUIDApp(uuid.trim());
+    if (requiredCredentials.username && username.trim()) setUsernameApp(username.trim());
+    if (requiredCredentials.password && password.trim()) setPasswordApp(password.trim());
     startAutoConnect();
   };
 
@@ -164,7 +239,15 @@ export function AutoConnectModal() {
             filteredCount={filteredCount}
             showAdvanced={showAdvanced}
             setShowAdvanced={setShowAdvanced}
-            onContinue={() => setStep('confirm')}
+            username={username}
+            password={password}
+            uuid={uuid}
+            requiredCredentials={requiredCredentials}
+            validationError={validationError}
+            onUsernameChange={handleUsernameChange}
+            onPasswordChange={handlePasswordChange}
+            onUuidChange={handleUuidChange}
+            onContinue={handleContinue}
           />
         )}
 
@@ -175,7 +258,10 @@ export function AutoConnectModal() {
             connectionTimeout={autoConnectConfig.connectionTimeout}
             fetchTimeout={autoConnectConfig.fetchTimeout}
             filteredCount={filteredCount}
-            hasV2RayWithoutUuid={hasV2RayWithoutUuid}
+            requiredCredentials={requiredCredentials}
+            username={username}
+            password={password}
+            uuid={uuid}
             onBack={() => setStep('setup')}
             onStart={handleStart}
           />
@@ -273,6 +359,14 @@ function SetupStep({
   filteredCount,
   showAdvanced,
   setShowAdvanced,
+  username,
+  password,
+  uuid,
+  requiredCredentials,
+  validationError,
+  onUsernameChange,
+  onPasswordChange,
+  onUuidChange,
   onContinue,
 }: {
   autoConnectConfig: AutoConnectConfig;
@@ -282,12 +376,37 @@ function SetupStep({
   filteredCount: number;
   showAdvanced: boolean;
   setShowAdvanced: (v: boolean) => void;
+  username: string;
+  password: string;
+  uuid: string;
+  requiredCredentials: { username: boolean; password: boolean; uuid: boolean };
+  validationError: string | null;
+  onUsernameChange: (v: string) => void;
+  onPasswordChange: (v: string) => void;
+  onUuidChange: (v: string) => void;
   onContinue: () => void;
 }) {
+  const [showPassword, setShowPassword] = useState(false);
+  const [showUuid, setShowUuid] = useState(false);
+  const [showUuidHelp, setShowUuidHelp] = useState(false);
+
+  const handlePasteUuid = async () => {
+    try {
+      const text = await readFromClipboard();
+      if (text && text.trim()) {
+        onUuidChange(text.trim());
+      }
+    } catch {
+      /* silent fallback */
+    }
+  };
+
+  const hasAnyRequired = requiredCredentials.username || requiredCredentials.password || requiredCredentials.uuid;
+
   return (
     <div className="flex flex-col gap-4 flex-1">
       <div>
-        <p className="text-xs text-[#b7abc9]/70 mb-2">Tipo de configuração</p>
+        <p className="text-xs text-[#b7abc9]/70 mb-2 font-medium">Tipo de configuração</p>
         <div className="flex flex-wrap gap-2">
           {(
             [
@@ -295,37 +414,42 @@ function SetupStep({
               { value: 'ssh', label: 'SSH' },
               { value: 'v2ray', label: 'V2Ray' },
             ] as const
-          ).map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => updateConfig({ configType: opt.value })}
-              className={`min-h-[44px] px-4 rounded-full text-sm font-medium touch-manipulation ${
-                autoConnectConfig.configType === opt.value
-                  ? 'bg-[#8b5cf6] text-white'
-                  : 'bg-[#1a1624]/60 text-[#b7abc9] border border-[#8b5cf6]/20'
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
+          ).map((opt) => {
+            const isSelected = autoConnectConfig.configType === opt.value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => updateConfig({ configType: opt.value })}
+                className={`min-h-[44px] px-4 rounded-full text-sm font-semibold touch-manipulation transition-all`}
+                style={{
+                  background: isSelected ? 'var(--accent)' : 'var(--bg-elevated)',
+                  color: isSelected ? '#ffffff' : 'var(--text-muted)',
+                  border: '1px solid var(--border)',
+                }}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
       <div>
-        <p className="text-xs text-[#b7abc9]/70 mb-2">Categorias</p>
+        <p className="text-xs mb-2 font-medium" style={{ color: 'var(--text-muted)' }}>Categorias</p>
         <button
           type="button"
           onClick={() => updateConfig({ selectedCategories: [] })}
-          className={`w-full min-h-[44px] mb-2 px-3 rounded-lg text-left text-sm touch-manipulation ${
-            autoConnectConfig.selectedCategories.length === 0
-              ? 'bg-[#8b5cf6] text-white'
-              : 'bg-[#1a1624]/40 text-[#b7abc9]'
-          }`}
+          className={`w-full min-h-[44px] mb-2 px-3 rounded-xl text-left text-sm font-semibold touch-manipulation transition-all`}
+          style={{
+            background: autoConnectConfig.selectedCategories.length === 0 ? 'var(--accent)' : 'var(--bg-elevated)',
+            color: autoConnectConfig.selectedCategories.length === 0 ? '#ffffff' : 'var(--text)',
+            border: '1px solid var(--border)',
+          }}
         >
           Todas as categorias
         </button>
-        <div className="space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar">
+        <div className="space-y-1.5 max-h-40 overflow-y-auto custom-scrollbar">
           {categories.map((category) => {
             const selected = autoConnectConfig.selectedCategories.includes(category.id);
             const count = category.items.length;
@@ -334,22 +458,156 @@ function SetupStep({
                 key={category.id}
                 type="button"
                 onClick={() => toggleCategory(category.id)}
-                className={`w-full min-h-[44px] px-3 rounded-lg text-left text-sm flex items-center gap-2 touch-manipulation ${
-                  selected ? 'bg-[#8b5cf6] text-white' : 'bg-[#1a1624]/40 text-[#b7abc9]'
-                }`}
+                className={`w-full min-h-[44px] px-3 rounded-xl text-left text-sm flex items-center gap-2 touch-manipulation transition-all`}
+                style={{
+                  background: selected ? 'var(--accent)' : 'var(--bg-elevated)',
+                  color: selected ? '#ffffff' : 'var(--text)',
+                  border: '1px solid var(--border)',
+                }}
               >
                 <span
                   className={`flex-shrink-0 w-4 h-4 rounded border ${
-                    selected ? 'bg-white border-white' : 'border-[#b7abc9]/50'
+                    selected ? 'bg-white border-white' : 'border-[var(--text-muted)]'
                   }`}
                 />
                 <span className="flex-1 truncate">{category.name}</span>
-                <span className="text-xs opacity-70">{count}</span>
+                <span className="text-xs opacity-75">{count}</span>
               </button>
             );
           })}
         </div>
       </div>
+
+      {/* Seção de Credenciais de Acesso */}
+      {hasAnyRequired ? (
+        <div className="p-3 rounded-xl space-y-3" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+          <div className="flex items-center gap-2">
+            <Key className="w-4 h-4" style={{ color: 'var(--accent)' }} />
+            <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text)' }}>
+              Credenciais de Acesso
+            </span>
+          </div>
+
+          {requiredCredentials.username && (
+            <div>
+              <label className="text-[11px] mb-1 block font-medium" style={{ color: 'var(--text-muted)' }}>Usuário SSH</label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => onUsernameChange(e.target.value)}
+                placeholder="Digite seu usuário..."
+                className="w-full min-h-[44px] px-3 rounded-xl text-sm outline-none allow-select"
+                style={{
+                  background: 'var(--bg-elevated)',
+                  color: 'var(--text)',
+                  border: '1px solid var(--border)',
+                }}
+                autoCapitalize="none"
+              />
+            </div>
+          )}
+
+          {requiredCredentials.password && (
+            <div>
+              <label className="text-[11px] mb-1 block font-medium" style={{ color: 'var(--text-muted)' }}>Senha SSH</label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => onPasswordChange(e.target.value)}
+                  placeholder="Digite sua senha..."
+                  className="w-full min-h-[44px] px-3 pr-11 rounded-xl text-sm outline-none allow-select"
+                  style={{
+                    background: 'var(--bg-elevated)',
+                    color: 'var(--text)',
+                    border: '1px solid var(--border)',
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 min-w-[44px] flex items-center justify-center touch-manipulation"
+                  style={{ color: 'var(--text-muted)' }}
+                  aria-label={showPassword ? 'Ocultar senha' : 'Exibir senha'}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {requiredCredentials.uuid && (
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[11px] font-medium" style={{ color: 'var(--text-muted)' }}>UUID V2Ray</label>
+                <button
+                  type="button"
+                  onClick={() => setShowUuidHelp(!showUuidHelp)}
+                  className="text-[11px] hover:underline flex items-center gap-1 touch-manipulation font-semibold"
+                  style={{ color: 'var(--accent)' }}
+                >
+                  <HelpCircle className="w-3.5 h-3.5" />
+                  Ajuda
+                </button>
+              </div>
+
+              {showUuidHelp && (
+                <div className="mb-2 p-2.5 rounded-xl text-xs space-y-1" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+                  <p className="font-semibold" style={{ color: 'var(--text)' }}>Chave de acesso V2Ray</p>
+                  <p>É o código identificador gerado na compra para conectar em servidores V2Ray/VMess/VLess.</p>
+                </div>
+              )}
+
+              <div className="relative">
+                <input
+                  type={showUuid ? 'text' : 'password'}
+                  value={uuid}
+                  onChange={(e) => onUuidChange(e.target.value)}
+                  placeholder="Cole seu UUID V2Ray..."
+                  className="w-full min-h-[44px] px-3 pr-20 rounded-xl text-sm outline-none font-mono allow-select"
+                  style={{
+                    background: 'var(--bg-elevated)',
+                    color: 'var(--text)',
+                    border: '1px solid var(--border)',
+                  }}
+                  autoCapitalize="none"
+                />
+                <div className="absolute inset-y-0 right-0 flex items-center">
+                  <button
+                    type="button"
+                    onClick={handlePasteUuid}
+                    title="Colar UUID"
+                    className="min-w-[36px] h-full flex items-center justify-center touch-manipulation"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    <Copy className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowUuid(!showUuid)}
+                    className="min-w-[36px] h-full flex items-center justify-center touch-manipulation"
+                    style={{ color: 'var(--text-muted)' }}
+                    aria-label={showUuid ? 'Ocultar UUID' : 'Exibir UUID'}
+                  >
+                    {showUuid ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : filteredCount > 0 ? (
+        <div className="p-2.5 rounded-lg bg-green-500/10 border border-green-500/20 flex items-center gap-2 text-xs text-green-300">
+          <CheckCircle className="w-4 h-4 flex-shrink-0 text-green-400" />
+          <span>As configurações selecionadas já possuem credenciais pré-configuradas.</span>
+        </div>
+      ) : null}
+
+      {validationError && (
+        <p className="text-xs text-red-400 text-center font-medium bg-red-500/10 p-2 rounded-lg border border-red-500/20">
+          {validationError}
+        </p>
+      )}
 
       <div>
         <button
@@ -404,7 +662,10 @@ function ConfirmStep({
   connectionTimeout,
   fetchTimeout,
   filteredCount,
-  hasV2RayWithoutUuid,
+  requiredCredentials,
+  username,
+  password,
+  uuid,
   onBack,
   onStart,
 }: {
@@ -413,13 +674,16 @@ function ConfirmStep({
   connectionTimeout: number;
   fetchTimeout: number;
   filteredCount: number;
-  hasV2RayWithoutUuid?: boolean;
+  requiredCredentials: { username: boolean; password: boolean; uuid: boolean };
+  username: string;
+  password: string;
+  uuid: string;
   onBack: () => void;
   onStart: () => void;
 }) {
   return (
     <div className="flex flex-col gap-4 flex-1">
-      <p className="text-sm text-[#b7abc9]">Confira antes de iniciar:</p>
+      <p className="text-sm text-[#b7abc9] font-medium">Confira antes de iniciar:</p>
       <ul className="space-y-2 text-sm text-white bg-[#1a1624]/50 rounded-lg p-3">
         <li>
           <span className="text-[#b7abc9]/70">Tipo: </span>
@@ -441,19 +705,31 @@ function ConfirmStep({
           <span className="text-[#b7abc9]/70">Total: </span>
           {filteredCount} configs
         </li>
+        {requiredCredentials.username && (
+          <li>
+            <span className="text-[#b7abc9]/70">Usuário SSH: </span>
+            <span className="text-white font-mono">{username || 'Não informado'}</span>
+          </li>
+        )}
+        {requiredCredentials.password && (
+          <li>
+            <span className="text-[#b7abc9]/70">Senha SSH: </span>
+            <span className="text-white">{password ? '••••••••' : 'Não informada'}</span>
+          </li>
+        )}
+        {requiredCredentials.uuid && (
+          <li>
+            <span className="text-[#b7abc9]/70">UUID V2Ray: </span>
+            <span className="text-white font-mono">{uuid ? `${uuid.substring(0, 8)}...` : 'Não informado'}</span>
+          </li>
+        )}
+        {!requiredCredentials.username && !requiredCredentials.password && !requiredCredentials.uuid && (
+          <li>
+            <span className="text-[#b7abc9]/70">Credenciais: </span>
+            <span className="text-green-400 font-medium">Pré-configuradas na config</span>
+          </li>
+        )}
       </ul>
-
-      {hasV2RayWithoutUuid && (
-        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-300">
-          <div className="font-semibold flex items-center gap-1.5 mb-1">
-            <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0" />
-            Atenção: UUID V2Ray não preenchido
-          </div>
-          <p className="opacity-90">
-            O teste inclui configurações V2Ray. Caso queira testá-las com sucesso, certifique-se de preencher o UUID V2Ray no formulário da tela inicial.
-          </p>
-        </div>
-      )}
 
       <div className="mt-auto flex gap-2">
         <button
@@ -516,7 +792,7 @@ function RunStep({
         </div>
       </div>
 
-      <div className="flex-1 min-h-[160px] max-h-56 overflow-y-auto rounded-lg bg-black/40 p-2 font-mono text-[11px] custom-scrollbar">
+      <div className="flex-1 min-h-[240px] max-h-[380px] sm:max-h-[460px] overflow-y-auto rounded-xl bg-black/50 p-3 font-mono text-[11px] custom-scrollbar border border-white/5 space-y-1">
         {logs.map((log) => (
           <LogLine key={log.id} log={log} />
         ))}
@@ -536,20 +812,16 @@ function RunStep({
 }
 
 function LogLine({ log }: { log: TestLog }) {
+  const sanitizedMessage = sanitizeLogHtml(log.message);
+  const prefix = log.configName ? `<strong class="text-white font-semibold">${log.configName}: </strong>` : '';
+
   return (
-    <div className="flex gap-1.5 py-0.5 text-[#b7abc9]/90 leading-snug">
-      <span className="text-[#b7abc9]/40 shrink-0">{formatTime(log.timestamp)}</span>
+    <div className="flex items-start gap-2 py-0.5 text-[#b7abc9]/90 leading-snug">
+      <span className="text-[#b7abc9]/40 shrink-0 font-mono select-none">{formatTime(log.timestamp)}</span>
       <span
-        className={`shrink-0 px-1 rounded ${
-          log.source === 'sdk' ? 'bg-[#8b5cf6]/40 text-white' : 'bg-white/10'
-        }`}
-      >
-        {log.source === 'sdk' ? 'SDK' : 'Teste'}
-      </span>
-      <span className="break-all">
-        {log.configName ? `${log.configName}: ` : ''}
-        {log.message}
-      </span>
+        className="break-words whitespace-pre-wrap flex-1 allow-select font-mono text-[11px]"
+        dangerouslySetInnerHTML={{ __html: prefix + sanitizedMessage }}
+      />
     </div>
   );
 }
@@ -603,7 +875,7 @@ function ResultStep({
       )}
 
       {logs.length > 0 && (
-        <div className="max-h-32 overflow-y-auto rounded-lg bg-black/40 p-2 font-mono text-[11px] custom-scrollbar">
+        <div className="max-h-56 sm:max-h-72 overflow-y-auto rounded-xl bg-black/50 p-3 font-mono text-[11px] custom-scrollbar border border-white/5 space-y-1">
           {logs.slice(-40).map((log) => (
             <LogLine key={log.id} log={log} />
           ))}

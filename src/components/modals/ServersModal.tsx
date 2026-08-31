@@ -351,15 +351,15 @@ export function ServersModal({ onClose }: ServersModalProps) {
         )}
 
         {/* Cabeçalho fixo com refresh */}
-        <div className="flex items-center justify-between mb-2 sticky top-0 z-10 bg-[#18122B] rounded-t-lg p-2 md:p-0">
+        <div className="flex items-center justify-between mb-2 sticky top-0 z-10 rounded-t-lg p-2 md:p-0" style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
           <div className="flex items-center gap-4">
-            <span className="font-semibold text-base md:text-lg lg:text-xl 2xl:text-2xl text-white">Status dos Servidores</span>
+            <span className="font-semibold text-base md:text-lg lg:text-xl 2xl:text-2xl" style={{ color: 'var(--text)' }}>Status dos Servidores</span>
             {!loading && servers.length > 0 && (
-              <div className="text-xs md:text-sm lg:text-base text-[#b7abc9]/70 flex gap-3 lg:gap-4">
-                <span>SSH: <span className="text-white font-semibold">{totals.ssh}</span></span>
-                <span>V2Ray: <span className="text-white font-semibold">{totals.v2ray}</span></span>
-                <span>DT Proto: <span className="text-white font-semibold">{totals.dtProto}</span></span>
-                <span className="text-[#b7abc9]">Total: <span className="text-[#00ff88] font-semibold">{totals.total}</span></span>
+              <div className="text-xs md:text-sm lg:text-base flex gap-3 lg:gap-4" style={{ color: 'var(--text-muted)' }}>
+                <span>SSH: <span className="font-semibold" style={{ color: 'var(--text)' }}>{totals.ssh}</span></span>
+                <span>V2Ray: <span className="font-semibold" style={{ color: 'var(--text)' }}>{totals.v2ray}</span></span>
+                <span>DT Proto: <span className="font-semibold" style={{ color: 'var(--text)' }}>{totals.dtProto}</span></span>
+                <span>Total: <span className="text-emerald-400 font-semibold">{totals.total}</span></span>
               </div>
             )}
           </div>
@@ -369,31 +369,31 @@ export function ServersModal({ onClose }: ServersModalProps) {
             className={`
               p-2 rounded-lg transition-all duration-200
               ${refreshing || serverConfigs.length === 0
-                ? 'bg-[#8b5cf6]/10 cursor-not-allowed' 
-                : 'hover:bg-[#8b5cf6]/20 active:scale-95'
+                ? 'opacity-40 cursor-not-allowed' 
+                : 'active:scale-95'
               }
             `}
+            style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}
             aria-label="Atualizar lista de servidores"
           >
             <RefreshCw 
               className={`
-                w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 text-[#b7abc9]
-                ${refreshing ? 'animate-spin' : 'hover:text-white transition-colors'}
+                w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8
+                ${refreshing ? 'animate-spin text-[var(--accent)]' : 'transition-colors'}
               `}
+              style={{ color: 'var(--text-muted)' }}
             />
           </button>
         </div>
-
- 
 
         {/* Lista de servidores com scroll e feedback visual */}
         <div className="flex-1 overflow-y-auto custom-scrollbar pr-1">
           {loading && servers.length === 0 ? (
             <div className="flex items-center justify-center p-4">
-              <Loader className="w-7 h-7 text-[#b7abc9] animate-spin" />
+              <Loader className="w-7 h-7 animate-spin" style={{ color: 'var(--text-muted)' }} />
             </div>
           ) : servers.length === 0 ? (
-            <div className="flex items-center justify-center p-8 text-[#b7abc9]/70">
+            <div className="flex items-center justify-center p-8" style={{ color: 'var(--text-muted)' }}>
               <p>Nenhum servidor configurado</p>
             </div>
           ) : (
@@ -402,23 +402,26 @@ export function ServersModal({ onClose }: ServersModalProps) {
                 <div
                   key={server.host}
                   className={`
-                    px-3 py-3 md:px-4 md:py-4 lg:px-5 lg:py-5 2xl:px-6 2xl:py-6 rounded-lg 2xl:rounded-2xl
+                    px-3 py-3 md:px-4 md:py-4 lg:px-5 lg:py-5 2xl:px-6 2xl:py-6 rounded-xl 2xl:rounded-2xl
                     transition-all duration-200 hover:scale-[1.01] active:scale-95
-                    ${server.isOnline ? 'bg-[#8b5cf6]/20' : 'bg-red-500/10'}
                     ${server.isOnline ? '' : 'opacity-60'}
                     shadow-sm hover:shadow-md cursor-pointer select-none
                   `}
+                  style={{
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border)',
+                  }}
                   tabIndex={0}
                   aria-label={`Servidor ${server.name} com ${server.totalUsers} usuários online`}
                 >
                   <div className="flex justify-between items-center mb-2">
-                    <span className="font-medium text-white text-sm md:text-base lg:text-lg 2xl:text-xl truncate max-w-[60vw] md:max-w-[250px] lg:max-w-[400px]">
+                    <span className="font-semibold text-sm md:text-base lg:text-lg 2xl:text-xl truncate max-w-[60vw] md:max-w-[250px] lg:max-w-[400px]" style={{ color: 'var(--text)' }}>
                       {server.name}
                     </span>
                     <div className="flex items-center gap-2">
                       <span className={`
-                        text-xs lg:text-sm font-semibold px-2 py-1 lg:px-3 lg:py-1.5 rounded
-                        ${server.isOnline ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'}
+                        text-xs lg:text-sm font-bold px-2 py-1 lg:px-3 lg:py-1.5 rounded-lg border
+                        ${server.isOnline ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' : 'bg-rose-500/15 text-rose-400 border-rose-500/30'}
                       `}>
                         {server.isOnline ? 'Online' : 'Offline'}
                       </span>
@@ -428,54 +431,54 @@ export function ServersModal({ onClose }: ServersModalProps) {
                   {server.isOnline && (
                     <>
                       <div className="grid grid-cols-4 gap-2 lg:gap-3 2xl:gap-4 text-xs md:text-sm lg:text-base mb-2">
-                        <div className="bg-[#8b5cf6]/10 p-2 lg:p-3 2xl:p-4 rounded lg:rounded-lg">
-                          <span className="text-[#b7abc9]/70 block">SSH</span>
-                          <span className="text-white font-mono font-semibold">{server.sshUsers}</span>
+                        <div className="p-2 lg:p-3 2xl:p-4 rounded-xl" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
+                          <span className="block text-[10px] sm:text-xs" style={{ color: 'var(--text-muted)' }}>SSH</span>
+                          <span className="font-mono font-semibold" style={{ color: 'var(--text)' }}>{server.sshUsers}</span>
                         </div>
-                        <div className="bg-[#8b5cf6]/10 p-2 lg:p-3 2xl:p-4 rounded lg:rounded-lg">
-                          <span className="text-[#b7abc9]/70 block">V2Ray</span>
-                          <span className="text-white font-mono font-semibold">{server.v2rayUsers}</span>
+                        <div className="p-2 lg:p-3 2xl:p-4 rounded-xl" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
+                          <span className="block text-[10px] sm:text-xs" style={{ color: 'var(--text-muted)' }}>V2Ray</span>
+                          <span className="font-mono font-semibold" style={{ color: 'var(--text)' }}>{server.v2rayUsers}</span>
                         </div>
-                        <div className="bg-[#8b5cf6]/10 p-2 lg:p-3 2xl:p-4 rounded lg:rounded-lg">
-                          <span className="text-[#b7abc9]/70 block">DT Proto</span>
-                          <span className="text-white font-mono font-semibold">{server.dtProtoUsers}</span>
+                        <div className="p-2 lg:p-3 2xl:p-4 rounded-xl" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
+                          <span className="block text-[10px] sm:text-xs" style={{ color: 'var(--text-muted)' }}>DT Proto</span>
+                          <span className="font-mono font-semibold" style={{ color: 'var(--text)' }}>{server.dtProtoUsers}</span>
                         </div>
-                        <div className="bg-[#8b5cf6]/15 p-2 lg:p-3 2xl:p-4 rounded lg:rounded-lg">
-                          <span className="text-[#b7abc9]/70 block">Total</span>
-                          <span className="text-white font-mono font-semibold">{server.totalUsers}</span>
+                        <div className="p-2 lg:p-3 2xl:p-4 rounded-xl" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
+                          <span className="block text-[10px] sm:text-xs" style={{ color: 'var(--text-muted)' }}>Total</span>
+                          <span className="font-mono font-semibold" style={{ color: 'var(--accent)' }}>{server.totalUsers}</span>
                         </div>
                       </div>
                       
                       {/* Recursos do Sistema */}
                       {server.resources && (
-                        <div className="grid grid-cols-2 gap-2 lg:gap-3 2xl:gap-4 text-xs md:text-sm lg:text-base pt-2 border-t border-[#8b5cf6]/20">
-                          <div className="bg-[#8b5cf6]/5 p-2 lg:p-3 2xl:p-4 rounded lg:rounded-lg">
-                            <span className="text-[#b7abc9]/70 block mb-1">💾 Memória</span>
+                        <div className="grid grid-cols-2 gap-2 lg:gap-3 2xl:gap-4 text-xs md:text-sm lg:text-base pt-2 border-t" style={{ borderColor: 'var(--border)' }}>
+                          <div className="p-2 lg:p-3 2xl:p-4 rounded-xl" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
+                            <span className="block mb-1 font-medium" style={{ color: 'var(--text-muted)' }}>💾 Memória</span>
                             <div className="flex items-center gap-2">
-                              <div className="flex-1 bg-[#8b5cf6]/20 rounded-full h-2 lg:h-2.5 2xl:h-3">
+                              <div className="flex-1 rounded-full h-2 lg:h-2.5 2xl:h-3 overflow-hidden bg-black/20">
                                 <div 
                                   className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 lg:h-2.5 2xl:h-3 rounded-full transition-all duration-300"
                                   style={{ width: `${server.resources.memory.usage_percent}%` }}
                                 />
                               </div>
-                              <span className="text-white font-mono font-semibold text-xs">
+                              <span className="font-mono font-semibold text-xs" style={{ color: 'var(--text)' }}>
                                 {server.resources.memory.usage_percent.toFixed(1)}%
                               </span>
                             </div>
-                            <span className="text-[#b7abc9]/50 text-[10px] lg:text-xs block mt-1">
+                            <span className="text-[10px] lg:text-xs block mt-1" style={{ color: 'var(--text-muted)' }}>
                               {(server.resources.memory.used / 1024).toFixed(0)}MB / {(server.resources.memory.total / 1024).toFixed(0)}MB
                             </span>
                           </div>
-                          <div className="bg-[#8b5cf6]/5 p-2 lg:p-3 2xl:p-4 rounded lg:rounded-lg">
-                            <span className="text-[#b7abc9]/70 block mb-1">⚡ CPU</span>
+                          <div className="p-2 lg:p-3 2xl:p-4 rounded-xl" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
+                            <span className="block mb-1 font-medium" style={{ color: 'var(--text-muted)' }}>⚡ CPU</span>
                             <div className="flex items-center gap-2">
-                              <div className="flex-1 bg-[#8b5cf6]/20 rounded-full h-2 lg:h-2.5 2xl:h-3">
+                              <div className="flex-1 rounded-full h-2 lg:h-2.5 2xl:h-3 overflow-hidden bg-black/20">
                                 <div 
-                                  className="bg-gradient-to-r from-green-500 to-cyan-500 h-2 lg:h-2.5 2xl:h-3 rounded-full transition-all duration-300"
+                                  className="bg-gradient-to-r from-emerald-500 to-cyan-500 h-2 lg:h-2.5 2xl:h-3 rounded-full transition-all duration-300"
                                   style={{ width: `${server.resources.cpu.usage_percent}%` }}
                                 />
                               </div>
-                              <span className="text-white font-mono font-semibold text-xs">
+                              <span className="font-mono font-semibold text-xs" style={{ color: 'var(--text)' }}>
                                 {server.resources.cpu.usage_percent.toFixed(1)}%
                               </span>
                             </div>

@@ -36,25 +36,143 @@ export function getNavbarHeight(): number {
 }
 
 // App Config Functions
+export function safeStringifyConfigValue(val: unknown): string | null {
+  if (val == null) return null;
+  if (typeof val === 'string') {
+    const trimmed = val.trim();
+    if (!trimmed) return null;
+    if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (parsed && typeof parsed === 'object') {
+          const inner = parsed.value ?? parsed.version ?? parsed.config_version ?? parsed.v_config ?? parsed.v;
+          if (inner != null) return String(inner).trim();
+        }
+      } catch {
+        /* se não for JSON válido, usa a string original */
+      }
+    }
+    return trimmed;
+  }
+  if (typeof val === 'number' || typeof val === 'boolean') {
+    return String(val).trim();
+  }
+  if (typeof val === 'object') {
+    const obj = val as Record<string, unknown>;
+    const inner = obj.value ?? obj.version ?? obj.config_version ?? obj.v_config ?? obj.v ?? obj.data;
+    if (inner != null && inner !== val) {
+      return safeStringifyConfigValue(inner);
+    }
+    try {
+      return JSON.stringify(val);
+    } catch {
+      return String(val);
+    }
+  }
+  return String(val).trim() || null;
+}
+
 export function getConfigLabel(label: string): string | null {
   const sdk = getSdk();
   if (sdk?.app) {
     const cfg = sdk.app.getAppConfig(label);
-    const val = cfg?.value;
-    return val != null ? String(val) : null;
+    if (cfg != null) {
+      const val = typeof cfg === 'object' && 'value' in cfg ? (cfg as { value?: unknown }).value : cfg;
+      return safeStringifyConfigValue(val ?? cfg);
+    }
   }
   const v = call('DtGetAppConfig', 'execute', [label]);
-  return v == null ? null : String(v);
+  return safeStringifyConfigValue(v);
+}
+
+export interface SdkConfigVersionDetails {
+  localConfigVersion: string | null;
+  appConfigVersion: string | null;
+  selectedConfigId: number | string | null;
+  configCount: number | string | null;
+  effectiveVersion: string;
+}
+
+/**
+  * Obtém os detalhes de versão da configuração expostos pelo SDK.
+  * Lê os 2 valores principais que o SDK DTunnel expõe:
+  * 1. getLocalConfigVersion (DtGetLocalConfigVersion)
+  * 2. getAppConfig("config_version" | "v_config" | "version") (DtGetAppConfig)
+  * Converte e formata o resultado com segurança para QUALQUER tipo de dado (texto, número, objeto).
+  */
+export function getSdkConfigDetails(): SdkConfigVersionDetails {
+  const sdk = getSdk();
+
+  // Valor 1: getLocalConfigVersion (via sdk.config.getLocalConfigVersion ou DtGetLocalConfigVersion)
+  let localConfigVersion: string | null = null;
+  try {
+    if (sdk?.config) {
+      const v = sdk.config.getLocalConfigVersion();
+      localConfigVersion = safeStringifyConfigValue(v);
+    } else {
+      const v = call('DtGetLocalConfigVersion', 'execute');
+      localConfigVersion = safeStringifyConfigValue(v);
+    }
+  } catch {
+    localConfigVersion = null;
+  }
+
+  // Valor 2: getAppConfig (testa chaves candidatas: config_version, v_config, version, config_v, app_version, v, config_num)
+  let appConfigVersion: string | null = null;
+  try {
+    const candidateKeys = ['config_version', 'v_config', 'version', 'config_v', 'app_version', 'v', 'config_num'];
+    for (const key of candidateKeys) {
+      const raw = getConfigLabel(key);
+      if (raw != null) {
+        appConfigVersion = raw;
+        break;
+      }
+    }
+  } catch {
+    appConfigVersion = null;
+  }
+
+  // Valores auxiliares
+  let selectedConfigId: number | string | null = null;
+  try {
+    if (sdk?.config) {
+      const id = sdk.config.getSelectedConfigId();
+      if (id != null) selectedConfigId = safeStringifyConfigValue(id) ?? id;
+    } else {
+      const id = call('DtGetSelectedConfigId', 'execute');
+      if (id != null) selectedConfigId = safeStringifyConfigValue(id) ?? (id as number | string);
+    }
+  } catch {
+    selectedConfigId = null;
+  }
+
+  let configCount: number | string | null = null;
+  try {
+    if (sdk?.config) {
+      const count = sdk.config.getConfigCount();
+      if (count != null) configCount = safeStringifyConfigValue(count) ?? count;
+    } else {
+      const count = call('DtGetConfigCount', 'execute');
+      if (count != null) configCount = safeStringifyConfigValue(count) ?? (count as number | string);
+    }
+  } catch {
+    configCount = null;
+  }
+
+  const effectiveVersion = localConfigVersion || appConfigVersion || '1.0';
+
+  return {
+    localConfigVersion,
+    appConfigVersion,
+    selectedConfigId,
+    configCount,
+    effectiveVersion,
+  };
 }
 
 export function getConfigVersion(): string | null {
-  const sdk = getSdk();
-  if (sdk?.config) {
-    const v = sdk.config.getLocalConfigVersion();
-    return v == null ? null : String(v);
-  }
-  const v = call('DtGetLocalConfigVersion', 'execute');
-  return v == null ? null : String(v);
+  const details = getSdkConfigDetails();
+  return details.localConfigVersion || details.appConfigVersion || null;
 }
 
 export function openDialogConfig(): void {
@@ -477,24 +595,89 @@ export function clearVpnLogs(): void {
   callVoid('DtClearLogs', 'execute');
 }
 
+const vpnLogTimestampMap = new Map<string, string>();
+
+function getOrAssignVpnLogTimestamp(key: string): string {
+  let ts = vpnLogTimestampMap.get(key);
+  if (!ts) {
+    const now = new Date();
+    ts = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    vpnLogTimestampMap.set(key, ts);
+    if (vpnLogTimestampMap.size > 1000) {
+      const firstKey = vpnLogTimestampMap.keys().next().value;
+      if (firstKey) vpnLogTimestampMap.delete(firstKey);
+    }
+  }
+  return ts;
+}
+
+function parseVpnTimeField(rawTime: unknown): string | null {
+  if (rawTime == null) return null;
+  const str = String(rawTime).trim();
+  if (!str) return null;
+
+  const match = str.match(/(\d{2}:\d{2}:\d{2})/);
+  if (match) return match[1];
+
+  if (/^\d{10,13}$/.test(str)) {
+    const num = Number(str);
+    const date = new Date(num < 1e11 ? num * 1000 : num);
+    if (!isNaN(date.getTime())) {
+      return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+  }
+
+  const date = new Date(str);
+  if (!isNaN(date.getTime())) {
+    return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+
+  return null;
+}
+
 export function formatVpnLogEntry(entry: unknown): string {
   if (entry == null) return '';
-  if (typeof entry === 'string') return entry.trim();
-  if (typeof entry === 'object') {
+
+  let rawText = '';
+  let timeStr: string | null = null;
+
+  if (typeof entry === 'string') {
+    rawText = entry.trim();
+  } else if (typeof entry === 'object') {
     const rec = entry as Record<string, unknown>;
     const time = rec.time ?? rec.timestamp ?? rec.date ?? rec.hora;
     const message = rec.message ?? rec.log ?? rec.text ?? rec.data ?? rec.msg ?? rec.content;
-    const timeText = time == null ? '' : String(time).trim();
-    const messageText = message == null ? '' : String(message).trim();
-    if (timeText && messageText) return `${timeText} - ${messageText}`;
-    if (messageText) return messageText;
-    if (timeText) return timeText;
-    const values = Object.values(rec)
-      .filter((value) => value != null && String(value).trim())
-      .map((value) => String(value).trim());
-    return values.join(' - ');
+
+    timeStr = parseVpnTimeField(time);
+
+    if (message != null && String(message).trim()) {
+      rawText = String(message).trim();
+    } else {
+      const values = Object.values(rec)
+        .filter((value) => value != null && String(value).trim())
+        .map((value) => String(value).trim());
+      rawText = values.join(' - ');
+    }
+  } else {
+    rawText = String(entry).trim();
   }
-  return String(entry).trim();
+
+  if (!rawText) return '';
+
+  // Se o próprio texto já possui um timestamp HH:mm:ss no início
+  const existingTimeMatch = rawText.match(/^\[?(\d{2}:\d{2}:\d{2})\]?\s*[-:]?\s*(.*)$/);
+  if (existingTimeMatch) {
+    timeStr = existingTimeMatch[1];
+    rawText = existingTimeMatch[2].trim();
+  }
+
+  if (!timeStr) {
+    timeStr = getOrAssignVpnLogTimestamp(rawText);
+  }
+
+  if (!rawText) return timeStr;
+
+  return `${timeStr}  ${rawText}`;
 }
 
 const LOG_HTML_ALLOWED = /^(br|b|i|em|strong|u|small)$/i;
@@ -865,4 +1048,127 @@ export function getDiagnosticReport(): string | null {
   }
   const v = call('DtGetDiagnosticReport', 'execute');
   return v == null ? null : String(v);
+}
+
+export function isNativeDarkMode(): boolean {
+  const sdk = getSdk();
+  try {
+    if (typeof sdk?.android?.isDarkMode === 'function') {
+      return Boolean(sdk.android.isDarkMode());
+    }
+  } catch {
+    /* fallback */
+  }
+  const nativeVal = call('DtIsDarkMode', 'execute');
+  if (nativeVal != null) return Boolean(nativeVal);
+
+  if (typeof window !== 'undefined' && window.matchMedia) {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+
+  return true;
+}
+
+export interface SdkDiagnosticSnapshot {
+  timestamp: string;
+  sdkReady: boolean;
+  sdkVersion: string;
+  main: {
+    vpnState: string | null;
+    isVpnRunning: boolean;
+    airplaneState: string | null;
+    assistantState: string | null;
+    remainingTimeText: string | null;
+    lastVpnError: string | null;
+    networkName: string | null;
+    localIp: string | null;
+  };
+  config: {
+    selectedConfigId: number | string | null;
+    configCount: number | string | null;
+    cdnCount: number | string | null;
+    localConfigVersion: string | null;
+    appConfigVersion: string | null;
+    hasUsername: boolean;
+    hasPassword: boolean;
+    hasUuid: boolean;
+    hasPendingImport: boolean;
+  };
+  android: {
+    deviceId: string | null;
+    appVersion: string | null;
+    isSafeMode: boolean;
+    isDarkMode: boolean;
+    statusBarHeight: number;
+    navBarHeight: number;
+    downloadBytes: number;
+    uploadBytes: number;
+    hotspotStatus: string | null;
+  };
+  bridgeAvailability: Record<string, boolean>;
+}
+
+export function getSdkDiagnosticSnapshot(): SdkDiagnosticSnapshot {
+  const sdk = getSdk();
+  const bridgeObjects = [
+    'DtSetConfig', 'DtGetConfigs', 'DtGetCategories', 'DtGetSelectedCategory', 'DtGetSelectedCategoryId',
+    'DtGetConfigsByCategory', 'DtGetSelectedConfig', 'DtGetSelectedConfigId', 'DtGetConfigCount', 'DtGetDefaultConfig',
+    'DtExecuteDialogConfig', 'DtGetImportPublicKey', 'DtCopyImportPublicKey', 'DtImportConfig', 'DtHasPendingConfigImport',
+    'DtGetPendingConfigImportDetails', 'DtUsername', 'DtPassword', 'DtGetLocalConfigVersion', 'DtCDNCount',
+    'DtEndpointCount', 'DtUuid', 'DtGetUser', 'DtGetLogs', 'DtClearLogs', 'DtExecuteVpnStart', 'DtExecuteVpnStop',
+    'DtGetVpnState', 'DtIsVpnRunning', 'DtStartAppUpdate', 'DtStartCheckUser', 'DtShowLoggerDialog', 'DtGetLocalIP',
+    'DtAirplaneActivate', 'DtAirplaneDeactivate', 'DtAirplaneState', 'DtAppIsCurrentAssistant', 'DtShowMenuDialog',
+    'DtShowDialogAdsRewarded', 'DtIsAdsEnabled', 'DtGetRemainingConnectionTime', 'DtGetRemainingConnectionTimerText',
+    'DtGetLastVpnError', 'DtGetNetworkName'
+  ];
+
+  const bridgeAvailability: Record<string, boolean> = {};
+  if (sdk && typeof sdk.getBridgeAvailability === 'function') {
+    Object.assign(bridgeAvailability, sdk.getBridgeAvailability());
+  } else {
+    for (const name of bridgeObjects) {
+      bridgeAvailability[name] = typeof window !== 'undefined' && Boolean((window as unknown as Record<string, unknown>)[name]);
+    }
+  }
+
+  const details = getSdkConfigDetails();
+
+  return {
+    timestamp: new Date().toISOString(),
+    sdkReady: Boolean(sdk && (typeof sdk.isReady === 'function' ? sdk.isReady() : true)),
+    sdkVersion: sdk?.version ?? '2.0.0',
+    main: {
+      vpnState: getConnectionState(),
+      isVpnRunning: isVpnRunning(),
+      airplaneState: sdk?.main?.getAirplaneState?.() ?? null,
+      assistantState: sdk?.main?.getAssistantState?.() ?? null,
+      remainingTimeText: getRemainingConnectionTimerText(),
+      lastVpnError: getLastVpnError(),
+      networkName: getNetworkName(),
+      localIp: getLocalIP(),
+    },
+    config: {
+      selectedConfigId: details.selectedConfigId,
+      configCount: details.configCount,
+      cdnCount: sdk?.config?.getCdnCount?.() ?? null,
+      localConfigVersion: details.localConfigVersion,
+      appConfigVersion: details.appConfigVersion,
+      hasUsername: Boolean(getUsername()),
+      hasPassword: Boolean(getPassword()),
+      hasUuid: Boolean(getUUID()),
+      hasPendingImport: sdk?.config?.hasPendingConfigImport?.() ?? false,
+    },
+    android: {
+      deviceId: sdk?.android?.getDeviceId?.() ?? null,
+      appVersion: sdk?.android?.getAppVersion?.() ?? null,
+      isSafeMode: sdk?.android?.isSafeMode?.() ?? false,
+      isDarkMode: sdk?.android?.isDarkMode?.() ?? false,
+      statusBarHeight: getStatusbarHeight(),
+      navBarHeight: getNavbarHeight(),
+      downloadBytes: getDownloadBytes(),
+      uploadBytes: getUploadBytes(),
+      hotspotStatus: getHotspotNativeStatus(),
+    },
+    bridgeAvailability,
+  };
 }

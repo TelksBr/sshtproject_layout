@@ -1,6 +1,7 @@
-import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useDTunnelEvent } from '../hooks/useDTunnelEvent';
-import { vibrate } from '../utils/appFunctions';
+import { vibrate, getConfigLabel } from '../utils/appFunctions';
+import { recordDebugLog } from '../utils/dtunnelEventBridge';
 import {
   loadAppNotifications,
   parseAppNotification,
@@ -41,9 +42,14 @@ export function AppNotificationsProvider({ children }: { children: ReactNode }) 
     return trimmed;
   }, []);
 
-  useDTunnelEvent('notification', (payload) => {
+  const handleIncomingPayload = useCallback((payload: unknown) => {
     const parsed = parseAppNotification(payload);
-    if (!parsed) return;
+    if (!parsed) {
+      recordDebugLog('app_notif', 'parse_failed_or_empty', payload);
+      return;
+    }
+
+    recordDebugLog('app_notif', 'received_valid', parsed);
 
     const prev = itemsRef.current;
     const duplicate = prev.some(
@@ -52,7 +58,10 @@ export function AppNotificationsProvider({ children }: { children: ReactNode }) 
         item.message === parsed.message &&
         Date.now() - item.receivedAt < 4000
     );
-    if (duplicate) return;
+    if (duplicate) {
+      recordDebugLog('app_notif', 'duplicate_ignored', parsed.title);
+      return;
+    }
 
     const added: AppNotification = {
       id: makeId(),
@@ -72,7 +81,38 @@ export function AppNotificationsProvider({ children }: { children: ReactNode }) 
     }
 
     setIncomingQueue((queue) => [...queue, added]);
-  });
+  }, [commit]);
+
+  // 1. Escuta eventos de notificação do DTunnel SDK
+  useDTunnelEvent('notification', handleIncomingPayload);
+
+  // 2. Checagens auxiliares na montagem (caso tenha sido passado via URL ou AppConfig)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    // Verifica se há parâmetros de notificação na URL do WebView (ex: ?notification=... ou ?notif=...)
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const notifFromUrl = urlParams.get('notification') || urlParams.get('notif') || urlParams.get('msg');
+      if (notifFromUrl) {
+        recordDebugLog('app_notif', 'found_in_url_params', notifFromUrl);
+        handleIncomingPayload(notifFromUrl);
+      }
+    } catch {
+      /* ignore */
+    }
+
+    // Verifica se há notificação salva no bridge DtGetAppConfig
+    try {
+      const storedNotif = getConfigLabel('notification') || getConfigLabel('last_notification');
+      if (storedNotif) {
+        recordDebugLog('app_notif', 'found_in_app_config', storedNotif);
+        handleIncomingPayload(storedNotif);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [handleIncomingPayload]);
 
   const dismissIncoming = useCallback(() => {
     setIncomingQueue((queue) => {

@@ -9,8 +9,8 @@ export interface AppInsets {
 
 export function useAppLayout() {
   const [insets, setInsets] = useState<AppInsets>({
-    paddingTop: 32,
-    paddingBottom: 56,
+    paddingTop: 8,
+    paddingBottom: 8,
   });
 
   const applyInsets = useCallback((next: AppInsets) => {
@@ -24,8 +24,8 @@ export function useAppLayout() {
     const statusBarHeight = getStatusBarHeight();
     const navBarHeight = getNavBarHeight();
     applyInsets({
-      paddingTop: statusBarHeight + 8,
-      paddingBottom: navBarHeight + 8,
+      paddingTop: statusBarHeight > 0 ? statusBarHeight + 8 : 8,
+      paddingBottom: navBarHeight > 0 ? navBarHeight + 8 : 8,
     });
   }, [applyInsets]);
 

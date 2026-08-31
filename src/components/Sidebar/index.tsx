@@ -70,8 +70,6 @@ export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
 
   const menuStyle = {
     paddingTop: insets.paddingTop,
-    paddingBottom: insets.paddingBottom,
-    height: 'calc(var(--vh, 1vh) * 100)',
   };
 
   const menuCategories: MenuCategory[] = [
@@ -153,7 +151,7 @@ export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
         ${isOpen ? 'is-open' : ''}
         ${!isOpen && mobileSettledClosed ? 'is-closed-settled' : ''}
       `}
-        style={{ ...menuStyle, background: 'var(--bg-elevated)', borderRight: '1px solid var(--border)' }}
+        style={{ ...menuStyle, height: '100%', maxHeight: '100%', background: 'var(--bg-elevated)', borderRight: '1px solid var(--border)' }}
       >
         <div className="flex flex-col h-full min-h-0">
           {/* Header */}
@@ -170,11 +168,11 @@ export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
             <button
               onClick={closeMenu}
               type="button"
-              className="lg:hidden min-w-[44px] min-h-[44px] lg:min-w-[48px] lg:min-h-[48px] 2xl:min-w-[56px] 2xl:min-h-[56px] flex items-center justify-center rounded-xl flex-shrink-0 touch-manipulation"
-              style={{ background: 'var(--surface)' }}
+              className="lg:hidden min-w-[44px] min-h-[44px] lg:min-w-[48px] lg:min-h-[48px] 2xl:min-w-[56px] 2xl:min-h-[56px] flex items-center justify-center rounded-xl flex-shrink-0 touch-manipulation transition-opacity active:opacity-70"
+              style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
               aria-label="Fechar menu"
             >
-              <X className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9 text-white" strokeWidth={2.5} />
+              <X className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" style={{ color: 'var(--text)' }} strokeWidth={2.5} />
             </button>
           </div>
 
@@ -203,7 +201,14 @@ export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
           </div>
 
           {/* Footer com botões */}
-          <div className="p-4 lg:p-6 space-y-3 flex-shrink-0" style={{ borderTop: '1px solid var(--border)', background: 'var(--bg)' }}>
+          <div
+            className="p-4 lg:p-6 space-y-3 flex-shrink-0"
+            style={{
+              borderTop: '1px solid var(--border)',
+              background: 'var(--bg-elevated)',
+              paddingBottom: insets.paddingBottom > 8 ? `${insets.paddingBottom}px` : undefined,
+            }}
+          >
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => onNavigate('terms')}

@@ -7,6 +7,7 @@ export interface ConfigAuth {
   username?: string;
   password?: string;
   v2ray_uuid?: string;
+  uuid?: string;
 }
 
 /**

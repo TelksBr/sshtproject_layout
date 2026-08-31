@@ -17,7 +17,7 @@ export function getStorageItem<T>(key: string): T | null {
   return loadData<T>(key);
 }
 
-export function setStorageItem(key: string, value: any): void {
+export function setStorageItem<T = unknown>(key: string, value: T): void {
   saveData(key, value);
 }
 

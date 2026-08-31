@@ -119,35 +119,34 @@ export function SpeedTest({ onClose }: SpeedTestProps) {
   return (
     <Modal onClose={onClose} title="Speed Test" icon={Download}>
       <div className="flex-1 p-4">
-
-
         <div className="grid gap-4">
           {/* Server Selection */}
           <div className="relative">
             <button
               onClick={() => setShowServers(!showServers)}
               disabled={loading || testing}
-              className="w-full p-4 rounded-lg bg-[#1a1624]/30 border border-[#8b5cf6]/20 text-left hover:bg-[#1a1624]/40 transition-colors flex items-center justify-between"
+              className="w-full p-4 rounded-xl text-left transition-colors flex items-center justify-between touch-manipulation disabled:opacity-50"
+              style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
             >
               <div className="flex items-center gap-3">
-                <Server className="w-5 h-5 text-[#8b5cf6]" />
+                <Server className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--accent)' }} />
                 <div>
-                  <span className="block text-sm font-medium text-[#b7abc9]">
+                  <span className="block text-sm font-semibold truncate" style={{ color: 'var(--text)' }}>
                     {loading ? 'Carregando servidores...' : selectedServer?.location.city || 'Selecione um servidor'}
                   </span>
                   {selectedServer && (
-                    <span className="block text-xs text-[#b7abc9]/70">
+                    <span className="block text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
                       Ping: {selectedServer?.ping === undefined ? 'Medindo...' : `${selectedServer.ping}ms`}
                     </span>
                   )}
                 </div>
               </div>
-              <ChevronDown className={`w-5 h-5 text-[#8b5cf6] transition-transform ${showServers ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-5 h-5 transition-transform ${showServers ? 'rotate-180' : ''}`} style={{ color: 'var(--accent)' }} />
             </button>
 
             {/* Server List */}
             {showServers && (
-              <div className="absolute inset-x-0 top-full mt-2 p-2 rounded-lg bg-[#1a1624]/95 border border-[#8b5cf6]/20 z-10 max-h-48 overflow-y-auto">
+              <div className="absolute inset-x-0 top-full mt-2 p-2 rounded-xl border z-20 max-h-48 overflow-y-auto shadow-xl custom-scrollbar" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
                 {servers.map((server, index) => (
                   <button
                     key={index}
@@ -155,20 +154,20 @@ export function SpeedTest({ onClose }: SpeedTestProps) {
                       setSelectedServer(server);
                       setShowServers(false);
                     }}
-                    className="w-full p-3 rounded-lg hover:bg-[#8b5cf6]/10 transition-colors text-left flex items-center justify-between"
+                    className="w-full p-3 rounded-lg hover:bg-[var(--accent-dim)] transition-colors text-left flex items-center justify-between touch-manipulation"
                   >
                     <div>
-                      <span className="block text-sm font-medium text-[#b7abc9]">
+                      <span className="block text-sm font-semibold" style={{ color: 'var(--text)' }}>
                         {server.location.city}
                       </span>
-                      <span className="block text-xs text-[#b7abc9]/70">
+                      <span className="block text-xs" style={{ color: 'var(--text-muted)' }}>
                         {server.location.country}
                       </span>
                     </div>
-                    <span className="text-sm text-[#8b5cf6]">
+                    <span className="text-sm font-semibold" style={{ color: 'var(--accent)' }}>
                       {server.ping === undefined ? (
                         <span className="inline-flex items-center gap-1">
-                          <svg className="animate-spin w-3 h-3 mr-1 text-[#8b5cf6]" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
+                          <svg className="animate-spin w-3 h-3 mr-1 text-[var(--accent)]" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
                           Medindo...
                         </span>
                       ) : `${server.ping}ms`}
@@ -180,22 +179,23 @@ export function SpeedTest({ onClose }: SpeedTestProps) {
           </div>
 
           {/* Speed Test Display */}
-          <div className="p-6 rounded-lg bg-[#1a1624]/30 border border-[#8b5cf6]/20 text-center">
-            <div className="w-48 h-48 mx-auto relative mb-6">
-              <div className="absolute inset-0 rounded-full border-4 border-[#8b5cf6]/20" />
+          <div className="p-6 rounded-xl text-center space-y-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+            <div className="w-48 h-48 mx-auto relative">
+              <div className="absolute inset-0 rounded-full border-4 opacity-20" style={{ borderColor: 'var(--accent)' }} />
               <div 
-                className="absolute inset-0 rounded-full border-4 border-[#8b5cf6] transition-all duration-500"
+                className="absolute inset-0 rounded-full border-4 transition-all duration-500"
                 style={{
                   animation: testing ? 'spin 2s linear infinite' : 'none',
-                  borderTopColor: testing ? 'transparent' : '#8b5cf6'
+                  borderColor: 'var(--accent)',
+                  borderTopColor: testing ? 'transparent' : 'var(--accent)'
                 }}
               />
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center">
-                  <span className="block text-3xl font-bold text-[#b7abc9]">
+                  <span className="block text-3xl font-bold font-mono" style={{ color: 'var(--text)' }}>
                     {currentPhase === 'ping' ? results.ping : results.download}
                   </span>
-                  <span className="text-sm text-[#b7abc9]/70">
+                  <span className="text-sm font-semibold" style={{ color: 'var(--text-muted)' }}>
                     {currentPhase === 'ping' ? 'ms' : 'Mbps'}
                   </span>
                 </div>
@@ -203,15 +203,16 @@ export function SpeedTest({ onClose }: SpeedTestProps) {
             </div>
 
             {error && (
-              <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-                <p className="text-red-400 text-sm">{error}</p>
+              <div className="p-3 rounded-lg bg-rose-500/15 border border-rose-500/30">
+                <p className="text-rose-400 text-sm font-medium">{error}</p>
               </div>
             )}
 
             <button
               onClick={startTest}
               disabled={testing || loading || !selectedServer}
-              className="w-full h-12 flex items-center justify-center gap-2 bg-gradient-to-r from-[#8b5cf6] to-[#7c3aed] hover:from-[#7c3aed] hover:to-[#8b5cf6] text-white font-bold py-2 px-6 rounded-lg shadow-lg transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full min-h-[48px] flex items-center justify-center gap-2 text-white font-bold py-2 px-6 rounded-xl shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation active:scale-[0.99]"
+              style={{ background: 'var(--accent)' }}
             >
               {testing ? (
                 <>
@@ -224,21 +225,21 @@ export function SpeedTest({ onClose }: SpeedTestProps) {
             </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 rounded-lg bg-[#1a1624]/30 border border-[#8b5cf6]/20">
-              <div className="flex items-center gap-2 mb-2">
-                <Upload className="w-4 h-4 text-[#8b5cf6]" />
-                <span className="text-[#b7abc9] text-sm">Upload</span>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="p-4 rounded-xl" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+              <div className="flex items-center gap-2 mb-1">
+                <Upload className="w-4 h-4" style={{ color: 'var(--accent)' }} />
+                <span className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Upload</span>
               </div>
-              <span className="text-xl font-bold text-[#b7abc9]">{results.upload} Mbps</span>
+              <span className="text-xl font-bold font-mono" style={{ color: 'var(--text)' }}>{results.upload} Mbps</span>
             </div>
 
-            <div className="p-4 rounded-lg bg-[#1a1624]/30 border border-[#8b5cf6]/20">
-              <div className="flex items-center gap-2 mb-2">
-                <RefreshCw className="w-4 h-4 text-[#8b5cf6]" />
-                <span className="text-[#b7abc9] text-sm">Ping</span>
+            <div className="p-4 rounded-xl" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+              <div className="flex items-center gap-2 mb-1">
+                <RefreshCw className="w-4 h-4" style={{ color: 'var(--accent)' }} />
+                <span className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Ping</span>
               </div>
-              <span className="text-xl font-bold text-[#b7abc9]">{results.ping} ms</span>
+              <span className="text-xl font-bold font-mono" style={{ color: 'var(--text)' }}>{results.ping} ms</span>
             </div>
           </div>
         </div>

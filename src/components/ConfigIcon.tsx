@@ -1,4 +1,4 @@
-import React, { useState, useEffect, memo } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { getIconSrc, subscribeIconCache } from '../utils/iconCache';
 
 interface ConfigIconProps {

@@ -3,7 +3,9 @@
 @import "tailwindcss/utilities";
 
 @layer base {
-  :root {
+  :root,
+  html.dark,
+  [data-theme="dark"] {
     --bg: #0c0a12;
     --bg-elevated: #14111c;
     --surface: #1a1624;
@@ -15,8 +17,31 @@
     --text-muted: #b7abc9;
     --danger: #f87171;
     --ok: #34d399;
-    --safe-top: 32px;
-    --safe-bottom: 48px;
+    --safe-top: env(safe-area-inset-top, 16px);
+    --safe-bottom: env(safe-area-inset-bottom, 16px);
+    color-scheme: dark;
+  }
+
+  html.light,
+  [data-theme="light"] {
+    --bg: #f4f1fa;
+    --bg-elevated: #ffffff;
+    --surface: #ffffff;
+    --surface-hover: #f0eaf8;
+    --border: rgba(139, 92, 246, 0.2);
+    --accent: #7c3aed;
+    --accent-dim: rgba(124, 58, 237, 0.12);
+    --text: #1e1b2e;
+    --text-muted: #685f80;
+    --danger: #dc2626;
+    --ok: #059669;
+    --safe-top: env(safe-area-inset-top, 16px);
+    --safe-bottom: env(safe-area-inset-bottom, 16px);
+    color-scheme: light;
+  }
+
+  html {
+    transition: background-color 0.25s ease, color 0.25s ease;
   }
 
   /* Correção para avisos CSS do Tailwind */
@@ -95,21 +120,30 @@
     /* user-drag: none; - Removido: propriedade não padrão */
   }
 
+  /* Desativar barra de rolagem global visível no aplicativo para estética mobile limpa */
+  * {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
   ::-webkit-scrollbar {
-    width: 0.5rem;
-  }
-
-  ::-webkit-scrollbar-track {
-    background: var(--bg-elevated);
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: var(--accent);
-    border-radius: 9999px;
+    display: none;
+    width: 0px;
+    height: 0px;
   }
 }
 
 @layer components {
+  .input-field {
+    background: var(--bg-elevated);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .input-field::placeholder {
+    color: var(--text-muted);
+    opacity: 0.6;
+  }
+
   .btn-primary {
     padding: 0.75rem 1.25rem;
     color: white;
@@ -737,22 +771,22 @@ input[type="range"].layout-range::-moz-range-thumb {
 /* Melhorias para modais e componentes modernos */
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: var(--accent) var(--bg-elevated);
+  scrollbar-color: var(--accent) transparent;
 }
 
 .custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  display: block !important;
+  width: 4px;
+  height: 4px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: var(--bg-elevated);
-  border-radius: 6px;
+  background: transparent;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: var(--accent);
-  border-radius: 6px;
+  border-radius: 4px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-corner {

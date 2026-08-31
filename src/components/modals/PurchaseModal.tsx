@@ -26,6 +26,7 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
   const [emailError, setEmailError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [copiedPix, setCopiedPix] = useState(false);
   
   // Estados do processo de pagamento
   const [purchaseData, setPurchaseData] = useState<OrderResponse | null>(null);
@@ -41,10 +42,8 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
     credentials: hookCredentials, 
     isPolling, 
     error: pollingError,
-    attempts,
-    maxAttempts,
     resetPolling
-  } = usePaymentPolling(purchaseData?.payment_id || null);
+  } = usePaymentPolling(purchaseData?.payment_id ? String(purchaseData.payment_id) : null);
 
   useEffect(() => {
     if (!hookCredentials || (hookCredentials.status !== 'completed' && hookCredentials.status !== 'approved')) {
@@ -73,8 +72,24 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
     loadPlans();
   }, []);
 
-  // Callback ref: assim que o canvas estiver no DOM, desenha o QR nele
-  const drawQRCode = useCallback(async (canvas: HTMLCanvasElement | null) => {
+  function handleCopyToClipboard(text: string, type: string = 'texto') {
+    copyToClipboard(text).then((success) => {
+      if (success) {
+        setCopiedPix(true);
+        setError(`✅ ${type} copiado com sucesso!`);
+        setTimeout(() => {
+          setCopiedPix(false);
+          setError('');
+        }, 2500);
+      } else {
+        setError(`❌ Erro ao copiar ${type}. Tente selecionar e copiar manualmente.`);
+        setTimeout(() => setError(''), 3000);
+      }
+    });
+  }
+
+  // Callback ref: assim que o canvas estiver no DOM, desenha o QR nele (retorna void para satisfazer React.Ref)
+  const drawQRCode = useCallback((canvas: HTMLCanvasElement | null) => {
     if (!canvas || !purchaseData) return;
     // Guardar ref para limpar depois se necessário
     (qrCanvasRef as React.MutableRefObject<HTMLCanvasElement | null>).current = canvas;
@@ -82,23 +97,25 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
     const pixCode = purchaseData.qr_code || purchaseData.ticket_url || '';
     if (!pixCode) return;
 
-    try {
-      setQrCodeError(null);
-      const QRCodeModule = await import('qrcode');
-      const QRCode = QRCodeModule.default || QRCodeModule;
+    (async () => {
+      try {
+        setQrCodeError(null);
+        const QRCodeModule = await import('qrcode');
+        const QRCode = QRCodeModule.default || QRCodeModule;
 
-      // Desenha direto no <canvas> — método mais confiável, sem intermediários
-      await QRCode.toCanvas(canvas, pixCode, {
-        width: 256,
-        margin: 4,
-        color: { dark: '#000000', light: '#FFFFFF' },
-        errorCorrectionLevel: 'M',
-      });
-      setQrCodeReady(true);
-    } catch (err) {
-      console.error('[QRCode] toCanvas falhou:', err);
-      setQrCodeError(`Erro ao gerar QR Code: ${err}`);
-    }
+        // Desenha direto no <canvas> — método mais confiável, sem intermediários
+        await QRCode.toCanvas(canvas, pixCode, {
+          width: 256,
+          margin: 4,
+          color: { dark: '#000000', light: '#FFFFFF' },
+          errorCorrectionLevel: 'M',
+        });
+        setQrCodeReady(true);
+      } catch (err) {
+        console.error('[QRCode] toCanvas falhou:', err);
+        setQrCodeError(`Erro ao gerar QR Code: ${err}`);
+      }
+    })();
   }, [purchaseData]);
 
   async function loadPlans() {
@@ -206,21 +223,6 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
     };
   }, [resetPolling]);
 
-  function handleCopyToClipboard(text: string, type: string = 'texto') {
-    // Função para copiar via SDK ou APIs nativas do browser
-    copyToClipboard(text).then((success) => {
-      if (success) {
-        setError(`✅ ${type} copiado com sucesso!`);
-        setTimeout(() => {
-          setError('');
-        }, 2000);
-      } else {
-        setError(`❌ Erro ao copiar ${type}. Tente selecionar e copiar manualmente.`);
-        setTimeout(() => setError(''), 3000);
-      }
-    });
-  }
-
   // Renderizar conteúdo baseado no step atual
   function renderStepContent() {
     switch (currentStep) {
@@ -229,10 +231,10 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
           <div className="w-full space-y-3 sm:space-y-4">
             {/* Cabeçalho */}
             <div className="text-center">
-              <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-white mb-0.5 sm:mb-1">
+              <h3 className="text-base sm:text-lg lg:text-xl font-semibold mb-0.5 sm:mb-1" style={{ color: 'var(--text)' }}>
                 Escolha seu Plano
               </h3>
-              <p className="text-xs sm:text-sm text-gray-400">
+              <p className="text-xs sm:text-sm" style={{ color: 'var(--text-muted)' }}>
                 Selecione a opção que melhor se adequa a você
               </p>
             </div>
@@ -240,7 +242,7 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
             {/* Lista de planos */}
             {isLoading ? (
               <div className="flex justify-center py-8 sm:py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#8b5cf6] border-t-transparent"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-[var(--accent)] border-t-transparent"></div>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-4 w-full">
@@ -254,8 +256,6 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
                       w-full text-left
                       p-3 sm:p-4
                       rounded-lg sm:rounded-xl
-                      border-2 border-[#8b5cf6]/30 hover:border-[#8b5cf6]/70
-                      bg-[#14111c]/80 hover:bg-[#1a1624]/95
                       active:scale-95 hover:scale-105
                       transition-all duration-200
                       touch-manipulation
@@ -263,18 +263,22 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
                       min-h-[140px] sm:min-h-[160px]
                       flex flex-col
                     "
+                    style={{
+                      background: 'var(--surface)',
+                      border: '1px solid var(--border)',
+                    }}
                   >
                     {/* Gradiente de fundo ao passar */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#8b5cf6]/0 to-[#8b5cf6]/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-[var(--accent)]/0 to-[var(--accent)]/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
                     
                     {/* Conteúdo */}
                     <div className="relative z-10 flex flex-col h-full">
                       {/* Nome e descrição */}
                       <div className="flex-1">
-                        <h4 className="font-semibold text-white text-sm sm:text-base line-clamp-2">
+                        <h4 className="font-semibold text-sm sm:text-base line-clamp-2" style={{ color: 'var(--text)' }}>
                           {plan.name}
                         </h4>
-                        <p className="text-xs sm:text-sm text-gray-400 mt-1 line-clamp-2">
+                        <p className="text-xs sm:text-sm mt-1 line-clamp-2" style={{ color: 'var(--text-muted)' }}>
                           {plan.description}
                         </p>
                       </div>
@@ -287,32 +291,41 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
                               key={protocol}
                               className="
                                 px-1.5 py-0.5 sm:px-2 sm:py-1
-                                bg-[#8b5cf6]/50 text-[#b7abc9]
-                                text-[10px] sm:text-xs font-medium
+                                text-[10px] sm:text-xs font-semibold
                                 rounded-md
                               "
+                              style={{
+                                background: 'var(--accent-dim)',
+                                color: 'var(--accent)',
+                              }}
                             >
                               {protocol.toUpperCase()}
                             </span>
                           ))
                         ) : (
-                          <span className="px-1.5 py-0.5 sm:px-2 sm:py-1 bg-[#8b5cf6]/50 text-[#b7abc9] text-[10px] sm:text-xs font-medium rounded-md">
+                          <span
+                            className="px-1.5 py-0.5 sm:px-2 sm:py-1 text-[10px] sm:text-xs font-semibold rounded-md"
+                            style={{
+                              background: 'var(--accent-dim)',
+                              color: 'var(--accent)',
+                            }}
+                          >
                             SSH/V2RAY
                           </span>
                         )}
                       </div>
 
                       {/* Preço e duração */}
-                      <div className="flex items-baseline justify-between border-t border-[#8b5cf6]/20 pt-2 mt-auto">
+                      <div className="flex items-baseline justify-between border-t border-[var(--border)] pt-2 mt-auto">
                         <div className="flex flex-col">
-                          <span className="text-[10px] sm:text-xs text-gray-500 font-medium">
+                          <span className="text-[10px] sm:text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
                             Por {(plan.duration_days || plan.validate || 30)}d
                           </span>
-                          <span className="text-lg sm:text-xl lg:text-2xl font-bold text-green-400">
+                          <span className="text-lg sm:text-xl lg:text-2xl font-bold text-emerald-500">
                             {formatPrice(plan.price)}
                           </span>
                         </div>
-                        <div className="text-2xl sm:text-3xl group-hover:scale-110 transition-transform">
+                        <div className="text-2xl sm:text-3xl group-hover:scale-110 transition-transform" style={{ color: 'var(--accent)' }}>
                           →
                         </div>
                       </div>
@@ -329,17 +342,17 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
           <div className="w-full space-y-3 sm:space-y-4">
             {/* Cabeçalho */}
             <div className="text-center">
-              <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-white mb-0.5 sm:mb-1">
+              <h3 className="text-base sm:text-lg lg:text-xl font-semibold mb-0.5 sm:mb-1" style={{ color: 'var(--text)' }}>
                 Seus Dados
               </h3>
-              <p className="text-xs sm:text-sm text-gray-400">
+              <p className="text-xs sm:text-sm" style={{ color: 'var(--text-muted)' }}>
                 Preencha para receber as credenciais
               </p>
             </div>
 
             {/* Nome */}
             <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1.5 sm:mb-2">
+              <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: 'var(--text-muted)' }}>
                 Nome completo
               </label>
               <input
@@ -349,18 +362,21 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
                 className="
                   w-full min-h-[44px] sm:min-h-[48px]
                   px-3 sm:px-4 py-2
-                  bg-[#14111c]/50 border-2 border-[#8b5cf6]/30
-                  rounded-lg text-white text-sm sm:text-base
-                  focus:outline-none focus:border-[#8b5cf6]/70 focus:bg-[#14111c]/70
-                  transition-all placeholder-gray-500
+                  rounded-xl text-sm sm:text-base
+                  outline-none transition-all allow-select
                 "
+                style={{
+                  background: 'var(--bg-elevated)',
+                  color: 'var(--text)',
+                  border: '1px solid var(--border)',
+                }}
                 placeholder="João Silva"
               />
             </div>
 
             {/* Email */}
             <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-300 mb-1.5 sm:mb-2">
+              <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: 'var(--text-muted)' }}>
                 Email
               </label>
               <input
@@ -371,15 +387,18 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
                 className="
                   w-full min-h-[44px] sm:min-h-[48px]
                   px-3 sm:px-4 py-2
-                  bg-[#14111c]/50 border-2 border-[#8b5cf6]/30
-                  rounded-lg text-white text-sm sm:text-base
-                  focus:outline-none focus:border-[#8b5cf6]/70 focus:bg-[#14111c]/70
-                  transition-all placeholder-gray-500
+                  rounded-xl text-sm sm:text-base
+                  outline-none transition-all allow-select
                 "
+                style={{
+                  background: 'var(--bg-elevated)',
+                  color: 'var(--text)',
+                  border: '1px solid var(--border)',
+                }}
                 placeholder="seu@email.com"
               />
               {emailError && (
-                <p className="text-red-400 text-xs sm:text-sm mt-1.5 font-medium">{emailError}</p>
+                <p className="text-rose-400 text-xs sm:text-sm mt-1.5 font-medium">{emailError}</p>
               )}
             </div>
 
@@ -390,10 +409,14 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
                 className="
                   flex-1 min-h-[44px] sm:min-h-[48px]
                   px-3 sm:px-4
-                  bg-[#1a1624]/80 hover:bg-[#1a1624] border-2 border-[#8b5cf6]/30 hover:border-[#8b5cf6]/60
-                  text-white text-sm sm:text-base font-medium
-                  rounded-lg transition-all active:scale-95
+                  text-sm sm:text-base font-medium
+                  rounded-xl transition-all active:scale-95
                 "
+                style={{
+                  background: 'var(--bg-elevated)',
+                  color: 'var(--text)',
+                  border: '1px solid var(--border)',
+                }}
               >
                 Voltar
               </button>
@@ -402,9 +425,10 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
                 className="
                   flex-1 min-h-[44px] sm:min-h-[48px]
                   px-3 sm:px-4
-                  bg-[#8b5cf6] hover:bg-[#8b5cf6] text-white text-sm sm:text-base font-medium
-                  rounded-lg transition-all active:scale-95
+                  text-white text-sm sm:text-base font-medium
+                  rounded-xl transition-all active:scale-95
                 "
+                style={{ background: 'var(--accent)' }}
               >
                 Continuar
               </button>
@@ -417,32 +441,32 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
           <div className="w-full space-y-3 sm:space-y-4">
             {/* Cabeçalho */}
             <div className="text-center">
-              <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-white mb-0.5 sm:mb-1">
+              <h3 className="text-base sm:text-lg lg:text-xl font-semibold mb-0.5 sm:mb-1" style={{ color: 'var(--text)' }}>
                 Confirmar Compra
               </h3>
-              <p className="text-xs sm:text-sm text-gray-400">
+              <p className="text-xs sm:text-sm" style={{ color: 'var(--text-muted)' }}>
                 Revise os dados antes de finalizar
               </p>
             </div>
 
             {/* Resumo do plano */}
             {selectedPlan && (
-              <div className="bg-[#14111c]/50 border-2 border-[#8b5cf6]/30 p-3 sm:p-4 rounded-lg space-y-2 sm:space-y-3">
-                <h4 className="font-semibold text-white text-sm sm:text-base">{selectedPlan.name}</h4>
+              <div className="p-3 sm:p-4 rounded-xl space-y-2 sm:space-y-3" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+                <h4 className="font-semibold text-sm sm:text-base" style={{ color: 'var(--text)' }}>{selectedPlan.name}</h4>
                 <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Preço:</span>
-                    <span className="text-green-400 font-semibold">{formatPrice(selectedPlan.price)}</span>
+                    <span style={{ color: 'var(--text-muted)' }}>Preço:</span>
+                    <span className="text-emerald-500 font-semibold">{formatPrice(selectedPlan.price)}</span>
                   </div>
-                  <div className="border-t border-[#8b5cf6]/20 pt-1.5 sm:pt-2 mt-1.5 sm:mt-2">
+                  <div className="border-t pt-1.5 sm:pt-2 mt-1.5 sm:mt-2" style={{ borderColor: 'var(--border)' }}>
                     <div className="grid grid-cols-2 gap-2 text-[10px] sm:text-xs">
                       <div>
-                        <span className="text-gray-500">Duração:</span>
-                        <div className="text-white font-medium">{selectedPlan.duration_days || selectedPlan.validate || 30}d</div>
+                        <span style={{ color: 'var(--text-muted)' }}>Duração:</span>
+                        <div className="font-medium" style={{ color: 'var(--text)' }}>{selectedPlan.duration_days || selectedPlan.validate || 30}d</div>
                       </div>
                       <div>
-                        <span className="text-gray-500">Protocolo:</span>
-                        <div className="text-white font-medium">
+                        <span style={{ color: 'var(--text-muted)' }}>Protocolo:</span>
+                        <div className="font-medium" style={{ color: 'var(--text)' }}>
                           {selectedPlan.protocols && selectedPlan.protocols.length > 0 
                             ? selectedPlan.protocols[0].toUpperCase()
                             : 'SSH/V2RAY'}
@@ -451,14 +475,14 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
                     </div>
                   </div>
                   
-                  <div className="border-t border-[#8b5cf6]/20 pt-1.5 sm:pt-2 mt-1.5 sm:mt-2 space-y-1.5">
+                  <div className="border-t pt-1.5 sm:pt-2 mt-1.5 sm:mt-2 space-y-1.5" style={{ borderColor: 'var(--border)' }}>
                     <div className="flex justify-between">
-                      <span className="text-gray-500 text-[10px] sm:text-xs">Nome:</span>
-                      <span className="text-white text-xs sm:text-sm font-medium truncate">{customerName}</span>
+                      <span className="text-[10px] sm:text-xs" style={{ color: 'var(--text-muted)' }}>Nome:</span>
+                      <span className="text-xs sm:text-sm font-medium truncate" style={{ color: 'var(--text)' }}>{customerName}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-500 text-[10px] sm:text-xs">Email:</span>
-                      <span className="text-white text-xs sm:text-sm font-medium truncate">{email}</span>
+                      <span className="text-[10px] sm:text-xs" style={{ color: 'var(--text-muted)' }}>Email:</span>
+                      <span className="text-xs sm:text-sm font-medium truncate" style={{ color: 'var(--text)' }}>{email}</span>
                     </div>
                   </div>
                 </div>
@@ -505,94 +529,76 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
 
       case 'payment':
         return (
-          <div className="w-full space-y-3 sm:space-y-4">
-            {/* Cabeçalho */}
-            <div className="text-center">
-              <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-white mb-0.5 sm:mb-1">
-                Pagamento PIX
-              </h3>
-              <p className="text-xs sm:text-sm text-gray-400">
-                Complete o pagamento para ativar
-              </p>
-            </div>
-
+          <div className="w-full space-y-3 sm:space-y-4 max-w-lg mx-auto">
+            {/* Card Principal de Resumo do Pagamento */}
             {purchaseData && (
-              <div className="space-y-3 sm:space-y-4">
-                {/* Valor do pagamento */}
-                <div className="bg-green-900/30 border-2 border-green-600/50 p-2.5 sm:p-3 rounded-lg text-center">
-                  <div className="text-green-300/80 text-xs sm:text-sm">Valor a pagar:</div>
-                  <div className="text-green-400 text-xl sm:text-2xl lg:text-3xl font-bold">
-                    {formatPrice(purchaseData.amount)}
+              <>
+                <div className="rounded-2xl p-4 sm:p-5 text-center shadow-sm space-y-3" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                    PAGAMENTO PIX INSTANTÂNEO
                   </div>
+                  
+                  <div>
+                    <span className="text-xs uppercase tracking-wider block font-semibold" style={{ color: 'var(--text-muted)' }}>Valor Total</span>
+                    <div className="text-3xl sm:text-4xl font-extrabold font-mono" style={{ color: 'var(--text)' }}>
+                      {formatPrice(purchaseData.amount)}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-center gap-2 pt-2 border-t text-xs font-medium" style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
+                    <span>ID: <strong style={{ color: 'var(--text)' }}>{purchaseData.payment_id}</strong></span>
+                    <span>•</span>
+                    <span>Expira em: <strong className="text-amber-500">{purchaseData.expires_in || 15}m</strong></span>
+                  </div>
+
+                  {(purchaseData as any)?.username && (
+                    <div className="pt-1">
+                      <span className="px-2.5 py-1 rounded-lg text-xs font-semibold" style={{ background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--border)' }}>
+                        👤 Usuário: {(purchaseData as any).username}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
-                {/* QR Code Visual Gerado Dinamicamente */}
-                {(purchaseData.qr_code || purchaseData.ticket_url) ? (
-                  <div className="bg-gradient-to-br from-blue-900/50 to-blue-800/50 p-3 sm:p-4 rounded-lg border-2 border-blue-600/30">
-                    <div className="text-center">
-                      <p className="text-white mb-2 sm:mb-3 font-semibold text-xs sm:text-sm">📱 Escaneie o QR Code PIX</p>
-                      
-                      <div className="bg-white p-2.5 sm:p-3 rounded-lg inline-block mb-2 sm:mb-3 shadow-lg">
-                        <canvas 
-                          ref={drawQRCode}
-                          style={{ width: 200, height: 200, display: qrCodeReady ? 'block' : 'none' }}
-                        />
-                        {!qrCodeReady && !qrCodeError && (
-                          <div className="w-48 h-48 flex items-center justify-center bg-gray-100 rounded">
-                            <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#8b5cf6] border-t-transparent"></div>
-                          </div>
-                        )}
-                      </div>
-
-                      {qrCodeError && (
-                        <div className="text-xs text-red-300 bg-red-900/30 p-2 rounded mb-2">
-                          {qrCodeError} — Use o código PIX abaixo
+                {/* QR Code Container */}
+                {(purchaseData.qr_code || purchaseData.ticket_url) && (
+                  <div className="rounded-2xl p-4 sm:p-5 text-center shadow-sm" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+                    <p className="font-semibold text-sm mb-3" style={{ color: 'var(--text)' }}>📱 QR Code para Leitura</p>
+                    <div className="bg-white p-4 rounded-2xl inline-block shadow-md border border-gray-200">
+                      <canvas 
+                        ref={drawQRCode}
+                        style={{ width: 192, height: 192, display: qrCodeReady ? 'block' : 'none' }}
+                      />
+                      {!qrCodeReady && !qrCodeError && (
+                        <div className="w-48 h-48 flex items-center justify-center bg-gray-50 rounded-xl">
+                          <div className="animate-spin rounded-full h-8 w-8 border-2 border-[var(--accent)] border-t-transparent" />
                         </div>
                       )}
-
-                      <div className="text-xs sm:text-sm text-blue-100 bg-blue-900/50 p-2 sm:p-2.5 rounded">
-                        💡 Abra seu banco e escaneie
-                      </div>
                     </div>
-                  </div>
-                ) : qrCodeError ? (
-                  <div className="bg-gradient-to-br from-red-900/50 to-red-800/50 p-3 sm:p-4 rounded-lg border-2 border-red-600/30">
-                    <div className="text-center space-y-2">
-                      <p className="text-white font-semibold text-xs sm:text-sm">❌ Erro ao gerar QR Code</p>
-                      
-                      <div className="bg-red-950/50 p-2 sm:p-2.5 rounded border border-red-700/30">
-                        <div className="text-red-300 text-xs line-clamp-2">{qrCodeError}</div>
-                      </div>
 
-                      <div className="text-xs text-red-200 bg-red-900/30 p-2 rounded">
-                        💡 Use o código PIX abaixo
+                    {qrCodeError && (
+                      <div className="text-xs text-rose-400 bg-rose-500/10 p-2 rounded-xl border border-rose-500/20 mt-2">
+                        {qrCodeError}
                       </div>
-                    </div>
-                  </div>
-                ) : null}
-
-                {/* SEPARADOR VISUAL */}
-                {purchaseData.qr_code && purchaseData.ticket_url && (
-                  <div className="flex items-center gap-2 my-2 sm:my-3">
-                    <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#8b5cf6]/30 to-transparent"></div>
-                    <span className="text-gray-400 font-semibold text-xs sm:text-sm px-2">OU</span>
-                    <div className="flex-1 h-px bg-gradient-to-l from-transparent via-[#8b5cf6]/30 to-transparent"></div>
+                    )}
                   </div>
                 )}
 
-                {/* Código PIX Copia e Cola */}
+                {/* PIX Copia e Cola - Ação Principal Mobile */}
                 {purchaseData.qr_code && (
-                  <div className="bg-gradient-to-br from-[#1a3a1a]/50 to-[#0a2a0a]/50 p-2.5 sm:p-3 rounded-lg border-2 border-green-600/30">
-                    <p className="text-white mb-2 font-semibold text-xs sm:text-sm">💳 PIX Copia e Cola</p>
-                    
-                    <div className="bg-[#0a0a0a] p-2 sm:p-2.5 rounded border border-[#8b5cf6]/20 mb-2">
-                      <div className="text-[10px] sm:text-xs text-gray-500 mb-1 uppercase tracking-wider">Código:</div>
-                      <div className="font-mono text-[10px] sm:text-xs text-green-400 break-all leading-relaxed bg-[#0a0a0a] p-2 rounded border-l-2 border-green-500 max-h-16 overflow-auto custom-scrollbar">
-                        {purchaseData.qr_code}
-                      </div>
+                  <div className="rounded-2xl p-4 sm:p-5 shadow-sm space-y-3" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-sm" style={{ color: 'var(--text)' }}>💳 PIX Copia e Cola</span>
+                      <span className="text-[11px] font-medium" style={{ color: 'var(--text-muted)' }}>Toque para copiar</span>
+                    </div>
+
+                    <div className="p-3 rounded-xl font-mono text-xs break-all max-h-20 overflow-y-auto custom-scrollbar select-all leading-relaxed" style={{ background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--border)' }}>
+                      {purchaseData.qr_code}
                     </div>
 
                     <button
+                      type="button"
                       onClick={() => {
                         const pixCode = purchaseData.qr_code || '';
                         if (!pixCode) {
@@ -601,145 +607,71 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
                         }
                         handleCopyToClipboard(pixCode, 'Código PIX');
                       }}
-                      className="
-                        w-full min-h-[44px] sm:min-h-[48px]
-                        px-3 sm:px-4
-                        bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400
-                        text-white text-sm sm:text-base font-medium
-                        rounded-lg transition-all active:scale-95
-                      "
+                      className={`w-full min-h-[48px] px-4 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md active:scale-[0.98] touch-manipulation ${
+                        copiedPix ? 'bg-emerald-600' : ''
+                      }`}
+                      style={{ background: copiedPix ? '#059669' : 'var(--accent)' }}
                     >
-                      📋 Copiar Código
+                      {copiedPix ? '✅ Código PIX Copiado!' : '📋 Copiar Código PIX'}
                     </button>
                   </div>
                 )}
 
-                {/* Link de Pagamento Alternativo */}
+                {/* Link Alternativo do Mercado Pago */}
                 {purchaseData.ticket_url && (
-                  <div className="bg-gradient-to-br from-[#3a2400]/50 to-[#1a1200]/50 p-2.5 sm:p-3 rounded-lg border-2 border-orange-600/30">
-                    <p className="text-white mb-2 font-semibold text-xs sm:text-sm">🔗 Mercado Pago</p>
-                    
-                    <div className="bg-[#0a0a0a] p-2 sm:p-2.5 rounded border border-[#8b5cf6]/20 mb-2">
-                      <div className="text-[10px] sm:text-xs text-gray-500 mb-1 uppercase tracking-wider">Link:</div>
-                      <div className="font-mono text-[10px] sm:text-xs text-orange-300 break-all leading-relaxed bg-[#0a0a0a] p-2 rounded border-l-2 border-orange-500 max-h-12 overflow-hidden">
-                        {purchaseData.ticket_url.substring(0, 50)}...
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={() => {
-                        navigateToUrl(purchaseData.ticket_url);
-                      }}
-                      className="
-                        w-full min-h-[44px] sm:min-h-[48px]
-                        px-3 sm:px-4
-                        bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400
-                        text-white text-sm sm:text-base font-medium
-                        rounded-lg transition-all active:scale-95
-                      "
-                    >
-                      🌐 Abrir Mercado Pago
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigateToUrl(purchaseData.ticket_url || '')}
+                    className="w-full min-h-[44px] px-4 rounded-xl font-semibold text-xs flex items-center justify-center gap-2 transition-all border active:scale-[0.98] touch-manipulation"
+                    style={{ background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--border)' }}
+                  >
+                    🌐 Pagar no site do Mercado Pago
+                  </button>
                 )}
 
-                {/* Informações do pagamento */}
-                <div className="bg-[#14111c]/50 border-2 border-[#8b5cf6]/30 p-2.5 sm:p-3 rounded-lg text-xs sm:text-sm space-y-1">
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">💰 Valor:</span>
-                    <span className="text-green-400 font-semibold">{formatPrice(purchaseData.amount)}</span>
+                {/* Status de Verificação em Tempo Real */}
+                <div className="rounded-2xl p-3 sm:p-4 text-center space-y-1.5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+                  <div className="flex items-center justify-center gap-2 text-xs font-semibold">
+                    {isPolling && <div className="w-3 h-3 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />}
+                    <span style={{ color: credentials ? '#10b981' : 'var(--text)' }}>
+                      {!credentials ? '🔄 Aguardando confirmação do pagamento...' : '✅ Pagamento Aprovado!'}
+                    </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">🆔 ID:</span>
-                    <span className="text-white font-mono text-[9px] sm:text-xs truncate">{purchaseData.payment_id}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">⏱️ Limite:</span>
-                    <span className="text-white font-semibold">{purchaseData.expires_in || 15}m</span>
-                  </div>
-                </div>
-
-                {/* Informações opcionais */}
-                {purchaseData.username && (
-                  <div className="bg-[#14111c]/50 border-2 border-[#8b5cf6]/30 p-2.5 sm:p-3 rounded-lg">
-                    <p className="text-white text-xs sm:text-sm">
-                      <span className="text-gray-400">👤 Usuário:</span>
-                      <span className="font-mono ml-1 text-green-400">{purchaseData.username}</span>
-                    </p>
-                  </div>
-                )}
-
-                {/* Status do polling */}
-                <div className="bg-[#14111c]/50 border-2 border-[#8b5cf6]/30 p-2.5 sm:p-3 rounded-lg">
-                  <div className="flex items-center justify-between mb-1 sm:mb-2">
-                    <span className="text-gray-400 text-xs sm:text-sm font-semibold">Status:</span>
-                    <div className="flex items-center gap-1.5 sm:gap-2">
-                      {isPolling && (
-                        <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-2 border-[#8b5cf6] border-t-transparent"></div>
-                      )}
-                      <span className={`font-semibold text-xs sm:text-sm ${
-                        !credentials ? 'text-yellow-400' : 'text-green-400'
-                      }`}>
-                        {!credentials ? '⏳ Aguardando...' : '✅ Aprovado!'}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="text-[10px] sm:text-xs text-gray-500">
-                    {attempts}/{maxAttempts} • a cada 5s
-                  </div>
+                  <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                    Verificação automática ativa • As credenciais serão liberadas instantaneamente
+                  </p>
                 </div>
 
                 {pollingError && (
-                  <div className="bg-red-900/30 border-2 border-red-600/30 p-2 sm:p-2.5 rounded-lg">
-                    <p className="text-red-300 text-xs sm:text-sm">❌ {pollingError}</p>
+                  <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-400 text-xs font-medium text-center">
+                    ❌ {pollingError}
                   </div>
                 )}
-
-                {/* Instruções compactas */}
-                <div className="bg-blue-900/30 border-2 border-blue-600/30 p-2.5 sm:p-3 rounded-lg">
-                  <div className="text-blue-200 text-xs sm:text-sm space-y-0.5 sm:space-y-1">
-                    <div className="font-semibold">📋 Como pagar:</div>
-                    <div className="text-[10px] sm:text-xs text-blue-300/80 space-y-0.5">
-                      <div>1️⃣ Abra seu banco</div>
-                      <div>2️⃣ Procure PIX/QR Code</div>
-                      <div>3️⃣ Escaneie ou copie</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              </>
             )}
 
             {/* Credenciais recebidas */}
             {credentials && (
-              <div className="bg-green-900/30 border-2 border-green-600/30 p-2.5 sm:p-3 rounded-lg">
-                <div className="text-green-300 text-xs sm:text-sm mb-1">✅ Credenciais ativadas!</div>
-                <div className="text-[10px] sm:text-xs text-green-400/80 space-y-0.5">
-                  <div>Status: {credentials.status}</div>
-                  {credentials.ssh_credentials && (
-                    <div>SSH: {credentials.ssh_credentials.username}</div>
-                  )}
-                  {credentials.v2ray_credentials && (
-                    <div>V2Ray: {credentials.v2ray_credentials.uuid.substring(0, 8)}...</div>
-                  )}
+              <div className="p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-center">
+                <div className="text-emerald-500 font-bold text-xs sm:text-sm mb-1">✅ Pagamento Confirmado!</div>
+                <div className="text-[10px] sm:text-xs text-emerald-600 font-medium">
+                  Suas credenciais foram ativadas com sucesso.
                 </div>
               </div>
             )}
 
             {/* Botões de ação */}
-            <div className="flex gap-2 sm:gap-3 pt-1 sm:pt-2">
+            <div className="flex gap-2 pt-2">
               <button
+                type="button"
                 onClick={() => setCurrentStep('plans')}
-                className="
-                  flex-1 min-h-[44px] sm:min-h-[48px]
-                  px-3 sm:px-4
-                  bg-[#1a1624]/80 hover:bg-[#1a1624] border-2 border-[#8b5cf6]/30 hover:border-[#8b5cf6]/60
-                  text-white text-sm sm:text-base font-medium
-                  rounded-lg transition-all active:scale-95
-                "
+                className="flex-1 min-h-[44px] rounded-xl text-xs font-semibold transition-all touch-manipulation active:scale-[0.98]"
+                style={{ background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--border)' }}
               >
-                ← Voltar
+                ← Voltar aos Planos
               </button>
               <button
+                type="button"
                 onClick={() => {
                   if (!isPolling && currentStep === 'payment') {
                     reloadApp();
@@ -926,7 +858,7 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
     }
   }
 
-  const steps = ['plans', 'email', 'confirm', 'payment', 'success'] as const;
+  const steps: PaymentStep[] = ['plans', 'email', 'confirm', 'payment', 'success'];
   const currentStepIndex = steps.indexOf(currentStep);
 
   return (
@@ -935,34 +867,53 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
         {/* Indicador de progresso - compacto no mobile */}
         <div className="flex items-center justify-center mb-4 sm:mb-6">
           <div className="flex items-center gap-1 sm:gap-0">
-            {steps.map((step, index) => (
-              <Fragment key={step}>
-                <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium transition-colors ${
-                  currentStep === step 
-                    ? 'bg-[#8b5cf6] text-white ring-2 ring-[#8b5cf6]/50' 
-                    : index < currentStepIndex
-                    ? 'bg-green-600/80 text-white'
-                    : 'bg-[#1a1624] text-gray-400 border border-[#8b5cf6]/20'
-                }`}>
-                  {index + 1}
-                </div>
-                {index < 4 && (
-                  <div className={`hidden sm:block w-6 lg:w-8 h-0.5 mx-0.5 ${
-                    index < currentStepIndex ? 'bg-green-600' : 'bg-[#1a1624]'
-                  }`} />
-                )}
-              </Fragment>
-            ))}
+            {steps.map((step, index) => {
+              const isCurrent = currentStep === step;
+              const isPast = index < currentStepIndex;
+              return (
+                <Fragment key={step}>
+                  <div
+                    className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold transition-all ${
+                      isCurrent
+                        ? 'bg-[var(--accent)] text-white ring-2 ring-[var(--accent)]/50'
+                        : isPast
+                        ? 'bg-emerald-600 text-white'
+                        : 'text-[var(--text-muted)]'
+                    }`}
+                    style={{
+                      background: isCurrent ? 'var(--accent)' : isPast ? '#059669' : 'var(--bg-elevated)',
+                      border: '1px solid var(--border)',
+                    }}
+                  >
+                    {index + 1}
+                  </div>
+                  {index < 4 && (
+                    <div
+                      className="hidden sm:block w-6 lg:w-8 h-0.5 mx-0.5"
+                      style={{
+                        background: isPast ? '#059669' : 'var(--border)',
+                      }}
+                    />
+                  )}
+                </Fragment>
+              );
+            })}
           </div>
         </div>
 
         {/* Conteúdo do step atual */}
         {renderStepContent()}
 
-        {/* Error display */}
+        {/* Display de Mensagens de Erro ou Sucesso */}
         {error && (
-          <div className="mt-4 bg-red-900/30 border border-red-600 p-3 rounded-lg">
-            <p className="text-red-300 text-sm">{error}</p>
+          <div
+            className={`mt-4 p-3 rounded-xl border text-sm font-semibold text-center transition-all ${
+              error.startsWith('✅')
+                ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
+                : 'bg-rose-500/15 border-rose-500/30 text-rose-400'
+            }`}
+          >
+            <p>{error}</p>
           </div>
         )}
       </div>

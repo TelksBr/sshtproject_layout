@@ -53,6 +53,7 @@ const RenewalModal: React.FC<RenewalModalProps> = ({ onClose, initialUsername })
   const [qrCodeReady, setQrCodeReady] = useState(false);
   const [qrCodeError, setQrCodeError] = useState<string | null>(null);
   const [credentials, setCredentials] = useState<any>(null);
+  const [copiedPix, setCopiedPix] = useState(false);
   const qrCanvasRef = useRef<HTMLCanvasElement>(null);
   const appliedPaymentRef = useRef<string | null>(null);
 
@@ -61,8 +62,6 @@ const RenewalModal: React.FC<RenewalModalProps> = ({ onClose, initialUsername })
     credentials: hookCredentials,
     isPolling,
     error: pollingError,
-    attempts,
-    maxAttempts,
     resetPolling
   } = usePaymentPolling(paymentData?.payment_id || null);
 
@@ -88,6 +87,34 @@ const RenewalModal: React.FC<RenewalModalProps> = ({ onClose, initialUsername })
       getPlans().then(setPlans).catch(() => setPlans([]));
     }
   }, [result]);
+
+  // Callback ref: desenha QR direto no canvas quando ele aparece no DOM (retorna void para satisfazer React.Ref)
+  const drawQRCode = useCallback((canvas: HTMLCanvasElement | null) => {
+    if (!canvas || !paymentData) return;
+    (qrCanvasRef as React.MutableRefObject<HTMLCanvasElement | null>).current = canvas;
+
+    const pixCode = paymentData.qr_code || paymentData.ticket_url || '';
+    if (!pixCode) return;
+
+    (async () => {
+      try {
+        setQrCodeError(null);
+        const QRCodeModule = await import('qrcode');
+        const QRCode = QRCodeModule.default || QRCodeModule;
+
+        await QRCode.toCanvas(canvas, pixCode, {
+          width: 256,
+          margin: 4,
+          color: { dark: '#000000', light: '#FFFFFF' },
+          errorCorrectionLevel: 'M',
+        });
+        setQrCodeReady(true);
+      } catch (err) {
+        console.error('[QRCode] toCanvas falhou:', err);
+        setQrCodeError(`Erro ao gerar QR Code: ${err}`);
+      }
+    })();
+  }, [paymentData]);
 
   // Auto-verificar quando username inicial for fornecido
   useEffect(() => {
@@ -161,31 +188,7 @@ const RenewalModal: React.FC<RenewalModalProps> = ({ onClose, initialUsername })
   };
 
 
-  // Callback ref: desenha QR direto no canvas quando ele aparece no DOM
-  const drawQRCode = useCallback(async (canvas: HTMLCanvasElement | null) => {
-    if (!canvas || !paymentData) return;
-    (qrCanvasRef as React.MutableRefObject<HTMLCanvasElement | null>).current = canvas;
 
-    const pixCode = paymentData.qr_code || paymentData.ticket_url || '';
-    if (!pixCode) return;
-
-    try {
-      setQrCodeError(null);
-      const QRCodeModule = await import('qrcode');
-      const QRCode = QRCodeModule.default || QRCodeModule;
-
-      await QRCode.toCanvas(canvas, pixCode, {
-        width: 256,
-        margin: 4,
-        color: { dark: '#000000', light: '#FFFFFF' },
-        errorCorrectionLevel: 'M',
-      });
-      setQrCodeReady(true);
-    } catch (err) {
-      console.error('[QRCode] toCanvas falhou:', err);
-      setQrCodeError(`Erro ao gerar QR Code: ${err}`);
-    }
-  }, [paymentData]);
 
 
   // Renderização condicional por step
@@ -196,8 +199,8 @@ const RenewalModal: React.FC<RenewalModalProps> = ({ onClose, initialUsername })
         {!result && (
           <form onSubmit={handleSubmit} className="flex flex-col gap-6 p-4 animate-fade-in">
             <div className="flex flex-col gap-2">
-              <label htmlFor="renew-identifier" className="text-white font-semibold text-base flex items-center gap-2">
-                <RefreshCw className="w-5 h-5 text-[#b7abc9]" /> Usuário ou UUID para renovação:
+              <label htmlFor="renew-identifier" className="font-semibold text-sm flex items-center gap-2" style={{ color: 'var(--text)' }}>
+                <RefreshCw className="w-4 h-4 text-[var(--accent)]" /> Usuário ou UUID para renovação:
               </label>
               <input
                 id="renew-identifier"
@@ -207,55 +210,56 @@ const RenewalModal: React.FC<RenewalModalProps> = ({ onClose, initialUsername })
                 required
                 disabled={loading}
                 placeholder="Username SSH ou UUID V2Ray"
-                className="rounded-lg px-4 py-2 bg-[#0c0a12] border-2 border-[#8b5cf6]/40 text-white focus:outline-none focus:ring-2 focus:ring-[#8b5cf6] shadow-sm transition-all"
-                style={{ width: '100%' }}
+                className="rounded-xl px-4 py-2 text-sm outline-none shadow-sm transition-all allow-select"
+                style={{ width: '100%', background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--border)' }}
                 autoFocus
               />
             </div>
             <button
               type="submit"
               disabled={loading || !identifier}
-              className="flex items-center justify-center gap-2 bg-gradient-to-r from-[#8b5cf6] to-[#7c3aed] hover:from-[#7c3aed] hover:to-[#8b5cf6] text-white font-bold py-2 px-6 rounded-lg shadow-lg transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="flex items-center justify-center gap-2 text-white font-bold py-2.5 px-6 rounded-xl shadow-lg transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+              style={{ background: 'var(--accent)' }}
             >
               {loading && <span className="loader mr-2"></span>}
               {loading ? 'Verificando...' : 'Verificar Usuário'}
             </button>
-            {error && <div className="text-red-400 text-sm mt-2 text-center animate-shake">{error}</div>}
+            {error && <div className="text-rose-400 text-sm mt-2 text-center animate-shake font-medium">{error}</div>}
           </form>
         )}
 
         {result && (
-          <div className="flex flex-col items-center gap-5 p-6 animate-fade-in w-full">
+          <div className="flex flex-col items-center gap-5 p-4 animate-fade-in w-full">
             <div className="flex items-center gap-3 mb-2">
               {result.can_renew ? (
-                <CheckCircle className="w-8 h-8 text-green-400 animate-bounce" />
+                <CheckCircle className="w-8 h-8 text-emerald-400 animate-bounce" />
               ) : (
-                <XCircle className="w-8 h-8 text-red-400 animate-pulse" />
+                <XCircle className="w-8 h-8 text-rose-400 animate-pulse" />
               )}
-              <span className={`text-xl font-bold drop-shadow ${result.can_renew ? 'text-green-300' : 'text-red-300'}`}>{result.can_renew ? 'Usuário pode renovar!' : 'Usuário não pode renovar'}</span>
+              <span className={`text-xl font-bold drop-shadow ${result.can_renew ? 'text-emerald-400' : 'text-rose-400'}`}>{result.can_renew ? 'Usuário pode renovar!' : 'Usuário não pode renovar'}</span>
             </div>
-            <div className="bg-[#0c0a12]/80 rounded-lg p-4 border border-[#8b5cf6]/30 shadow-inner w-full max-w-md">
-              <div className="text-white text-base mb-2"><b>Tipo:</b> <span className="text-[#b7abc9]">{result.user_type === 'both' ? 'SSH + V2Ray' : result.user_type === 'ssh' ? 'SSH' : 'V2Ray'}</span></div>
+            <div className="rounded-xl p-4 shadow-inner w-full max-w-md space-y-2" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+              <div className="text-base" style={{ color: 'var(--text)' }}><b>Tipo:</b> <span style={{ color: 'var(--text-muted)' }}>{result.user_type === 'both' ? 'SSH + V2Ray' : result.user_type === 'ssh' ? 'SSH' : 'V2Ray'}</span></div>
               {result.ssh && (
-                <div className="text-white text-base mb-2"><b>SSH:</b> <span className="text-[#b7abc9]">{result.ssh.username}</span> <span className="text-gray-400 text-sm">(limite: {result.ssh.limit})</span></div>
+                <div className="text-base" style={{ color: 'var(--text)' }}><b>SSH:</b> <span style={{ color: 'var(--text-muted)' }}>{result.ssh.username}</span> <span className="text-xs" style={{ color: 'var(--text-muted)' }}>(limite: {result.ssh.limit})</span></div>
               )}
               {result.v2ray && (
-                <div className="text-white text-base mb-2"><b>V2Ray:</b> <span className="text-[#b7abc9] text-sm font-mono">{result.v2ray.uuid.substring(0, 16)}...</span> <span className="text-gray-400 text-sm">(limite: {result.v2ray.limit})</span></div>
+                <div className="text-base" style={{ color: 'var(--text)' }}><b>V2Ray:</b> <span className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>{result.v2ray.uuid.substring(0, 16)}...</span> <span className="text-xs" style={{ color: 'var(--text-muted)' }}>(limite: {result.v2ray.limit})</span></div>
               )}
               {result.current_expiration && (
-                <div className="text-white text-base mb-2"><b>Expiração atual:</b> <span className="text-[#b7abc9]">{new Date(result.current_expiration).toLocaleString()}</span></div>
+                <div className="text-base" style={{ color: 'var(--text)' }}><b>Expiração atual:</b> <span style={{ color: 'var(--text-muted)' }}>{new Date(result.current_expiration).toLocaleString()}</span></div>
               )}
               {typeof result.is_expired !== 'undefined' && (
-                <div className="text-white text-base mb-2"><b>Status:</b> <span className={result.is_expired ? 'text-red-400' : 'text-green-400'}>{result.is_expired ? 'Expirado' : 'Ativo'}</span></div>
+                <div className="text-base" style={{ color: 'var(--text)' }}><b>Status:</b> <span className={result.is_expired ? 'text-rose-400 font-bold' : 'text-emerald-400 font-bold'}>{result.is_expired ? 'Expirado' : 'Ativo'}</span></div>
               )}
               {typeof result.days_until_expiration !== 'undefined' && (
-                <div className="text-white text-base mb-2"><b>Dias até expirar:</b> <span className="text-[#b7abc9]">{result.days_until_expiration}</span></div>
+                <div className="text-base" style={{ color: 'var(--text)' }}><b>Dias até expirar:</b> <span style={{ color: 'var(--text-muted)' }}>{result.days_until_expiration}</span></div>
               )}
             </div>
             {result.can_renew && plans.length > 0 && (
               <div className="w-full max-w-md flex flex-col gap-2 mt-2">
-                <label className="text-white font-semibold flex items-center gap-2">
-                  <DollarSign className="w-5 h-5 text-[#b7abc9]" />
+                <label className="font-semibold flex items-center gap-2 text-sm" style={{ color: 'var(--text)' }}>
+                  <DollarSign className="w-4 h-4 text-[var(--accent)]" />
                   Selecione o plano para renovação
                 </label>
                 <div className="flex flex-col gap-2 max-h-[40vh] overflow-y-auto custom-scrollbar pr-0.5">
@@ -325,163 +329,149 @@ const RenewalModal: React.FC<RenewalModalProps> = ({ onClose, initialUsername })
     );
   } else if (currentStep === 'payment' && paymentData) {
     content = (
-      <div className="space-y-4 p-4 animate-fade-in">
-        <div className="text-center">
-          <h3 className="text-xl font-semibold text-white mb-2">Pagamento PIX</h3>
-          <p className="text-gray-300">Complete o pagamento para renovar seu acesso</p>
-        </div>
-        <div className="bg-green-900/30 border border-green-600 p-3 rounded-lg text-center">
-          <div className="text-green-300 text-sm">Valor a pagar:</div>
-          <div className="text-green-400 text-2xl font-bold">
-            {paymentData.amount ? paymentData.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : ''}
+      <div className="space-y-4 p-2 sm:p-4 animate-fade-in max-w-lg mx-auto">
+        {/* Card Principal de Resumo do Pagamento */}
+        <div className="rounded-2xl p-4 sm:p-5 text-center shadow-sm space-y-3" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+            PAGAMENTO PIX INSTANTÂNEO
           </div>
-        </div>
-        {/* Mensagens informativas de upgrade/downgrade */}
-        {paymentData.ssh_message && (
-          <div className="bg-blue-900/30 border border-blue-500 p-3 rounded-lg">
-            <p className="text-blue-200 text-sm">🔐 <strong>SSH:</strong> {paymentData.ssh_message}</p>
+          
+          <div>
+            <span className="text-xs uppercase tracking-wider block font-semibold" style={{ color: 'var(--text-muted)' }}>Valor Total</span>
+            <div className="text-3xl sm:text-4xl font-extrabold font-mono" style={{ color: 'var(--text)' }}>
+              {paymentData.amount ? paymentData.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'R$ 0,00'}
+            </div>
           </div>
-        )}
-        {paymentData.v2ray_message && (
-          <div className="bg-purple-900/30 border border-purple-500 p-3 rounded-lg">
-            <p className="text-purple-200 text-sm">🌐 <strong>V2Ray:</strong> {paymentData.v2ray_message}</p>
-          </div>
-        )}
-        {/* QR Code Visual — Canvas direto */}
-        {(paymentData.qr_code || paymentData.ticket_url) ? (
-          <div className="bg-gradient-to-br from-blue-900 to-blue-800 p-6 rounded-lg border border-blue-600">
-            <div className="text-center">
-              <p className="text-white mb-4 font-semibold text-lg">📱 Escaneie o QR Code PIX</p>
-              <div className="bg-white p-6 rounded-xl inline-block mb-4 shadow-lg">
-                <canvas 
-                  ref={drawQRCode}
-                  style={{ width: 224, height: 224, display: qrCodeReady ? 'block' : 'none' }}
-                />
-                {!qrCodeReady && !qrCodeError && (
-                  <div className="w-56 h-56 flex items-center justify-center bg-gray-100 rounded">
-                    <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#8b5cf6] border-t-transparent"></div>
-                  </div>
-                )}
-              </div>
 
-              {qrCodeError && (
-                <div className="text-xs text-red-300 bg-red-900/30 p-2 rounded mb-3">
-                  {qrCodeError} — Use o código PIX abaixo
+          <div className="flex flex-wrap items-center justify-center gap-2 pt-2 border-t text-xs font-medium" style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
+            <span>ID: <strong style={{ color: 'var(--text)' }}>{paymentData.payment_id}</strong></span>
+            <span>•</span>
+            <span>Expira em: <strong className="text-amber-500">{paymentData.expires_in || 15}m</strong></span>
+          </div>
+
+          {/* Mensagens de serviço */}
+          {(paymentData.ssh_message || paymentData.v2ray_message) && (
+            <div className="pt-2 flex flex-wrap gap-2 justify-center text-xs">
+              {paymentData.ssh_message && (
+                <span className="px-2.5 py-1 rounded-lg font-medium" style={{ background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--border)' }}>
+                  🔐 {paymentData.ssh_message}
+                </span>
+              )}
+              {paymentData.v2ray_message && (
+                <span className="px-2.5 py-1 rounded-lg font-medium" style={{ background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--border)' }}>
+                  🌐 {paymentData.v2ray_message}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* QR Code Container */}
+        {(paymentData.qr_code || paymentData.ticket_url) && (
+          <div className="rounded-2xl p-4 sm:p-5 text-center shadow-sm" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+            <p className="font-semibold text-sm mb-3" style={{ color: 'var(--text)' }}>📱 QR Code para Leitura</p>
+            <div className="bg-white p-4 rounded-2xl inline-block shadow-md border border-gray-200">
+              <canvas 
+                ref={drawQRCode}
+                style={{ width: 192, height: 192, display: qrCodeReady ? 'block' : 'none' }}
+              />
+              {!qrCodeReady && !qrCodeError && (
+                <div className="w-48 h-48 flex items-center justify-center bg-gray-50 rounded-xl">
+                  <div className="animate-spin rounded-full h-8 w-8 border-2 border-[var(--accent)] border-t-transparent" />
                 </div>
               )}
+            </div>
 
-              <div className="text-sm text-blue-100 bg-blue-800/50 p-3 rounded-lg">
-                💡  Abra seu app de banco e escaneie o código acima
+            {qrCodeError && (
+              <div className="text-xs text-rose-400 bg-rose-500/10 p-2 rounded-xl border border-rose-500/20 mt-2">
+                {qrCodeError}
               </div>
-            </div>
+            )}
           </div>
-        ) : null}
-        {/* Código PIX Copia e Cola - Melhorado */}
+        )}
+
+        {/* PIX Copia e Cola - Ação Principal Mobile */}
         {paymentData.qr_code && (
-          <div className="bg-gradient-to-br from-gray-800 to-gray-900 p-6 rounded-lg border border-gray-600">
-            <p className="text-white mb-4 font-semibold text-lg">💳 Código PIX Copia e Cola</p>
-            <div className="bg-gray-950 p-4 rounded-lg border border-gray-700 mb-4">
-              <div className="text-xs text-gray-400 mb-2 uppercase tracking-wider">Código PIX:</div>
-              <div className="font-mono text-sm text-green-400 break-all leading-relaxed bg-gray-900 p-3 rounded border-l-4 border-green-500">
-                {paymentData.qr_code}
-              </div>
+          <div className="rounded-2xl p-4 sm:p-5 shadow-sm space-y-3" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+            <div className="flex items-center justify-between">
+              <span className="font-semibold text-sm" style={{ color: 'var(--text)' }}>💳 PIX Copia e Cola</span>
+              <span className="text-[11px] font-medium" style={{ color: 'var(--text-muted)' }}>Toque para copiar</span>
             </div>
+
+            <div className="p-3 rounded-xl font-mono text-xs break-all max-h-20 overflow-y-auto custom-scrollbar select-all leading-relaxed" style={{ background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--border)' }}>
+              {paymentData.qr_code}
+            </div>
+
             <button
-              onClick={() => copyToClipboard(paymentData.qr_code)}
-              className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white rounded-lg transition-all font-semibold shadow-lg transform hover:scale-105"
+              type="button"
+              onClick={() => {
+                copyToClipboard(paymentData.qr_code).then((ok) => {
+                  if (ok) {
+                    setCopiedPix(true);
+                    setTimeout(() => setCopiedPix(false), 2500);
+                  }
+                });
+              }}
+              className="w-full min-h-[48px] px-4 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md active:scale-[0.98] touch-manipulation"
+              style={{ background: copiedPix ? '#059669' : 'var(--accent)' }}
             >
-              📋 Copiar Código PIX
+              {copiedPix ? '✅ Código PIX Copiado com Sucesso!' : '📋 Copiar Código PIX'}
             </button>
-            <div className="text-sm text-gray-400 mt-3 bg-gray-800/50 p-3 rounded-lg">
-              💡  Copie o código acima e cole no seu app de banco na opção "PIX Copia e Cola"
-            </div>
           </div>
         )}
-        {/* Link de Pagamento Alternativo do Mercado Pago */}
+
+        {/* Link Alternativo do Mercado Pago */}
         {paymentData.ticket_url && (
-          <div className="bg-gradient-to-br from-orange-900 to-orange-800 p-6 rounded-lg border border-orange-600">
-            <p className="text-white mb-4 font-semibold text-lg">🔗 Pagar pelo Site do Mercado Pago</p>
-            <div className="bg-orange-950 p-4 rounded-lg border border-orange-700 mb-4">
-              <a href={paymentData.ticket_url} target="_blank" rel="noopener noreferrer" className="text-blue-300 underline break-all">{paymentData.ticket_url}</a>
-            </div>
-            <button
-              onClick={() => navigateToUrl(paymentData.ticket_url)}
-              className="w-full py-3 px-4 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white rounded-lg transition-all font-semibold shadow-lg transform hover:scale-105"
-            >
-              🌐 Abrir Site do Mercado Pago
-            </button>
-            <div className="text-sm text-orange-100 mt-3 bg-orange-800/50 p-3 rounded-lg">
-              💡  Se preferir, clique acima para pagar diretamente no site do Mercado Pago
-            </div>
-          </div>
-        )}
-        {/* Informações do pagamento sempre presentes */}
-        <div className="bg-gray-800 p-4 rounded-lg">
-          <div className="space-y-2">
-            <p className="text-white">
-              <span className="font-semibold">💰 Valor:</span> {paymentData.amount ? paymentData.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : ''}
-            </p>
-            <p className="text-white">
-              <span className="font-semibold">🆔 Payment ID:</span> {paymentData.payment_id}
-            </p>
-            <p className="text-white">
-              <span className="font-semibold">⏱️ Tempo limite:</span> {paymentData.expires_in || 15} minutos
-            </p>
-          </div>
-        </div>
-        {/* Status do polling otimizado */}
-        <div className="bg-gray-800 p-3 rounded-lg">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-gray-300 font-semibold">Status do Pagamento:</span>
-            <div className="flex items-center gap-2">
-              {isPolling && (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
-              )}
-              <span className={`font-semibold ${!credentials ? 'text-yellow-400' : 'text-green-400'}`}>
-                {!credentials ? '⏳ Aguardando pagamento...' : '✅ Pagamento aprovado!'}
-              </span>
-            </div>
-          </div>
-          <div className="text-xs text-gray-400">
-            Verificação automática {attempts}/{maxAttempts} • A cada 5 segundos
-          </div>
-          <div className="text-xs text-blue-300 mt-1">
-            💡 Após o pagamento, as credenciais aparecerão automaticamente
-          </div>
-        </div>
-        {pollingError && (
-          <div className="bg-red-900/30 border border-red-600 p-3 rounded-lg">
-            <p className="text-red-300 text-sm">❌ {pollingError}</p>
-          </div>
-        )}
-        {/* Instruções de pagamento */}
-        <div className="bg-blue-900/30 border border-blue-600 p-3 rounded-lg">
-          <div className="text-blue-300 text-sm">
-            <div className="font-semibold mb-2">� Como pagar:</div>
-            <div className="space-y-1 text-xs">
-              <div>1. 📱 Abra seu app do banco</div>
-              <div>2. 🔍 Procure por "PIX" ou "Pagar com QR Code"</div>
-              <div>3. 📷 Escaneie o QR Code ou cole o código PIX</div>
-              <div>4. ✅ Confirme o pagamento</div>
-              <div>5. ⚡ Aguarde alguns segundos para aprovação automática</div>
-            </div>
-          </div>
-        </div>
-        <div className="flex gap-3">
           <button
-            onClick={onClose}
-            className="flex-1 py-2 px-4 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors"
+            type="button"
+            onClick={() => navigateToUrl(paymentData.ticket_url)}
+            className="w-full min-h-[44px] px-4 rounded-xl font-semibold text-xs flex items-center justify-center gap-2 transition-all border active:scale-[0.98] touch-manipulation"
+            style={{ background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--border)' }}
           >
-            ← Cancelar
+            🌐 Pagar no site do Mercado Pago
+          </button>
+        )}
+
+        {/* Status de Verificação em Tempo Real */}
+        <div className="rounded-2xl p-3 sm:p-4 text-center space-y-1.5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+          <div className="flex items-center justify-center gap-2 text-xs font-semibold">
+            {isPolling && <div className="w-3 h-3 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />}
+            <span style={{ color: credentials ? '#10b981' : 'var(--text)' }}>
+              {!credentials ? '🔄 Aguardando confirmação do pagamento...' : '✅ Pagamento Aprovado!'}
+            </span>
+          </div>
+          <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+            Verificação automática ativa • As credenciais serão aplicadas instantaneamente
+          </p>
+        </div>
+
+        {pollingError && (
+          <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-400 text-xs font-medium text-center">
+            ❌ {pollingError}
+          </div>
+        )}
+
+        {/* Botões de Ação de Rodapé */}
+        <div className="flex gap-2 pt-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 min-h-[44px] rounded-xl text-xs font-semibold transition-all touch-manipulation active:scale-[0.98]"
+            style={{ background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--border)' }}
+          >
+            Cancelar
           </button>
           <button
+            type="button"
             onClick={() => {
               if (!isPolling && currentStep === 'payment') resetPolling();
             }}
             disabled={isPolling}
-            className="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-300 text-white rounded-lg transition-colors"
+            className="flex-1 min-h-[44px] rounded-xl text-white text-xs font-bold transition-all disabled:opacity-50 touch-manipulation active:scale-[0.98]"
+            style={{ background: 'var(--accent)' }}
           >
-            🔄 {isPolling ? 'Verificando...' : 'Verificar Novamente'}
+            {isPolling ? 'Verificando...' : 'Verificar Novamente'}
           </button>
         </div>
       </div>

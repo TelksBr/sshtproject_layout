@@ -80,12 +80,14 @@ export function CheckUser({ onClose }: CheckUserProps) {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Nome do usuário"
-                className="flex-1 min-h-[44px] lg:min-h-[48px] 2xl:min-h-[56px] px-4 rounded-lg glass-effect text-white placeholder-gray-400 outline-none focus:border-purple-500 allow-select text-sm lg:text-base 2xl:text-lg"
+                className="flex-1 min-h-[44px] lg:min-h-[48px] 2xl:min-h-[56px] px-4 rounded-xl outline-none allow-select text-sm lg:text-base 2xl:text-lg"
+                style={{ background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--border)' }}
               />
               <button
                 onClick={handleCheck}
                 disabled={loading}
-                className="w-[44px] h-[44px] lg:w-[48px] lg:h-[48px] 2xl:w-[56px] 2xl:h-[56px] flex items-center justify-center rounded-lg bg-[#8b5cf6] text-[#b7abc9] hover:bg-[#8b5cf6]/90 transition-colors disabled:opacity-50 flex-shrink-0"
+                className="w-[44px] h-[44px] lg:w-[48px] lg:h-[48px] 2xl:w-[56px] 2xl:h-[56px] flex items-center justify-center rounded-xl text-white transition-all disabled:opacity-50 flex-shrink-0 active:scale-95"
+                style={{ background: 'var(--accent)' }}
               >
                 {loading ? (
                   <RefreshCw className="w-5 h-5 lg:w-6 lg:h-6 animate-spin" />
