@@ -169,7 +169,7 @@ export function DnsModal({ onClose }: DnsModalProps) {
             border: enabled ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid var(--border)',
           }}
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
             <div
               className="w-10 h-10 rounded-xl flex items-center justify-center transition-colors flex-shrink-0"
               style={{
@@ -179,8 +179,8 @@ export function DnsModal({ onClose }: DnsModalProps) {
             >
               <Globe className="w-5 h-5" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-sm sm:text-base font-bold" style={{ color: 'var(--text)' }}>
                   DNS Personalizado
                 </h3>
@@ -203,23 +203,46 @@ export function DnsModal({ onClose }: DnsModalProps) {
             </div>
           </div>
 
-          <button
-            type="button"
+          <div
             role="switch"
             aria-checked={enabled}
             onClick={() => handleToggle(!enabled)}
-            className={`relative inline-flex h-7 w-12 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none touch-manipulation active:scale-95 ${
-              enabled ? 'bg-emerald-500' : 'bg-gray-700/80'
-            }`}
+            className="cursor-pointer select-none flex-shrink-0 touch-manipulation active:scale-95"
+            style={{
+              width: '50px',
+              minWidth: '50px',
+              maxWidth: '50px',
+              height: '28px',
+              minHeight: '28px',
+              maxHeight: '28px',
+              backgroundColor: enabled ? '#10b981' : 'rgba(255, 255, 255, 0.18)',
+              borderRadius: '9999px',
+              padding: '2px',
+              transition: 'background-color 0.22s ease',
+              display: 'flex',
+              alignItems: 'center',
+              boxSizing: 'border-box',
+              border: enabled ? '1px solid #059669' : '1px solid rgba(255, 255, 255, 0.12)',
+            }}
             aria-label="Ativar ou desativar DNS personalizado"
           >
-            <span
-              aria-hidden="true"
-              className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
-                enabled ? 'translate-x-5' : 'translate-x-0'
-              }`}
+            <div
+              style={{
+                width: '22px',
+                minWidth: '22px',
+                maxWidth: '22px',
+                height: '22px',
+                minHeight: '22px',
+                maxHeight: '22px',
+                backgroundColor: '#ffffff',
+                borderRadius: '9999px',
+                boxShadow: '0 2px 5px rgba(0, 0, 0, 0.35)',
+                transform: enabled ? 'translateX(22px)' : 'translateX(0px)',
+                transition: 'transform 0.22s cubic-bezier(0.4, 0, 0.2, 1)',
+                flexShrink: 0,
+              }}
             />
-          </button>
+          </div>
         </div>
 
         {/* Provedores Rápidos (Presets) */}
