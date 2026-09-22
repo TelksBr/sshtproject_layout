@@ -11,6 +11,7 @@ import {
   openNetworkSettings,
   checkBatteryOptimization,
   copyDiagnosticReport,
+  vibrate,
 } from '../../utils/appFunctions';
 import { getCustomDnsConfig } from '../../utils/dnsUtils';
 import { ModalType } from '../../App';
@@ -20,6 +21,7 @@ import { useAutoConnectContext } from '../../context/AutoConnectContext';
 import { useAppNotifications } from '../../context/AppNotificationsContext';
 import { useAppLayout } from '../../hooks/useAppLayout';
 import { useTranslation } from '../../i18n';
+import type { LocaleType } from '../../i18n/types';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -39,14 +41,36 @@ interface MenuCategory {
   }[];
 }
 
+const LANGUAGE_OPTIONS: {
+  locale: LocaleType;
+  country: string;
+  flag: string;
+  name: string;
+  sub: string;
+}[] = [
+  { locale: 'pt-BR', country: 'BR', flag: '🇧🇷', name: 'Brasil', sub: 'Português' },
+  { locale: 'es', country: 'AR', flag: '🇦🇷', name: 'Argentina', sub: 'Español' },
+  { locale: 'pt-AO', country: 'AO', flag: '🇦🇴', name: 'Angola', sub: 'Português' },
+];
+
 export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
-  const { t } = useTranslation();
+  const { t, locale, setLocale, setCountry } = useTranslation();
   const { insets } = useAppLayout();
   const [showServersModal, setShowServersModal] = useState(false);
   const [showNotificationsModal, setShowNotificationsModal] = useState(false);
   const autoConnect = useAutoConnectContext();
   const { unreadCount, markAllRead } = useAppNotifications();
   const isDnsActive = isOpen ? getCustomDnsConfig().enabled : false;
+
+  const handleLanguageSelect = useCallback((targetLocale: LocaleType, targetCountry: string) => {
+    try {
+      vibrate(25);
+    } catch {
+      /* ignore */
+    }
+    setLocale(targetLocale);
+    setCountry(targetCountry);
+  }, [setLocale, setCountry]);
 
   const handleCopyReport = useCallback(() => {
     copyDiagnosticReport();
@@ -182,7 +206,7 @@ export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
               </div>
               <div className="min-w-0">
                 <span className="font-medium text-sm lg:text-base 2xl:text-lg block truncate" style={{ color: 'var(--text)' }}>SSH T PROJECT</span>
-                <span className="text-sm lg:text-base block truncate" style={{ color: 'var(--text-muted)' }}>Configurações</span>
+                <span className="text-sm lg:text-base block truncate" style={{ color: 'var(--text-muted)' }}>{t('sidebar.settings')}</span>
               </div>
             </div>
             <button
@@ -190,7 +214,7 @@ export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
               type="button"
               className="lg:hidden min-w-[44px] min-h-[44px] lg:min-w-[48px] lg:min-h-[48px] 2xl:min-w-[56px] 2xl:min-h-[56px] flex items-center justify-center rounded-xl flex-shrink-0 touch-manipulation transition-opacity active:opacity-70"
               style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-              aria-label="Fechar menu"
+              aria-label={t('common.close')}
             >
               <X className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" style={{ color: 'var(--text)' }} strokeWidth={2.5} />
             </button>
@@ -198,6 +222,57 @@ export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
 
           {/* Menu Items com novas categorias */}
           <div ref={listRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain py-4 lg:py-6">
+            {/* Seletor de Idioma */}
+            <div className="px-4 lg:px-6 3xl:px-8 mb-5 lg:mb-6">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-xs lg:text-sm 2xl:text-base 3xl:text-lg font-semibold uppercase tracking-wider flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
+                  <Globe className="w-3.5 h-3.5 lg:w-4 lg:h-4" style={{ color: 'var(--accent)' }} />
+                  {t('sidebar.language')}
+                </h3>
+                <span
+                  className="text-[10px] lg:text-xs font-semibold px-2 py-0.5 rounded-full"
+                  style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}
+                >
+                  {locale === 'pt-BR' ? '🇧🇷 PT-BR' : locale === 'es' ? '🇦🇷 ES' : '🇦🇴 PT-AO'}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {LANGUAGE_OPTIONS.map((item) => {
+                  const isSelected = locale === item.locale;
+                  return (
+                    <button
+                      key={item.locale}
+                      type="button"
+                      onClick={() => handleLanguageSelect(item.locale, item.country)}
+                      className={`
+                        flex flex-col items-center justify-center py-2 px-1.5 rounded-xl border text-center transition-all duration-200 touch-manipulation
+                        ${
+                          isSelected
+                            ? 'border-[var(--accent)] bg-[var(--accent-dim)] shadow-sm'
+                            : 'border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)] opacity-85 hover:opacity-100'
+                        }
+                      `}
+                      aria-pressed={isSelected}
+                      aria-label={item.name}
+                    >
+                      <span className="text-xl sm:text-2xl mb-1 leading-none drop-shadow-sm">{item.flag}</span>
+                      <span
+                        className="text-xs font-semibold leading-tight truncate w-full"
+                        style={{ color: isSelected ? 'var(--accent)' : 'var(--text)' }}
+                      >
+                        {item.name}
+                      </span>
+                      <span
+                        className="text-[10px] leading-none mt-0.5 truncate w-full opacity-80"
+                        style={{ color: 'var(--text-muted)' }}
+                      >
+                        {item.sub}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             {menuCategories.map((category, idx) => (
               <div key={category.title} className={`px-4 lg:px-6 3xl:px-8 ${idx > 0 ? 'mt-6 lg:mt-8 2xl:mt-10 3xl:mt-12' : ''}`}>
                 <h3 className="text-xs lg:text-sm 2xl:text-base 3xl:text-lg font-semibold uppercase tracking-wider mb-2 lg:mb-3" style={{ color: 'var(--text-muted)' }}>
@@ -235,13 +310,13 @@ export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
                 onClick={() => onNavigate('terms')}
                 className="px-4 lg:px-6 min-h-[44px] lg:min-h-[48px] 2xl:min-h-[56px] 3xl:min-h-[64px] rounded-xl btn-secondary text-sm lg:text-base 2xl:text-lg 3xl:text-xl font-medium"
               >
-                Termos
+                {t('sidebar.terms')}
               </button>
               <button
                 onClick={() => onNavigate('privacy')}
                 className="px-4 lg:px-6 min-h-[44px] lg:min-h-[48px] 2xl:min-h-[56px] 3xl:min-h-[64px] rounded-xl btn-secondary text-sm lg:text-base 2xl:text-lg 3xl:text-xl font-medium"
               >
-                Privacidade
+                {t('sidebar.privacy')}
               </button>
             </div>
             <button
@@ -249,7 +324,7 @@ export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
               className="w-full px-4 lg:px-6 min-h-[44px] lg:min-h-[48px] 2xl:min-h-[56px] 3xl:min-h-[64px] rounded-lg bg-red-500/10 hover:bg-red-500/20 
                 transition-colors duration-200 text-red-400 text-sm lg:text-base 2xl:text-lg 3xl:text-xl font-medium"
             >
-              Limpar Dados
+              {t('sidebar.clearData')}
             </button>
           </div>
         </div>

@@ -114,6 +114,14 @@ export interface TranslationSchema {
     networkSettings: string;
     checkUpdates: string;
     activeBadge: string;
+    language: string;
+    selectLanguage: string;
+    portugueseBrazil: string;
+    portugueseAngola: string;
+    spanishArgentina: string;
+    terms: string;
+    privacy: string;
+    clearData: string;
   };
   countryFilter: {
     filterByCountry: string;
