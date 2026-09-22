@@ -2,23 +2,25 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Settings, Download,
-  Wifi, Battery, Network, Book, Globe,
-  RefreshCw, /* DollarSign, */ Share2, CalendarClock, BriefcaseBusiness, Search, Zap, Phone, Key, FileKey, Bell, X
+  Wifi, Battery, Network, Book, Globe, Bug,
+  RefreshCw, /* DollarSign, */ Share2, CalendarClock, BriefcaseBusiness, Search, Zap, Phone, Key, Bell, X
 } from '../../utils/icons';
 import {
   checkForUpdates,
   openApnSettings,
   openNetworkSettings,
   checkBatteryOptimization,
+  copyDiagnosticReport,
+  showNativeToast,
 } from '../../utils/appFunctions';
 import { getCustomDnsConfig } from '../../utils/dnsUtils';
 import { ModalType } from '../../App';
 import { ServersModal } from '../modals/ServersModal';
-import { ImportKeyModal } from '../modals/ImportKeyModal';
 import { NotificationsModal } from '../modals/NotificationsModal';
 import { useAutoConnectContext } from '../../context/AutoConnectContext';
 import { useAppNotifications } from '../../context/AppNotificationsContext';
 import { useAppLayout } from '../../hooks/useAppLayout';
+import { useToast } from '../../hooks/useToast';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -40,12 +42,18 @@ interface MenuCategory {
 
 export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
   const { insets } = useAppLayout();
+  const { showToast } = useToast();
   const [showServersModal, setShowServersModal] = useState(false);
-  const [showImportKeyModal, setShowImportKeyModal] = useState(false);
   const [showNotificationsModal, setShowNotificationsModal] = useState(false);
   const autoConnect = useAutoConnectContext();
   const { unreadCount, markAllRead } = useAppNotifications();
   const isDnsActive = isOpen ? getCustomDnsConfig().enabled : false;
+
+  const handleCopyReport = useCallback(() => {
+    copyDiagnosticReport();
+    showToast('Relatório de erros copiado para o clipboard!', 'success');
+    showNativeToast('Relatório de erros copiado!');
+  }, [showToast]);
   const listRef = useRef<HTMLDivElement>(null);
   const asideRef = useRef<HTMLElement>(null);
   const [mobileSettledClosed, setMobileSettledClosed] = useState(!isOpen);
@@ -127,7 +135,11 @@ export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
           highlight: isDnsActive,
           badgeText: isDnsActive ? 'Ativo' : undefined,
         },
-        { icon: <FileKey className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Chave de importação", onClick: () => setShowImportKeyModal(true) },
+        {
+          icon: <Bug className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />,
+          label: "Relatório de Erros",
+          onClick: handleCopyReport,
+        },
         { icon: <Battery className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Bateria", onClick: checkBatteryOptimization },
         { icon: <Wifi className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Ajustes de APN", onClick: openApnSettings },
         { icon: <Network className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Ajustes de Rede", onClick: openNetworkSettings },
@@ -249,10 +261,6 @@ export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
       {/* Modals renderizados fora do aside via Portal */}
       {showServersModal && typeof window !== 'undefined' && createPortal(
         <ServersModal onClose={() => setShowServersModal(false)} />,
-        document.body
-      )}
-      {showImportKeyModal && typeof window !== 'undefined' && createPortal(
-        <ImportKeyModal onClose={() => setShowImportKeyModal(false)} />,
         document.body
       )}
       {showNotificationsModal && typeof window !== 'undefined' && createPortal(

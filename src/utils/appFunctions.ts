@@ -1050,6 +1050,35 @@ export function getDiagnosticReport(): string | null {
   return v == null ? null : String(v);
 }
 
+export function copyDiagnosticReport(): boolean {
+  const sdk = getSdk();
+  vibrate(30);
+
+  if (typeof sdk?.android?.copyDiagnosticReport === 'function') {
+    try {
+      sdk.android.copyDiagnosticReport();
+      return true;
+    } catch {
+      /* fallback */
+    }
+  }
+
+  try {
+    callVoid('DtCopyDiagnosticReport', 'execute');
+    return true;
+  } catch {
+    /* fallback */
+  }
+
+  const report = getDiagnosticReport();
+  if (report) {
+    copyToClipboard(report);
+    return true;
+  }
+
+  return false;
+}
+
 export function isNativeDarkMode(): boolean {
   const sdk = getSdk();
   try {
