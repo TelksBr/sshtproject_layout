@@ -2,7 +2,6 @@ import { useState, useMemo, useRef } from 'react';
 import {
   Globe,
   Check,
-  Smartphone,
   Save,
   ShieldCheck,
   AlertCircle,
@@ -14,7 +13,6 @@ import {
   DEFAULT_DNS_PRESETS,
   getCustomDnsConfig,
   isValidIpAddress,
-  openNativeDnsDialog,
   setCustomDnsConfig,
   type DnsPreset,
 } from '../../utils/dnsUtils';
@@ -26,7 +24,7 @@ interface DnsModalProps {
 }
 
 export function DnsModal({ onClose }: DnsModalProps) {
-  const { showSuccess, showError, showInfo } = useToast();
+  const { showSuccess, showError } = useToast();
 
   const initialConfig = useMemo(() => getCustomDnsConfig(), []);
 
@@ -153,22 +151,6 @@ export function DnsModal({ onClose }: DnsModalProps) {
     }
   };
 
-  const handleOpenNativeDialog = () => {
-    try {
-      vibrate(25);
-    } catch {
-      /* ignore */
-    }
-    const opened = openNativeDnsDialog();
-    if (opened) {
-      showInfo('Abrindo diálogo nativo de DNS do Android...');
-      showNativeToast('Abrindo diálogo nativo do Android...');
-    } else {
-      showInfo('Diálogo nativo disponível apenas no aplicativo Android.');
-      showNativeToast('Diálogo nativo disponível apenas no aplicativo Android.');
-    }
-  };
-
   const currentPresetName = useMemo(() => {
     if (!enabled) return 'Desativado (Padrão)';
     const found = DEFAULT_DNS_PRESETS.find((p) => p.id === selectedPresetId);
@@ -234,7 +216,7 @@ export function DnsModal({ onClose }: DnsModalProps) {
 
         {/* Provedores Rápidos (Presets) */}
         <div>
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center mb-2">
             <span
               className="text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5"
               style={{ color: 'var(--text-muted)' }}
@@ -242,16 +224,6 @@ export function DnsModal({ onClose }: DnsModalProps) {
               <Sparkles className="w-3.5 h-3.5 text-amber-400" />
               Provedores Rápidos
             </span>
-            <button
-              type="button"
-              onClick={handleOpenNativeDialog}
-              className="text-xs flex items-center gap-1 font-medium hover:underline transition-all"
-              style={{ color: 'var(--accent)' }}
-              title="Abrir a tela nativa de DNS do aplicativo Android"
-            >
-              <Smartphone className="w-3.5 h-3.5" />
-              Diálogo Nativo
-            </button>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
