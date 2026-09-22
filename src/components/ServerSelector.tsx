@@ -9,6 +9,13 @@ import { useToast } from '../hooks/useToast';
 import { configRequiresField } from '../utils/configCredentials';
 import { ConfigIcon } from './ConfigIcon';
 import { syncIconCache } from '../utils/iconCache';
+import { CountryFilterHeader } from './CountryFilterHeader';
+import {
+  getAvailableCountries,
+  determineInitialCountry,
+  saveCountryPreference,
+  extractCountryFromText,
+} from '../utils/countryUtils';
 
 function normalizeSearch(value: string | null | undefined): string {
   return String(value || '')
@@ -35,6 +42,32 @@ export function ServerSelector() {
   const [airplaneMode, setAirplaneMode] = useState(() => {
     try { return getAirplaneState(); } catch { return false; }
   });
+
+  const [selectedCountry, setSelectedCountry] = useState<string>('all');
+  const hasInitializedCountryRef = useRef(false);
+
+  // Análise dos países disponíveis a partir dos emojis de bandeira nas categorias
+  const {
+    countries: availableCountries,
+    hasOtherWithoutFlag,
+    totalCategories,
+    totalConfigs,
+  } = useMemo(() => getAvailableCountries(configs), [configs]);
+
+  // Pré-filtro inteligente: detecta país pelo locale do WebView ou preferência salva
+  useEffect(() => {
+    if (configs.length > 0 && !hasInitializedCountryRef.current) {
+      const initial = determineInitialCountry(availableCountries, hasOtherWithoutFlag);
+      setSelectedCountry(initial);
+      hasInitializedCountryRef.current = true;
+    }
+  }, [configs, availableCountries, hasOtherWithoutFlag]);
+
+  const handleSelectCountry = useCallback((code: string) => {
+    setSelectedCountry(code);
+    saveCountryPreference(code);
+    setSelectedCategory(null);
+  }, []);
 
   const { activeConfig, setActiveConfigId, refreshActiveConfig } = useActiveConfig();
   const { homeEnabled, setHomeEnabled } = useAutoConnectContext();
@@ -179,21 +212,32 @@ export function ServerSelector() {
 
   const searchQuery = normalizeSearch(searchTerm);
 
-  const visibleCategories = useMemo(
-    () => configs.filter((category) => category.items.length > 0),
-    [configs]
-  );
+  const filteredCategories = useMemo(() => {
+    const nonEmpty = configs.filter((category) => category.items.length > 0);
+    if (selectedCountry === 'all') {
+      return nonEmpty;
+    }
+    if (selectedCountry === 'OTHER') {
+      return nonEmpty.filter((category) => !extractCountryFromText(category.name));
+    }
+    return nonEmpty.filter((category) => {
+      const country = extractCountryFromText(category.name);
+      return country?.code === selectedCountry;
+    });
+  }, [configs, selectedCountry]);
+
+  const visibleCategories = filteredCategories;
 
   const searchResults = useMemo(() => {
     if (!searchQuery) {
       return { categories: [] as ConfigCategory[], items: [] as Array<ConfigItem & { categoryName: string }> };
     }
 
-    const categories = configs.filter(
+    const categories = filteredCategories.filter(
       (category) => category.items.length > 0 && textMatches(category.name, searchQuery)
     );
 
-    const items = configs.flatMap((category) => {
+    const items = filteredCategories.flatMap((category) => {
       const categoryMatches = textMatches(category.name, searchQuery);
       return category.items
         .filter((item) =>
@@ -206,13 +250,17 @@ export function ServerSelector() {
     });
 
     return { categories, items };
-  }, [configs, searchQuery]);
+  }, [filteredCategories, searchQuery]);
 
   const hasSearchHits = searchResults.categories.length > 0 || searchResults.items.length > 0;
 
   const activeCategory = configs.find(category =>
     category.items.some(item => item.id === activeConfig?.id)
   );
+
+  const activeCountry = useMemo(() => {
+    return extractCountryFromText(activeCategory?.name);
+  }, [activeCategory?.name]);
 
   // Substitui o botão de AutoConnect para abrir o modal externo
   return (
@@ -250,7 +298,13 @@ export function ServerSelector() {
             ) : (
               <>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  <Settings className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--accent)' }} />
+                  {activeCountry ? (
+                    <span className="text-base select-none leading-none" title={activeCountry.name}>
+                      {activeCountry.flag}
+                    </span>
+                  ) : (
+                    <Settings className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--accent)' }} />
+                  )}
                   {activeConfig && (
                     <div className="w-2 h-2 rounded-full" style={{ background: 'var(--accent)' }} />
                   )}
@@ -377,10 +431,26 @@ export function ServerSelector() {
               </div>
             </div>
 
+            {/* Header com todos os países disponíveis extraídos das bandeiras */}
+            {!selectedCategory && availableCountries.length > 0 && (
+              <CountryFilterHeader
+                availableCountries={availableCountries}
+                selectedCountry={selectedCountry}
+                onSelectCountry={handleSelectCountry}
+                hasOtherWithoutFlag={hasOtherWithoutFlag}
+                totalCategories={totalCategories}
+                totalConfigs={totalConfigs}
+              />
+            )}
+
             <div className="flex items-center gap-2 mb-4">
               <input
                 type="text"
-                placeholder="Pesquisar config ou categoria..."
+                placeholder={
+                  selectedCountry !== 'all' && selectedCountry !== 'OTHER'
+                    ? `Pesquisar em ${availableCountries.find((c) => c.code === selectedCountry)?.name || 'país'}...`
+                    : 'Pesquisar config ou categoria...'
+                }
                 value={searchInput}
                 onChange={handleSearch}
                 className="flex-1 p-2 rounded-lg glass-effect"
@@ -677,6 +747,24 @@ export function ServerSelector() {
                     })}
                   </div>
                 )}
+              </div>
+            ) : selectedCountry !== 'all' && configs.length > 0 ? (
+              <div className="p-6 rounded-xl text-center glass-effect" style={{ border: '1px solid var(--border)' }}>
+                <div className="text-3xl mb-2">🌐</div>
+                <h3 className="text-sm font-semibold mb-1" style={{ color: 'var(--text)' }}>
+                  Nenhuma categoria para este país
+                </h3>
+                <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
+                  Não encontramos categorias com a bandeira selecionada.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => handleSelectCountry('all')}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold touch-manipulation transition-all active:scale-95 shadow-md shadow-[var(--accent)]/20"
+                  style={{ background: 'var(--accent)', color: '#ffffff' }}
+                >
+                  Ver todos os países ({totalCategories})
+                </button>
               </div>
             ) : (
               <div className="p-4 rounded-lg glass-effect text-center">
