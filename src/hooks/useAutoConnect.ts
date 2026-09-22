@@ -50,6 +50,7 @@ function loadSavedConfig(): AutoConnectConfig {
     ...DEFAULT_AUTO_CONNECT_CONFIG,
     ...saved,
     selectedCategories: Array.isArray(saved.selectedCategories) ? saved.selectedCategories : [],
+    selectedCountry: typeof saved.selectedCountry === 'string' ? saved.selectedCountry : undefined,
     connectionTimeout: clampTimeout(
       saved.connectionTimeout ?? DEFAULT_AUTO_CONNECT_CONFIG.connectionTimeout,
       CONNECTION_TIMEOUT_MIN,
@@ -269,15 +270,18 @@ export function useAutoConnect() {
       }))
     );
 
-    const filteredConfigs = filterConfigsForAutoConnect(allConfigs, runConfig);
+    const filteredConfigs = filterConfigsForAutoConnect(allConfigs, runConfig, allConfigCategories);
     setTotal(filteredConfigs.length);
     setTested(0);
 
+    const regionText = runConfig.selectedCountry && runConfig.selectedCountry !== 'all'
+      ? ` [Região: ${runConfig.selectedCountry}]`
+      : '';
     pushLog({
       source: 'test',
       configName: 'Sistema',
       status: 'testing',
-      message: `Iniciando teste com ${filteredConfigs.length} configuração(ões)`,
+      message: `Iniciando teste com ${filteredConfigs.length} configuração(ões)${regionText}`,
     });
 
     try {

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Modal } from './modals/Modal';
 import {
+  Globe,
   RefreshCw,
   CheckCircle,
   XCircle,
@@ -34,10 +35,18 @@ import {
   getPassword,
   setPassword as setPasswordApp,
   sanitizeLogHtml,
+  vibrate,
 } from '../utils/appFunctions';
+import {
+  getAvailableCountries,
+  extractCountryFromText,
+  determineInitialCountry,
+  AvailableCountry,
+} from '../utils/countryUtils';
 import { getAutoConnectCredentialFields } from '../utils/configCredentials';
 import { readFromClipboard } from '../utils/nativeClipboard';
 import { TestLog } from '../hooks/useAutoConnect';
+import { useTranslation } from '../i18n';
 
 type WizardStep = 'setup' | 'confirm' | 'run' | 'result';
 
@@ -64,6 +73,7 @@ function formatTime(date: Date) {
 }
 
 export function AutoConnectModal() {
+  const { t, country: currentI18nCountry } = useTranslation();
   const {
     open,
     closeModal,
@@ -97,12 +107,60 @@ export function AutoConnectModal() {
 
   const allCategories = useMemo(() => getAllConfigs(), [open]);
 
+  const {
+    countries: availableCountries,
+    hasOtherWithoutFlag,
+    totalConfigs: totalConfigsCount,
+  } = useMemo(() => {
+    return getAvailableCountries(allCategories);
+  }, [allCategories]);
+
+  // Região ativa (auto-detectada com base no país do app/WebView ou salva)
+  const activeCountry = useMemo(() => {
+    if (autoConnectConfig.selectedCountry) {
+      return autoConnectConfig.selectedCountry;
+    }
+    if (currentI18nCountry && availableCountries.some((c) => c.code === currentI18nCountry)) {
+      return currentI18nCountry;
+    }
+    const initial = determineInitialCountry(availableCountries, hasOtherWithoutFlag);
+    return initial || 'all';
+  }, [autoConnectConfig.selectedCountry, currentI18nCountry, availableCountries, hasOtherWithoutFlag]);
+
+  const activeCountryObj = useMemo(() => {
+    if (activeCountry === 'all' || !activeCountry) return null;
+    return availableCountries.find((c) => c.code === activeCountry) || null;
+  }, [activeCountry, availableCountries]);
+
+  const activeCountryDisplayName = useMemo(() => {
+    if (!activeCountryObj) {
+      return activeCountry === 'OTHER' ? (t('countryFilter.other') || 'Outros') : (t('autoConnect.allRegions') || 'Todas as Regiões');
+    }
+    return `${activeCountryObj.flag} ${activeCountryObj.name}`;
+  }, [activeCountryObj, activeCountry, t]);
+
+  const visibleCategories = useMemo(() => {
+    if (!activeCountry || activeCountry === 'all') {
+      return allCategories;
+    }
+    return allCategories.filter((cat) => {
+      const extracted = extractCountryFromText(cat.name);
+      if (activeCountry === 'OTHER') {
+        return !extracted;
+      }
+      return extracted?.code === activeCountry;
+    });
+  }, [allCategories, activeCountry]);
+
   const filteredConfigs = useMemo(() => {
     const flat = allCategories.flatMap((cat) =>
-      cat.items.map((item) => ({ ...item, category_id: cat.id }))
+      cat.items.map((item) => ({ ...item, category_id: cat.id, categoryName: cat.name }))
     );
-    return filterConfigsForAutoConnect(flat, autoConnectConfig);
-  }, [allCategories, autoConnectConfig]);
+    return filterConfigsForAutoConnect(flat, {
+      ...autoConnectConfig,
+      selectedCountry: activeCountry,
+    }, allCategories);
+  }, [allCategories, autoConnectConfig, activeCountry]);
 
   const filteredCount = filteredConfigs.length;
 
@@ -110,7 +168,7 @@ export function AutoConnectModal() {
     return getAutoConnectCredentialFields(filteredConfigs);
   }, [filteredConfigs]);
 
-  // Recarrega credenciais do SDK quando o modal é aberto
+  // Recarrega credenciais e sincroniza país inicial ao abrir o modal
   useEffect(() => {
     if (open) {
       setUsername(getUsername() || '');
@@ -118,6 +176,10 @@ export function AutoConnectModal() {
       setUuid(getUUID() || '');
       setValidationError(null);
       setStep(running ? 'run' : 'setup');
+
+      if (!autoConnectConfig.selectedCountry) {
+        updateConfig({ selectedCountry: activeCountry });
+      }
     }
   }, [open, running]);
 
@@ -144,6 +206,19 @@ export function AutoConnectModal() {
     if (running) return;
     setValidationError(null);
     setAutoConnectConfig({ ...autoConnectConfig, ...updates });
+  };
+
+  const handleCountryChange = (countryCode: string) => {
+    if (running) return;
+    try {
+      vibrate(20);
+    } catch {
+      /* ignore */
+    }
+    updateConfig({
+      selectedCountry: countryCode,
+      selectedCategories: [], // Limpa filtros manuais de categoria para testar toda a região escolhida
+    });
   };
 
   const toggleCategory = (categoryId: number) => {
@@ -197,19 +272,25 @@ export function AutoConnectModal() {
     setStep('confirm');
   };
 
-  const selectedCategoryNames =
-    autoConnectConfig.selectedCategories.length === 0
-      ? 'Todas'
-      : allCategories
-          .filter((c) => autoConnectConfig.selectedCategories.includes(c.id))
-          .map((c) => c.name)
-          .join(', ') || 'Todas';
+  const selectedCategoryNames = useMemo(() => {
+    if (autoConnectConfig.selectedCategories.length === 0) {
+      return activeCountry !== 'all'
+        ? `${t('autoConnect.allCategories')} (${activeCountryDisplayName})`
+        : t('autoConnect.allCategories');
+    }
+    return (
+      allCategories
+        .filter((c) => autoConnectConfig.selectedCategories.includes(c.id))
+        .map((c) => c.name)
+        .join(', ') || t('autoConnect.allCategories')
+    );
+  }, [autoConnectConfig.selectedCategories, allCategories, activeCountry, activeCountryDisplayName, t]);
 
   const title =
     step === 'setup'
-      ? 'Filtros e Acesso'
+      ? (t('autoConnect.modalTitle') || 'Filtros e Acesso')
       : step === 'confirm'
-        ? 'Confirmar Teste'
+        ? (t('autoConnect.confirmTitle') || 'Confirmar Teste')
         : step === 'run'
           ? `Testando ${tested}/${total}`
           : success
@@ -224,7 +305,7 @@ export function AutoConnectModal() {
     if (requiredCredentials.uuid && uuid.trim()) setUUIDApp(uuid.trim());
     if (requiredCredentials.username && username.trim()) setUsernameApp(username.trim());
     if (requiredCredentials.password && password.trim()) setPasswordApp(password.trim());
-    startAutoConnect();
+    startAutoConnect({ selectedCountry: activeCountry });
   };
 
   return (
@@ -235,7 +316,13 @@ export function AutoConnectModal() {
             autoConnectConfig={autoConnectConfig}
             updateConfig={updateConfig}
             toggleCategory={toggleCategory}
-            categories={allCategories}
+            visibleCategories={visibleCategories}
+            availableCountries={availableCountries}
+            activeCountry={activeCountry}
+            activeCountryDisplayName={activeCountryDisplayName}
+            hasOtherWithoutFlag={hasOtherWithoutFlag}
+            totalConfigsCount={totalConfigsCount}
+            onCountryChange={handleCountryChange}
             filteredCount={filteredCount}
             showAdvanced={showAdvanced}
             setShowAdvanced={setShowAdvanced}
@@ -255,6 +342,7 @@ export function AutoConnectModal() {
           <ConfirmStep
             typeLabel={TYPE_LABEL[autoConnectConfig.configType]}
             categoriesLabel={selectedCategoryNames}
+            regionLabel={activeCountryDisplayName}
             connectionTimeout={autoConnectConfig.connectionTimeout}
             fetchTimeout={autoConnectConfig.fetchTimeout}
             filteredCount={filteredCount}
@@ -289,7 +377,7 @@ export function AutoConnectModal() {
             logs={logs}
             onClose={closeModal}
             onRetry={() => {
-              startAutoConnect();
+              startAutoConnect({ selectedCountry: activeCountry });
             }}
             onAdjust={() => setStep('setup')}
           />
@@ -355,7 +443,13 @@ function SetupStep({
   autoConnectConfig,
   updateConfig,
   toggleCategory,
-  categories,
+  visibleCategories,
+  availableCountries,
+  activeCountry,
+  activeCountryDisplayName,
+  hasOtherWithoutFlag,
+  totalConfigsCount,
+  onCountryChange,
   filteredCount,
   showAdvanced,
   setShowAdvanced,
@@ -372,7 +466,13 @@ function SetupStep({
   autoConnectConfig: AutoConnectConfig;
   updateConfig: (u: Partial<AutoConnectConfig>) => void;
   toggleCategory: (id: number) => void;
-  categories: ReturnType<typeof getAllConfigs>;
+  visibleCategories: ReturnType<typeof getAllConfigs>;
+  availableCountries: AvailableCountry[];
+  activeCountry: string;
+  activeCountryDisplayName: string;
+  hasOtherWithoutFlag: boolean;
+  totalConfigsCount: number;
+  onCountryChange: (code: string) => void;
   filteredCount: number;
   showAdvanced: boolean;
   setShowAdvanced: (v: boolean) => void;
@@ -386,6 +486,7 @@ function SetupStep({
   onUuidChange: (v: string) => void;
   onContinue: () => void;
 }) {
+  const { t } = useTranslation();
   const [showPassword, setShowPassword] = useState(false);
   const [showUuid, setShowUuid] = useState(false);
   const [showUuidHelp, setShowUuidHelp] = useState(false);
@@ -405,14 +506,91 @@ function SetupStep({
 
   return (
     <div className="flex flex-col gap-4 flex-1">
+      {/* 1. Filtro de Região / País com auto-aplicação */}
+      {availableCountries.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-medium flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
+              <Globe className="w-3.5 h-3.5" style={{ color: 'var(--accent)' }} />
+              <span>{t('autoConnect.regionFilter')}</span>
+              {activeCountry !== 'all' && (
+                <span className="text-[10px] lowercase font-normal opacity-75">
+                  ({t('countryFilter.filtered')})
+                </span>
+              )}
+            </p>
+            <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+              {activeCountryDisplayName}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 custom-scrollbar touch-manipulation">
+            {/* Botão "Todas as Regiões" */}
+            <button
+              type="button"
+              onClick={() => onCountryChange('all')}
+              className="flex-shrink-0 min-h-[38px] px-3 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all touch-manipulation"
+              style={{
+                background: activeCountry === 'all' ? 'var(--accent)' : 'var(--bg-elevated)',
+                color: activeCountry === 'all' ? '#ffffff' : 'var(--text-muted)',
+                border: activeCountry === 'all' ? '1px solid var(--accent)' : '1px solid var(--border)',
+              }}
+            >
+              <span className="text-sm">🌐</span>
+              <span>{t('autoConnect.allRegions')}</span>
+              <span className="text-[10px] opacity-75">({totalConfigsCount})</span>
+            </button>
+
+            {/* Países disponíveis */}
+            {availableCountries.map((c) => {
+              const isSelected = activeCountry === c.code;
+              return (
+                <button
+                  key={c.code}
+                  type="button"
+                  onClick={() => onCountryChange(c.code)}
+                  className="flex-shrink-0 min-h-[38px] px-3 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all touch-manipulation"
+                  style={{
+                    background: isSelected ? 'var(--accent)' : 'var(--bg-elevated)',
+                    color: isSelected ? '#ffffff' : 'var(--text)',
+                    border: isSelected ? '1px solid var(--accent)' : '1px solid var(--border)',
+                  }}
+                >
+                  <span className="text-base leading-none">{c.flag}</span>
+                  <span>{c.name}</span>
+                  <span className="text-[10px] opacity-75">({c.configCount})</span>
+                </button>
+              );
+            })}
+
+            {hasOtherWithoutFlag && (
+              <button
+                type="button"
+                onClick={() => onCountryChange('OTHER')}
+                className="flex-shrink-0 min-h-[38px] px-3 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all touch-manipulation"
+                style={{
+                  background: activeCountry === 'OTHER' ? 'var(--accent)' : 'var(--bg-elevated)',
+                  color: activeCountry === 'OTHER' ? '#ffffff' : 'var(--text-muted)',
+                  border: activeCountry === 'OTHER' ? '1px solid var(--accent)' : '1px solid var(--border)',
+                }}
+              >
+                <span>🏳️</span>
+                <span>{t('countryFilter.other')}</span>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 2. Tipo de configuração (SSH / V2Ray / Todas) */}
       <div>
-        <p className="text-xs mb-2 font-medium" style={{ color: 'var(--text-muted)' }}>Tipo de configuração</p>
+        <p className="text-xs mb-2 font-medium" style={{ color: 'var(--text-muted)' }}>{t('autoConnect.configTypeLabel')}</p>
         <div className="flex flex-wrap gap-2">
           {(
             [
-              { value: 'all', label: 'Todas' },
-              { value: 'ssh', label: 'SSH' },
-              { value: 'v2ray', label: 'V2Ray' },
+              { value: 'all', label: t('autoConnect.typeAll') },
+              { value: 'ssh', label: t('autoConnect.typeSsh') },
+              { value: 'v2ray', label: t('autoConnect.typeV2ray') },
             ] as const
           ).map((opt) => {
             const isSelected = autoConnectConfig.configType === opt.value;
@@ -435,47 +613,67 @@ function SetupStep({
         </div>
       </div>
 
+      {/* 3. Categorias da Região */}
       <div>
-        <p className="text-xs mb-2 font-medium" style={{ color: 'var(--text-muted)' }}>Categorias</p>
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>{t('autoConnect.categoriesFilter')}</p>
+          <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+            {visibleCategories.length} {visibleCategories.length === 1 ? 'categoria' : 'categorias'}
+          </span>
+        </div>
         <button
           type="button"
           onClick={() => updateConfig({ selectedCategories: [] })}
-          className={`w-full min-h-[44px] mb-2 px-3 rounded-xl text-left text-sm font-semibold touch-manipulation transition-all`}
+          className={`w-full min-h-[44px] mb-2 px-3 rounded-xl text-left text-sm font-semibold touch-manipulation transition-all flex items-center justify-between`}
           style={{
             background: autoConnectConfig.selectedCategories.length === 0 ? 'var(--accent)' : 'var(--bg-elevated)',
             color: autoConnectConfig.selectedCategories.length === 0 ? '#ffffff' : 'var(--text)',
             border: '1px solid var(--border)',
           }}
         >
-          Todas as categorias
+          <span>
+            {activeCountry !== 'all'
+              ? t('autoConnect.allCategoriesInRegion', { region: activeCountryDisplayName })
+              : t('autoConnect.allCategories')}
+          </span>
+          <span className="text-xs opacity-80">
+            {visibleCategories.reduce((acc, cat) => acc + cat.items.length, 0)} configs
+          </span>
         </button>
-        <div className="space-y-1.5 max-h-40 overflow-y-auto custom-scrollbar">
-          {categories.map((category) => {
-            const selected = autoConnectConfig.selectedCategories.includes(category.id);
-            const count = category.items.length;
-            return (
-              <button
-                key={category.id}
-                type="button"
-                onClick={() => toggleCategory(category.id)}
-                className={`w-full min-h-[44px] px-3 rounded-xl text-left text-sm flex items-center gap-2 touch-manipulation transition-all`}
-                style={{
-                  background: selected ? 'var(--accent)' : 'var(--bg-elevated)',
-                  color: selected ? '#ffffff' : 'var(--text)',
-                  border: '1px solid var(--border)',
-                }}
-              >
-                <span
-                  className={`flex-shrink-0 w-4 h-4 rounded border ${
-                    selected ? 'bg-white border-white' : 'border-[var(--text-muted)]'
-                  }`}
-                />
-                <span className="flex-1 truncate">{category.name}</span>
-                <span className="text-xs opacity-75">{count}</span>
-              </button>
-            );
-          })}
-        </div>
+
+        {visibleCategories.length === 0 ? (
+          <div className="py-4 text-center text-xs opacity-75" style={{ color: 'var(--text-muted)' }}>
+            {t('autoConnect.noConfigsFound')}
+          </div>
+        ) : (
+          <div className="space-y-1.5 max-h-40 overflow-y-auto custom-scrollbar">
+            {visibleCategories.map((category) => {
+              const selected = autoConnectConfig.selectedCategories.includes(category.id);
+              const count = category.items.length;
+              return (
+                <button
+                  key={category.id}
+                  type="button"
+                  onClick={() => toggleCategory(category.id)}
+                  className={`w-full min-h-[44px] px-3 rounded-xl text-left text-sm flex items-center gap-2 touch-manipulation transition-all`}
+                  style={{
+                    background: selected ? 'var(--accent)' : 'var(--bg-elevated)',
+                    color: selected ? '#ffffff' : 'var(--text)',
+                    border: '1px solid var(--border)',
+                  }}
+                >
+                  <span
+                    className={`flex-shrink-0 w-4 h-4 rounded border ${
+                      selected ? 'bg-white border-white' : 'border-[var(--text-muted)]'
+                    }`}
+                  />
+                  <span className="flex-1 truncate">{category.name}</span>
+                  <span className="text-xs opacity-75">{count}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Seção de Credenciais de Acesso */}
@@ -642,7 +840,7 @@ function SetupStep({
 
       <div className="mt-auto pt-2">
         <p className="text-sm mb-2 text-center font-medium" style={{ color: 'var(--text-muted)' }}>
-          {filteredCount} configuração(ões) serão testadas
+          {t('autoConnect.configsToTest', { count: filteredCount })}
         </p>
         <button
           type="button"
@@ -651,7 +849,7 @@ function SetupStep({
           className="w-full min-h-[48px] rounded-xl text-white font-bold text-sm disabled:opacity-40 touch-manipulation transition-all active:scale-[0.98]"
           style={{ background: 'var(--accent)' }}
         >
-          Continuar
+          {t('common.confirm') || 'Continuar'}
         </button>
       </div>
     </div>
@@ -661,6 +859,7 @@ function SetupStep({
 function ConfirmStep({
   typeLabel,
   categoriesLabel,
+  regionLabel,
   connectionTimeout,
   fetchTimeout,
   filteredCount,
@@ -673,6 +872,7 @@ function ConfirmStep({
 }: {
   typeLabel: string;
   categoriesLabel: string;
+  regionLabel: string;
   connectionTimeout: number;
   fetchTimeout: number;
   filteredCount: number;
@@ -683,10 +883,15 @@ function ConfirmStep({
   onBack: () => void;
   onStart: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col gap-4 flex-1">
       <p className="text-sm font-semibold" style={{ color: 'var(--text-muted)' }}>Confira antes de iniciar:</p>
-      <ul className="space-y-2 text-sm rounded-xl p-3.5 space-y-2" style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}>
+      <ul className="space-y-2 text-sm rounded-xl p-3.5" style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}>
+        <li>
+          <span style={{ color: 'var(--text-muted)' }}>{t('autoConnect.regionLabel')} </span>
+          <strong>{regionLabel}</strong>
+        </li>
         <li>
           <span style={{ color: 'var(--text-muted)' }}>Tipo: </span>
           <strong>{typeLabel}</strong>

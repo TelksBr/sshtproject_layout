@@ -1,10 +1,12 @@
-import { startConnection, stopConnection, getConnectionState } from './appFunctions';
+import { startConnection, stopConnection, getConnectionState, getAllConfigs } from './appFunctions';
+import { extractCountryFromText } from './countryUtils';
 
 export interface AutoConnectConfig {
   fetchTimeout: number;
   connectionTimeout: number;
   selectedCategories: number[];
   configType: 'all' | 'ssh' | 'v2ray';
+  selectedCountry?: string;
 }
 
 export type AutoConnectPhase =
@@ -25,6 +27,7 @@ export const DEFAULT_AUTO_CONNECT_CONFIG: AutoConnectConfig = {
   connectionTimeout: 10000,
   selectedCategories: [],
   configType: 'all',
+  selectedCountry: 'all',
 };
 
 export function clampTimeout(value: number, min: number, max: number): number {
@@ -44,18 +47,53 @@ export function matchesConfigType(mode: string | undefined, configType: AutoConn
   return true;
 }
 
-export function filterConfigsForAutoConnect<T extends { category_id?: number; categoryId?: number; mode?: string }>(
+export function filterConfigsForAutoConnect<
+  T extends { category_id?: number; categoryId?: number; categoryName?: string; mode?: string }
+>(
   configs: T[],
-  autoConnectConfig: AutoConnectConfig
+  autoConnectConfig: AutoConnectConfig,
+  categories?: { id: number; name: string }[]
 ): T[] {
   let filtered = configs;
 
+  // Filtro por Região / País
+  if (autoConnectConfig.selectedCountry && autoConnectConfig.selectedCountry !== 'all') {
+    const cats = categories || getAllConfigs();
+    const targetCountry = autoConnectConfig.selectedCountry;
+    const allowedCategoryIds = new Set(
+      cats
+        .filter((cat) => {
+          const extracted = extractCountryFromText(cat.name);
+          if (targetCountry === 'OTHER') {
+            return !extracted;
+          }
+          return extracted?.code === targetCountry;
+        })
+        .map((cat) => cat.id)
+    );
+
+    filtered = filtered.filter((config) => {
+      const catId = config.category_id ?? config.categoryId;
+      if (catId != null) {
+        return allowedCategoryIds.has(catId);
+      }
+      if (config.categoryName) {
+        const extracted = extractCountryFromText(config.categoryName);
+        if (targetCountry === 'OTHER') return !extracted;
+        return extracted?.code === targetCountry;
+      }
+      return true;
+    });
+  }
+
+  // Filtro por Categorias selecionadas
   if (autoConnectConfig.selectedCategories.length > 0) {
     filtered = filtered.filter((config) =>
       autoConnectConfig.selectedCategories.includes(config.category_id ?? config.categoryId ?? -1)
     );
   }
 
+  // Filtro por Tipo de configuração (SSH / V2Ray)
   if (autoConnectConfig.configType !== 'all') {
     filtered = filtered.filter((config) => matchesConfigType(config.mode, autoConnectConfig.configType));
   }

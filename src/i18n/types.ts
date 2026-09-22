@@ -131,4 +131,19 @@ export interface TranslationSchema {
     categoriesLabel: string;
     configsLabel: string;
   };
+  autoConnect: {
+    regionFilter: string;
+    allRegions: string;
+    categoriesFilter: string;
+    allCategories: string;
+    allCategoriesInRegion: string;
+    configTypeLabel: string;
+    typeAll: string;
+    typeSsh: string;
+    typeV2ray: string;
+    configsToTest: string;
+    credentialsTitle: string;
+    noConfigsFound: string;
+    regionLabel: string;
+  };
 }
