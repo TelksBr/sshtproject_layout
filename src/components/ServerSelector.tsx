@@ -16,6 +16,7 @@ import {
   saveCountryPreference,
   extractCountryFromText,
 } from '../utils/countryUtils';
+import { useTranslation } from '../i18n';
 
 function normalizeSearch(value: string | null | undefined): string {
   return String(value || '')
@@ -31,6 +32,7 @@ function textMatches(haystack: string | null | undefined, needle: string): boole
 }
 
 export function ServerSelector() {
+  const { t, setCountry: setI18nCountry } = useTranslation();
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [configs, setConfigs] = useState<ConfigCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,15 +61,17 @@ export function ServerSelector() {
     if (configs.length > 0 && !hasInitializedCountryRef.current) {
       const initial = determineInitialCountry(availableCountries, hasOtherWithoutFlag);
       setSelectedCountry(initial);
+      setI18nCountry(initial);
       hasInitializedCountryRef.current = true;
     }
-  }, [configs, availableCountries, hasOtherWithoutFlag]);
+  }, [configs, availableCountries, hasOtherWithoutFlag, setI18nCountry]);
 
   const handleSelectCountry = useCallback((code: string) => {
     setSelectedCountry(code);
     saveCountryPreference(code);
     setSelectedCategory(null);
-  }, []);
+    setI18nCountry(code);
+  }, [setI18nCountry]);
 
   const { activeConfig, setActiveConfigId, refreshActiveConfig } = useActiveConfig();
   const { homeEnabled, setHomeEnabled } = useAutoConnectContext();
@@ -289,10 +293,10 @@ export function ServerSelector() {
             {homeEnabled ? (
               <div className="flex-1 min-w-0 text-center px-1">
                 <span className="text-xs font-medium block truncate max-w-full" style={{ color: 'var(--text)' }}>
-                  AUTO CONECT
+                  {t('serverSelector.autoConnectTitle')}
                 </span>
                 <span className="text-[10px] block truncate max-w-full" style={{ color: 'var(--text-muted)' }}>
-                  Todas as categorias
+                  {t('serverSelector.allCategoriesSub')}
                 </span>
               </div>
             ) : (
@@ -317,12 +321,12 @@ export function ServerSelector() {
                         {activeConfig.name}
                       </span>
                       <span className="text-[10px] block truncate max-w-full" style={{ color: 'var(--text-muted)' }}>
-                        {activeCategory?.name || 'Sem categoria'}
+                        {activeCategory?.name || t('serverSelector.noCategory')}
                       </span>
                     </div>
                   ) : (
                     <span className="text-xs font-medium truncate block max-w-full" style={{ color: 'var(--text-muted)' }}>
-                      ESCOLHA UMA CONFIGURAÇÃO
+                      {t('serverSelector.chooseConfig')}
                     </span>
                   )}
                 </div>
@@ -339,7 +343,7 @@ export function ServerSelector() {
           className="min-w-[44px] min-h-[44px] w-11 h-11 xl:w-12 xl:h-12 2xl:w-14 2xl:h-14 flex items-center justify-center rounded-xl glass-effect touch-manipulation flex-shrink-0"
           type="button"
           onClick={handleUpdate}
-          aria-label="Atualizar configurações"
+          aria-label={t('serverSelector.updateConfigs')}
         >
           <RefreshCw className={`w-4 h-4 xl:w-5 xl:h-5 ${loading ? 'animate-spin' : ''}`} style={{ color: 'var(--accent)' }} />
         </button>
@@ -348,7 +352,7 @@ export function ServerSelector() {
           className="min-w-[44px] min-h-[44px] w-11 h-11 xl:w-12 xl:h-12 2xl:w-14 2xl:h-14 flex items-center justify-center rounded-xl glass-effect touch-manipulation flex-shrink-0"
           type="button"
           onClick={checkUserStatus}
-          aria-label="Check user"
+          aria-label={t('serverSelector.checkUser')}
         >
           <CalendarClock className="w-4 h-4 xl:w-5 xl:h-5" style={{ color: 'var(--accent)' }} />
         </button>
@@ -357,7 +361,7 @@ export function ServerSelector() {
           className="min-w-[44px] min-h-[44px] w-11 h-11 xl:w-12 xl:h-12 2xl:w-14 2xl:h-14 flex items-center justify-center rounded-xl glass-effect touch-manipulation flex-shrink-0"
           type="button"
           onClick={toggleAirplaneModeHandler}
-          aria-label="Modo avião"
+          aria-label={t('serverSelector.airplaneMode')}
           style={airplaneMode ? { background: 'var(--accent-dim)' } : undefined}
         >
           <Plane 
@@ -416,16 +420,16 @@ export function ServerSelector() {
                 
                 {selectedCategory ? (
                   <p className="text-xs text-[#b7abc9]/70">
-                    {selectedCategory.items.length} configurações disponíveis
+                    {t('serverSelector.availableConfigsCount', { count: selectedCategory.items.length })}
                   </p>
                 ) : activeConfig ? (
                   <p className="text-xs text-[#b7abc9]/70">
-                    Config atual: <span className="text-[#8b5cf6] font-medium">{activeConfig.name}</span> 
+                    {t('serverSelector.currentConfig')} <span className="text-[#8b5cf6] font-medium">{activeConfig.name}</span> 
                     {activeCategory && ` • ${activeCategory.name}`}
                   </p>
                 ) : (
                   <p className="text-xs text-[#b7abc9]/70">
-                    Selecione uma configuração para conectar
+                    {t('serverSelector.selectConfigPrompt')}
                   </p>
                 )}
               </div>
@@ -448,8 +452,10 @@ export function ServerSelector() {
                 type="text"
                 placeholder={
                   selectedCountry !== 'all' && selectedCountry !== 'OTHER'
-                    ? `Pesquisar em ${availableCountries.find((c) => c.code === selectedCountry)?.name || 'país'}...`
-                    : 'Pesquisar config ou categoria...'
+                    ? t('serverSelector.searchInCountryPlaceholder', {
+                        country: availableCountries.find((c) => c.code === selectedCountry)?.name || 'país',
+                      })
+                    : t('serverSelector.searchPlaceholder')
                 }
                 value={searchInput}
                 onChange={handleSearch}
@@ -467,7 +473,7 @@ export function ServerSelector() {
                 {searchResults.categories.length > 0 && (
                   <div className="space-y-2">
                     <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-                      Categorias
+                      {t('serverSelector.categoriesTitle')}
                     </p>
                     {searchResults.categories.map((category) => {
                       const isActiveCategory = category.items.some(item => item.id === activeConfig?.id);
@@ -495,14 +501,14 @@ export function ServerSelector() {
                                   </h3>
                                   {isActiveCategory && (
                                     <div className="px-2 py-0.5 rounded-full bg-[#8b5cf6] text-white text-[10px] font-bold">
-                                      ATIVA
+                                      {t('common.active')}
                                     </div>
                                   )}
                                 </div>
                                 <p className={`text-xs mt-0.5 ${
                                   isActiveCategory ? 'text-[#b7abc9]' : 'text-[#b7abc9]/70'
                                 }`}>
-                                  {category.items.length} configurações disponíveis
+                                  {t('serverSelector.availableConfigsCount', { count: category.items.length })}
                                 </p>
                               </div>
                             </div>
@@ -522,7 +528,7 @@ export function ServerSelector() {
                 {searchResults.items.length > 0 && (
                   <div className="grid gap-1.5">
                     <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-                      Configurações
+                      {t('serverSelector.configsTitle')}
                     </p>
                     {searchResults.items.map((config) => {
                       const isActiveConfig = String(activeConfig?.id) === String(config.id);
@@ -564,7 +570,7 @@ export function ServerSelector() {
                                 </h3>
                                 {isActiveConfig && (
                                   <div className="px-2 py-0.5 rounded-full bg-[var(--accent)] text-white text-[9px] font-bold flex-shrink-0">
-                                    EM USO
+                                    {t('common.inUse')}
                                   </div>
                                 )}
                               </div>
@@ -603,10 +609,10 @@ export function ServerSelector() {
                   <Search className="w-6 h-6" style={{ color: 'var(--text-muted)' }} />
                 </div>
                 <h3 className="text-base font-semibold mb-2" style={{ color: 'var(--text)' }}>
-                  Nenhum resultado
+                  {t('serverSelector.noResultsTitle')}
                 </h3>
                 <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                  Nenhuma categoria ou configuração encontrada para “{searchInput.trim()}”.
+                  {t('serverSelector.noResultsDesc', { query: searchInput.trim() })}
                 </p>
               </div>
             ) : visibleCategories.length > 0 ? (
@@ -645,12 +651,12 @@ export function ServerSelector() {
                                   </h3>
                                   {isActiveCategory && (
                                     <div className="px-2 py-0.5 rounded-full bg-[var(--accent)] text-white text-[10px] font-bold">
-                                      ATIVA
+                                      {t('common.active')}
                                     </div>
                                   )}
                                 </div>
                                 <p className="text-xs mt-0.5 font-medium transition-colors" style={{ color: 'var(--text-muted)' }}>
-                                  {category.items.length} configurações disponíveis
+                                  {t('serverSelector.availableConfigsCount', { count: category.items.length })}
                                 </p>
                               </div>
                             </div>
@@ -716,7 +722,7 @@ export function ServerSelector() {
                                 </h3>
                                 {isActiveConfig && (
                                   <div className="px-2 py-0.5 rounded-full bg-[var(--accent)] text-white text-[9px] font-bold flex-shrink-0">
-                                    EM USO
+                                    {t('common.inUse')}
                                   </div>
                                 )}
                               </div>
@@ -752,10 +758,10 @@ export function ServerSelector() {
               <div className="p-6 rounded-xl text-center glass-effect" style={{ border: '1px solid var(--border)' }}>
                 <div className="text-3xl mb-2">🌐</div>
                 <h3 className="text-sm font-semibold mb-1" style={{ color: 'var(--text)' }}>
-                  Nenhuma categoria para este país
+                  {t('serverSelector.noCategoryForCountryTitle')}
                 </h3>
                 <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
-                  Não encontramos categorias com a bandeira selecionada.
+                  {t('serverSelector.noCategoryForCountryDesc')}
                 </p>
                 <button
                   type="button"
@@ -763,7 +769,7 @@ export function ServerSelector() {
                   className="px-4 py-2 rounded-xl text-xs font-semibold touch-manipulation transition-all active:scale-95 shadow-md shadow-[var(--accent)]/20"
                   style={{ background: 'var(--accent)', color: '#ffffff' }}
                 >
-                  Ver todos os países ({totalCategories})
+                  {t('serverSelector.seeAllCountries', { count: totalCategories })}
                 </button>
               </div>
             ) : (
@@ -772,14 +778,14 @@ export function ServerSelector() {
                   <AlertCircle className="w-6 h-6 text-[#b7abc9]" />
                 </div>
                 <h3 className="text-base font-medium text-[#b7abc9] mb-2">
-                  Nenhuma Configuração Encontrada
+                  {t('serverSelector.noConfigsFoundTitle')}
                 </h3>
                 <p className="text-sm text-[#b7abc9]/70 mb-4">
-                  Para baixar as configurações mais recentes, é necessário ter uma conexão estável com a internet.
+                  {t('serverSelector.noConfigsFoundDesc')}
                 </p>
                 <div className="flex items-center justify-center gap-1.5 text-[#b7abc9]/50">
                   <Wifi className="w-4 h-4" />
-                  <span className="text-xs">Verifique sua conexão e tente novamente</span>
+                  <span className="text-xs">{t('serverSelector.checkConnectionPrompt')}</span>
                 </div>
               </div>
             )}

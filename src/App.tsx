@@ -13,6 +13,7 @@ import { AppNotificationsProvider } from './context/AppNotificationsContext';
 import { ActiveConfigProvider } from './context/ActiveConfigContext';
 import { AutoConnectProvider } from './context/AutoConnectContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { I18nProvider } from './i18n';
 import { AutoConnectModal } from './components/AutoConnectModal';
 import { SdkCheckUserModal } from './components/modals/SdkCheckUserModal';
 import { PlayStoreReviewHost } from './components/PlayStoreReviewHost';
@@ -140,75 +141,77 @@ function App() {
   }, []);
 
   return (
+    <I18nProvider>
     <ThemeProvider>
     <AppNotificationsProvider>
     <ActiveConfigProvider>
       <AutoConnectProvider>
-      <main
-        className="w-full h-full min-h-full flex flex-col lg:flex-row relative overflow-hidden"
-        style={{ height: '100%', minHeight: '100vh', background: 'var(--bg)' }}
-      >
-        <Sidebar 
-          isOpen={showMenu}
-          onClose={handleMenuClose}
-          onNavigate={handleNavigate}
-        />
-
-        <section 
-          className="flex-1 w-full min-h-0 flex overflow-y-auto overflow-x-hidden px-3 md:px-6 xl:px-8 2xl:px-10 3xl:px-12" 
-          id="container-home"
-          style={containerStyleMemo}
+        <main
+          className="w-full h-full min-h-full flex flex-col lg:flex-row relative overflow-hidden"
+          style={{ height: '100%', minHeight: '100vh', background: 'var(--bg)' }}
         >
-          {/* Container centralizado — expande em telas grandes */}
-          <div className="w-full max-w-7xl xl:max-w-[1200px] 2xl:max-w-[1400px] 3xl:max-w-[1600px] mx-auto flex flex-col lg:flex-row lg:gap-8 xl:gap-10 2xl:gap-12">
-            
-            {/* Coluna principal - Conteúdo */}
-            <div className="flex-1 flex flex-col gap-2 sm:gap-3 lg:gap-5 xl:gap-6 2xl:gap-8 lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl">
-              <Header 
-                onMenuClick={handleMenuClick}
-                localIP={localIP}
-                vpnState={vpnState}
-                onOpenDebug={() => setShowDebugLogs(true)}
-              />
+          <Sidebar 
+            isOpen={showMenu}
+            onClose={handleMenuClose}
+            onNavigate={handleNavigate}
+          />
 
-              {logo && <AnimatedLogo logo={logo} />}
+          <section 
+            className="flex-1 w-full min-h-0 flex overflow-y-auto overflow-x-hidden px-3 md:px-6 xl:px-8 2xl:px-10 3xl:px-12" 
+            id="container-home"
+            style={containerStyleMemo}
+          >
+            {/* Container centralizado — expande em telas grandes */}
+            <div className="w-full max-w-7xl xl:max-w-[1200px] 2xl:max-w-[1400px] 3xl:max-w-[1600px] mx-auto flex flex-col lg:flex-row lg:gap-8 xl:gap-10 2xl:gap-12">
+              
+              {/* Coluna principal - Conteúdo */}
+              <div className="flex-1 flex flex-col gap-2 sm:gap-3 lg:gap-5 xl:gap-6 2xl:gap-8 lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl">
+                <Header 
+                  onMenuClick={handleMenuClick}
+                  localIP={localIP}
+                  vpnState={vpnState}
+                  onOpenDebug={() => setShowDebugLogs(true)}
+                />
 
-              <ServerSelector />
-              <ConnectionForm vpnState={vpnState} />
+                {logo && <AnimatedLogo logo={logo} />}
+
+                <ServerSelector />
+                <ConnectionForm vpnState={vpnState} />
+              </div>
             </div>
+          </section>
+
+          {getModal(currentModal, setCurrentModal)}
+          <AutoConnectModal />
+          <SdkCheckUserModal />
+          <PlayStoreReviewHost vpnState={vpnState} blockingModal={currentModal} />
+          <ToastContainer />
+          <IncomingNotificationHost />
+          {showDebugLogs && (
+            <LogsModal initialTab="debug" onClose={() => setShowDebugLogs(false)} />
+          )}
+          
+          {/* Notificações de pagamento aprovado */}
+          <div className="fixed top-0 right-0 left-0 pointer-events-none z-[999]">
+            {notifications.map((notification) => (
+              <div key={notification.order_id} className="pointer-events-auto">
+                <PaymentApprovedNotification
+                  amount={notification.amount}
+                  planName={notification.plan_name}
+                  orderId={notification.order_id}
+                  onDismiss={dismissNotification}
+                  onAccessCredentials={() => setCurrentModal('credentials')}
+                  autoClose={8000}
+                />
+              </div>
+            ))}
           </div>
-        </section>
-
-        {getModal(currentModal, setCurrentModal)}
-        <AutoConnectModal />
-        <SdkCheckUserModal />
-        <PlayStoreReviewHost vpnState={vpnState} blockingModal={currentModal} />
-        <ToastContainer />
-        <IncomingNotificationHost />
-        {showDebugLogs && (
-          <LogsModal initialTab="debug" onClose={() => setShowDebugLogs(false)} />
-        )}
-        
-        {/* Notificações de pagamento aprovado */}
-        <div className="fixed top-0 right-0 left-0 pointer-events-none z-[999]">
-          {notifications.map((notification) => (
-            <div key={notification.order_id} className="pointer-events-auto">
-              <PaymentApprovedNotification
-                amount={notification.amount}
-                planName={notification.plan_name}
-                orderId={notification.order_id}
-                onDismiss={dismissNotification}
-                onAccessCredentials={() => setCurrentModal('credentials')}
-                autoClose={8000}
-              />
-            </div>
-          ))}
-        </div>
-      </main>
+        </main>
       </AutoConnectProvider>
     </ActiveConfigProvider>
     </AppNotificationsProvider>
     </ThemeProvider>
+    </I18nProvider>
   );
 }
 

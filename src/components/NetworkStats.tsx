@@ -2,8 +2,10 @@
 import { memo } from 'react';
 import { Download, Upload } from '../utils/icons';
 import { useNetworkStatsGlobal } from '../hooks/useGlobalPolling';
+import { useTranslation } from '../i18n';
 
 const NetworkStats = memo(function NetworkStats() {
+  const { t } = useTranslation();
   const {
     downloadSpeed,
     uploadSpeed,
@@ -20,7 +22,9 @@ const NetworkStats = memo(function NetworkStats() {
     ">
       {/* Título */}
       <div className="text-center pb-2 border-b border-[#8b5cf6]/20">
-        <h3 className="text-[#b7abc9] text-sm lg:text-base xl:text-lg 2xl:text-xl font-semibold uppercase tracking-wide">Estatísticas</h3>
+        <h3 className="text-[#b7abc9] text-sm lg:text-base xl:text-lg 2xl:text-xl font-semibold uppercase tracking-wide">
+          {t('networkStats.title')}
+        </h3>
       </div>
       
       <div className="flex justify-between items-center gap-4 lg:flex-col xl:flex-row xl:gap-6 2xl:gap-8">
@@ -28,13 +32,17 @@ const NetworkStats = memo(function NetworkStats() {
         <div className="flex flex-col items-center flex-1 lg:w-full lg:bg-[#8b5cf6]/8 lg:p-4 xl:p-6 2xl:p-8 lg:rounded-xl 2xl:rounded-2xl lg:border lg:border-[#8b5cf6]/20">
           <div className="flex items-center gap-2 text-[#b7abc9] mb-2 xl:mb-3">
             <Download className="w-5 h-5 xl:w-6 xl:h-6 2xl:w-7 2xl:h-7" />
-            <span className="text-xs lg:text-sm xl:text-base 2xl:text-lg font-semibold uppercase tracking-wide">Download</span>
+            <span className="text-xs lg:text-sm xl:text-base 2xl:text-lg font-semibold uppercase tracking-wide">
+              {t('networkStats.download')}
+            </span>
           </div>
           <div className="flex flex-col items-center gap-1">
             <span className="text-[#b7abc9] font-mono text-xl lg:text-2xl xl:text-3xl 2xl:text-4xl font-bold drop-shadow">
               {downloadSpeed}
             </span>
-            <span className="text-xs xl:text-sm 2xl:text-base text-[#b7abc9]/70">Total: {formattedTotalDownloaded}</span>
+            <span className="text-xs xl:text-sm 2xl:text-base text-[#b7abc9]/70">
+              {t('networkStats.total', { total: formattedTotalDownloaded })}
+            </span>
           </div>
         </div>
         
@@ -45,13 +53,17 @@ const NetworkStats = memo(function NetworkStats() {
         <div className="flex flex-col items-center flex-1 lg:w-full lg:bg-[#8b5cf6]/8 lg:p-4 xl:p-6 2xl:p-8 lg:rounded-xl 2xl:rounded-2xl lg:border lg:border-[#8b5cf6]/20">
           <div className="flex items-center gap-2 text-[#b7abc9] mb-2 xl:mb-3">
             <Upload className="w-5 h-5 xl:w-6 xl:h-6 2xl:w-7 2xl:h-7" />
-            <span className="text-xs lg:text-sm xl:text-base 2xl:text-lg font-semibold uppercase tracking-wide">Upload</span>
+            <span className="text-xs lg:text-sm xl:text-base 2xl:text-lg font-semibold uppercase tracking-wide">
+              {t('networkStats.upload')}
+            </span>
           </div>
           <div className="flex flex-col items-center gap-1">
             <span className="text-[#b7abc9] font-mono text-xl lg:text-2xl xl:text-3xl 2xl:text-4xl font-bold drop-shadow">
               {uploadSpeed}
             </span>
-            <span className="text-xs xl:text-sm 2xl:text-base text-[#b7abc9]/70">Total: {formattedTotalUploaded}</span>
+            <span className="text-xs xl:text-sm 2xl:text-base text-[#b7abc9]/70">
+              {t('networkStats.total', { total: formattedTotalUploaded })}
+            </span>
           </div>
         </div>
       </div>

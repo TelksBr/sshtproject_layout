@@ -19,6 +19,7 @@ import { NotificationsModal } from '../modals/NotificationsModal';
 import { useAutoConnectContext } from '../../context/AutoConnectContext';
 import { useAppNotifications } from '../../context/AppNotificationsContext';
 import { useAppLayout } from '../../hooks/useAppLayout';
+import { useTranslation } from '../../i18n';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -39,6 +40,7 @@ interface MenuCategory {
 }
 
 export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
+  const { t } = useTranslation();
   const { insets } = useAppLayout();
   const [showServersModal, setShowServersModal] = useState(false);
   const [showNotificationsModal, setShowNotificationsModal] = useState(false);
@@ -80,11 +82,11 @@ export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
 
   const menuCategories: MenuCategory[] = [
     {
-      title: "Ações Rápidas",
+      title: t('sidebar.quickActions'),
       items: [
         {
           icon: <Bell className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />,
-          label: "Notificações",
+          label: t('sidebar.notifications'),
           highlight: unreadCount > 0,
           badge: unreadCount,
           onClick: () => {
@@ -93,52 +95,52 @@ export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
             setShowNotificationsModal(true);
           },
         },
-        { icon: <Key className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Minhas Credenciais", onClick: () => onNavigate('credentials'), highlight: true },
+        { icon: <Key className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: t('sidebar.myCredentials'), onClick: () => onNavigate('credentials'), highlight: true },
         // Temporariamente removido do menu:
         // { icon: <DollarSign className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Comprar Login", onClick: () => onNavigate('buy'), highlight: true },
-        { icon: <BriefcaseBusiness className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Gerar Teste (Email)", onClick: () => onNavigate('testgenerate') },
+        { icon: <BriefcaseBusiness className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: t('sidebar.generateTest'), onClick: () => onNavigate('testgenerate') },
         // { icon: <RefreshCw className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Renovar Login", onClick: () => onNavigate('renewal') },
-        { icon: <Search className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Recuperar Login", onClick: () => onNavigate('recovery') },
+        { icon: <Search className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: t('sidebar.recoverLogin'), onClick: () => onNavigate('recovery') },
       ]
     },
     {
-      title: "Principais",
+      title: t('sidebar.main'),
       items: [
-        { icon: <Book className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Tutoriais", onClick: () => onNavigate('tutorials') },
-        { icon: <Network className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Servidores", onClick: () => setShowServersModal(true) },
-        { icon: <CalendarClock className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Check User", onClick: () => onNavigate('checkuser') }
+        { icon: <Book className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: t('sidebar.tutorials'), onClick: () => onNavigate('tutorials') },
+        { icon: <Network className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: t('sidebar.servers'), onClick: () => setShowServersModal(true) },
+        { icon: <CalendarClock className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: t('sidebar.checkUser'), onClick: () => onNavigate('checkuser') }
       ]
     },
     {
-      title: "Ferramentas",
+      title: t('sidebar.tools'),
       items: [
-        { icon: <Zap className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Teste Automático", onClick: () => autoConnect.openModal(), highlight: true },
-        { icon: <Download className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Speed Test", onClick: () => onNavigate('speedtest') },
-        { icon: <Share2 className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Hotspot", onClick: () => onNavigate('hotspot') },
-        { icon: <Search className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Buscador de IP", onClick: () => onNavigate('ipfinder') },
+        { icon: <Zap className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: t('sidebar.autoTest'), onClick: () => autoConnect.openModal(), highlight: true },
+        { icon: <Download className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: t('sidebar.speedTest'), onClick: () => onNavigate('speedtest') },
+        { icon: <Share2 className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: t('sidebar.hotspot'), onClick: () => onNavigate('hotspot') },
+        { icon: <Search className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: t('sidebar.ipFinder'), onClick: () => onNavigate('ipfinder') },
         // { icon: <BriefcaseBusiness className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Serviços", onClick: () => onNavigate('services') },
-        { icon: <Phone className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Suporte", onClick: () => onNavigate('support'), highlight: true }
+        { icon: <Phone className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: t('sidebar.support'), onClick: () => onNavigate('support'), highlight: true }
       ]
     },
     {
-      title: "Configurações",
+      title: t('sidebar.settings'),
       items: [
         {
           icon: <Globe className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />,
-          label: "DNS Customizado",
+          label: t('sidebar.customDns'),
           onClick: () => onNavigate('dns'),
           highlight: isDnsActive,
-          badgeText: isDnsActive ? 'Ativo' : undefined,
+          badgeText: isDnsActive ? t('sidebar.activeBadge') : undefined,
         },
         {
           icon: <Bug className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />,
-          label: "Relatório de Erros",
+          label: t('sidebar.errorReport'),
           onClick: handleCopyReport,
         },
-        { icon: <Battery className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Bateria", onClick: checkBatteryOptimization },
-        { icon: <Wifi className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Ajustes de APN", onClick: openApnSettings },
-        { icon: <Network className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Ajustes de Rede", onClick: openNetworkSettings },
-        { icon: <RefreshCw className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Verificar Atualizações", onClick: checkForUpdates }
+        { icon: <Battery className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: t('sidebar.battery'), onClick: checkBatteryOptimization },
+        { icon: <Wifi className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: t('sidebar.apnSettings'), onClick: openApnSettings },
+        { icon: <Network className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: t('sidebar.networkSettings'), onClick: openNetworkSettings },
+        { icon: <RefreshCw className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: t('sidebar.checkUpdates'), onClick: checkForUpdates }
       ]
     }
   ];

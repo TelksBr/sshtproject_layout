@@ -20,6 +20,7 @@ export interface AvailableCountry {
 
 const FALLBACK_COUNTRY_NAMES: Record<string, string> = {
   BR: 'Brasil',
+  AO: 'Angola',
   US: 'Estados Unidos',
   AR: 'Argentina',
   CL: 'Chile',

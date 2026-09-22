@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import type { AvailableCountry } from '../utils/countryUtils';
 import { vibrate } from '../utils/appFunctions';
+import { useTranslation } from '../i18n';
 
 interface CountryFilterHeaderProps {
   availableCountries: AvailableCountry[];
@@ -20,6 +21,8 @@ export const CountryFilterHeader: React.FC<CountryFilterHeaderProps> = memo(
     totalCategories = 0,
     totalConfigs = 0,
   }) => {
+    const { t, setCountry } = useTranslation();
+
     if (availableCountries.length === 0) {
       return null;
     }
@@ -31,11 +34,12 @@ export const CountryFilterHeader: React.FC<CountryFilterHeaderProps> = memo(
         /* silencioso */
       }
       onSelectCountry(code);
+      setCountry(code);
     };
 
     return (
       <nav 
-        aria-label="Filtro de países"
+        aria-label={t('countryFilter.filterByCountry')}
         className="w-full mb-3"
       >
         <div className="flex items-center justify-between mb-1.5 px-0.5">
@@ -43,15 +47,15 @@ export const CountryFilterHeader: React.FC<CountryFilterHeaderProps> = memo(
             className="text-[11px] font-semibold uppercase tracking-wider flex items-center gap-1.5"
             style={{ color: 'var(--text-muted)' }}
           >
-            <span>Filtrar por País</span>
+            <span>{t('countryFilter.filterByCountry')}</span>
             {selectedCountry !== 'all' && (
               <span className="text-[10px] lowercase font-normal opacity-75">
-                (filtrado)
+                {t('countryFilter.filtered')}
               </span>
             )}
           </span>
           <span className="text-[10px]" style={{ color: 'var(--text-muted)', opacity: 0.8 }}>
-            {totalCategories} categorias • {totalConfigs} configs
+            {totalCategories} {t('countryFilter.categoriesLabel')} • {totalConfigs} {t('countryFilter.configsLabel')}
           </span>
         </div>
 
@@ -77,7 +81,7 @@ export const CountryFilterHeader: React.FC<CountryFilterHeaderProps> = memo(
             }}
           >
             <span className="text-sm">🌐</span>
-            <span>Todos</span>
+            <span>{t('countryFilter.all')}</span>
             <span
               className="text-[10px] px-1.5 py-0.2 rounded-full font-bold"
               style={{
@@ -144,7 +148,7 @@ export const CountryFilterHeader: React.FC<CountryFilterHeaderProps> = memo(
               }}
             >
               <span className="text-sm">🏳️</span>
-              <span>Outros</span>
+              <span>{t('countryFilter.other')}</span>
             </button>
           )}
         </div>

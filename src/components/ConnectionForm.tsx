@@ -21,12 +21,14 @@ import { useAutoConnectContext } from '../context/AutoConnectContext';
 import { useActiveConfig } from '../context/ActiveConfigContext';
 import { getVisibleCredentialFields, getAutoConnectCredentialFields, mergeCredentialHints } from '../utils/configCredentials';
 import { LogsModal } from './modals/LogsModal';
+import { useTranslation } from '../i18n';
 
 interface ConnectionFormProps {
   vpnState: VpnState;
 }
 
 export function ConnectionForm({ vpnState }: ConnectionFormProps) {
+  const { t } = useTranslation();
   const autoConnect = useAutoConnectContext();
   const { activeConfig } = useActiveConfig();
   const [showPassword, setShowPassword] = useState(false);
@@ -89,11 +91,11 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
   useEffect(() => {
     // Não limpa o erro automaticamente, só seta mensagem se necessário
     if (vpnState === 'AUTH_FAILED') {
-      setFormError('Falha na autenticação');
+      setFormError(t('connectionForm.authFailedError'));
       // Mantém isTryingToConnect true, pois usuário pode querer cancelar
       setIsTryingToConnect(true);
     } else if (vpnState === 'NO_NETWORK') {
-      setFormError('Sem conexão com a internet');
+      setFormError(t('connectionForm.noNetworkError'));
       setIsTryingToConnect(true);
     } else if (vpnState === 'DISCONNECTED' || vpnState === 'CONNECTED') {
       // Só limpa o estado de tentativa quando realmente desconectar ou conectar
@@ -107,7 +109,7 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
       setIsTryingToConnect(true);
     }
     // Se for outros estados, mantém o estado
-  }, [vpnState]);
+  }, [vpnState, t]);
 
   // Handlers para inputs: atualizam estado local e salvam usando as funções nativas
   const handleUsernameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -261,18 +263,18 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
   // Texto e estilo do botão baseado no estado
   const getButtonText = () => {
     if (autoConnect.running) {
-      return 'Cancelar Teste';
+      return t('connectionForm.cancel');
     }
     if (isTryingToConnect) {
-      return 'Cancelar Conexão';
+      return t('connectionForm.cancel');
     }
     switch (vpnState) {
       case 'STOPPING':
-        return 'Parando...';
+        return t('connectionForm.stopping');
       case 'CONNECTED':
-        return 'Desconectar';
+        return t('connectionForm.connected');
       default:
-        return autoConnect.homeEnabled ? 'Auto Conectar' : 'Conectar';
+        return t('connectionForm.disconnected');
     }
   };
 
@@ -293,13 +295,10 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
   return (
     <>
     <section className="card p-3 md:p-6 xl:p-8 2xl:p-10">
-      <h1 className="text-gradient text-base lg:text-lg xl:text-xl 2xl:text-2xl font-medium text-center mb-3 lg:mb-4 xl:mb-5 2xl:mb-6">
-        Dados de Acesso
-      </h1>
       <div className="space-y-3 md:space-y-4">
         {!hasVisibleCredentialFields && (
           <p className="text-xs lg:text-sm text-center" style={{ color: 'var(--text-muted)' }}>
-            Esta configuração já possui as credenciais definidas.
+            {t('connectionForm.credentialsAlreadySet')}
           </p>
         )}
         {showUsernameInput && (
@@ -308,7 +307,7 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
               className="w-full min-h-[44px] xl:h-12 2xl:h-14 px-3 xl:px-4 rounded-xl input-field outline-none text-sm xl:text-base 2xl:text-lg allow-select"
               type="text"
               autoCapitalize="none"
-              placeholder="Usuário"
+              placeholder={t('connectionForm.usernamePlaceholder')}
               value={usernameValue}
               onChange={handleUsernameChange}
             />
@@ -320,7 +319,7 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
             <input
               className="w-full min-h-[44px] xl:h-12 2xl:h-14 px-3 xl:px-4 pr-11 rounded-xl input-field outline-none text-sm xl:text-base 2xl:text-lg allow-select"
               type={showPassword ? 'text' : 'password'}
-              placeholder="Senha"
+              placeholder={t('connectionForm.passwordPlaceholder')}
               value={passwordValue}
               onChange={handlePasswordChange}
             />
@@ -329,7 +328,7 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
               style={{ color: 'var(--text-muted)' }}
               onClick={togglePasswordVisibility}
               type="button"
-              aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+              aria-label={showPassword ? t('connectionForm.hidePassword') : t('connectionForm.showPassword')}
             >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
@@ -341,7 +340,7 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
             <input
               className="w-full min-h-[44px] xl:h-12 2xl:h-14 px-3 xl:px-4 pr-[5.5rem] rounded-xl input-field outline-none text-sm xl:text-base 2xl:text-lg allow-select"
               type={showUUID ? 'text' : 'password'}
-              placeholder="UUID"
+              placeholder={t('connectionForm.uuidPlaceholder')}
               value={uuidValue}
               onChange={handleUUIDChange}
             />
@@ -350,7 +349,7 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
               style={{ color: 'var(--text-muted)' }}
               onClick={toggleUUIDVisibility}
               type="button"
-              aria-label={showUUID ? 'Ocultar UUID' : 'Mostrar UUID'}
+              aria-label={showUUID ? t('connectionForm.hideUuid') : t('connectionForm.showUuid')}
             >
               {showUUID ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
@@ -359,7 +358,7 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
               style={{ color: 'var(--text-muted)' }}
               onClick={() => setShowUuidHelp((prev) => !prev)}
               type="button"
-              aria-label="Ajuda sobre UUID"
+              aria-label={t('connectionForm.uuidHelpTitle')}
             >
               <HelpCircle className="w-4 h-4" />
             </button>
@@ -368,17 +367,17 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
                 className="absolute bottom-full right-0 mb-2 w-[min(18rem,calc(100vw-2rem))] text-sm p-3 rounded-xl z-50"
                 style={{ background: 'var(--surface)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
               >
-                <div className="font-bold mb-1" style={{ color: 'var(--text)' }}>O que é o UUID?</div>
-                <div className="mb-1">É a chave única de login do seu V2Ray.</div>
-                <div className="mb-1">Recebida no bot após a compra.</div>
+                <div className="font-bold mb-1" style={{ color: 'var(--text)' }}>{t('connectionForm.uuidHelpTitle')}</div>
+                <div className="mb-1">{t('connectionForm.uuidHelpDesc1')}</div>
+                <div className="mb-1">{t('connectionForm.uuidHelpDesc2')}</div>
                 <div className="mb-1">
-                  <span className="font-semibold" style={{ color: 'var(--text)' }}>Exemplo:</span>
+                  <span className="font-semibold" style={{ color: 'var(--text)' }}>{t('connectionForm.uuidHelpExample')}</span>
                   <br />
                   <span className="font-mono select-all break-all">
                     {crypto.randomUUID ? crypto.randomUUID() : 'e.g. 123e4567-e89b-12d3-a456-426614174000'}
                   </span>
                 </div>
-                <div className="font-semibold" style={{ color: 'var(--danger)' }}>Copie sem espaços extras.</div>
+                <div className="font-semibold" style={{ color: 'var(--danger)' }}>{t('connectionForm.uuidHelpWarning')}</div>
               </div>
             )}
           </div>
@@ -396,8 +395,7 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
 
         {/* Exibição de erro */}
         {formError && (
-          <p className="text-red-400 text-xs text-center">{formError}
-        </p>
+          <p className="text-red-400 text-xs text-center">{formError}</p>
         )}
 
         {/* Botões lado a lado: Registros e Auto Conect */}
@@ -407,7 +405,7 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
             onClick={() => setShowLogs(true)}
           >
             <Scroll className="w-4 h-4" />
-            <span className="font-medium">Registros</span>
+            <span className="font-medium">{t('connectionForm.recordsButton')}</span>
           </button>
           <button
             className="w-1/2 min-h-[44px] xl:h-12 2xl:h-14 flex items-center justify-center gap-1 xl:gap-2 text-xs lg:text-sm xl:text-base 2xl:text-lg font-medium rounded-xl btn-secondary touch-manipulation"
@@ -415,7 +413,7 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
             type="button"
           >
             <Zap className="w-4 h-4" />
-            <span className="font-medium">Auto Conect</span>
+            <span className="font-medium">{t('connectionForm.autoConnectButton')}</span>
           </button>
         </div>
       </div>

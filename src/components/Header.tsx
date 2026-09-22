@@ -4,6 +4,7 @@ import { VpnState } from '../types/vpn';
 import { vibrate } from '../utils/appFunctions';
 import { useTheme } from '../context/ThemeContext';
 import { useToast } from '../hooks/useToast';
+import { useTranslation } from '../i18n';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -12,24 +13,12 @@ interface HeaderProps {
   onOpenDebug?: () => void;
 }
 
-function getStateMessage(state: VpnState) {
-  switch (state) {
-    case "CONNECTED": return "Conectado";
-    case "CONNECTING": return "Conectando...";
-    case "STOPPING": return "Parando conexão...";
-    case "NO_NETWORK": return "Sem rede";
-    case "AUTH": return "Autenticando...";
-    case "AUTH_FAILED": return "Falha de autenticação";
-    case "DISCONNECTED":
-    default: return "Desconectado";
-  }
-}
-
 const Header = memo(function Header({ onMenuClick, localIP, vpnState, onOpenDebug }: HeaderProps) {
   const tapCountRef = useRef(0);
   const lastTapRef = useRef(0);
   const { mode, cycleMode } = useTheme();
   const { showToast } = useToast();
+  const { t } = useTranslation();
 
   const handleIpClick = () => {
     const now = Date.now();
@@ -59,9 +48,9 @@ const Header = memo(function Header({ onMenuClick, localIP, vpnState, onOpenDebu
     }
     const next = cycleMode();
     const labels = {
-      auto: 'Tema: Automático (SDK)',
-      dark: 'Tema: Escuro',
-      light: 'Tema: Claro',
+      auto: t('header.themeAutoToast'),
+      dark: t('header.themeDarkToast'),
+      light: t('header.themeLightToast'),
     };
     showToast(labels[next], 'info');
   };
@@ -78,10 +67,21 @@ const Header = memo(function Header({ onMenuClick, localIP, vpnState, onOpenDebu
     }
   }, [vpnState]);
 
-  const statusMessage = useMemo(() => getStateMessage(vpnState), [vpnState]);
+  const statusMessage = useMemo(() => {
+    switch (vpnState) {
+      case "CONNECTED": return t('header.connected');
+      case "CONNECTING": return t('header.connecting');
+      case "STOPPING": return t('header.stopping');
+      case "NO_NETWORK": return t('header.noNetwork');
+      case "AUTH": return t('header.auth');
+      case "AUTH_FAILED": return t('header.authFailed');
+      case "DISCONNECTED":
+      default: return t('header.disconnected');
+    }
+  }, [vpnState, t]);
 
   const ThemeIcon = mode === 'auto' ? SunMoon : mode === 'dark' ? Moon : Sun;
-  const themeLabel = mode === 'auto' ? 'Auto' : mode === 'dark' ? 'Escuro' : 'Claro';
+  const themeLabel = mode === 'auto' ? t('header.themeAuto') : mode === 'dark' ? t('header.themeDark') : t('header.themeLight');
 
   return (
     <section className="flex items-center gap-2 py-1">
@@ -89,7 +89,7 @@ const Header = memo(function Header({ onMenuClick, localIP, vpnState, onOpenDebu
         onClick={onMenuClick}
         className="lg:hidden min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl flex-shrink-0 touch-manipulation"
         style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-        aria-label="Abrir menu"
+        aria-label={t('header.openMenu')}
       >
         <Logs className="w-5 h-5" style={{ color: 'var(--text-muted)' }} id="open-menu" />
       </button>
