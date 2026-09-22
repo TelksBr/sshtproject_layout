@@ -11,7 +11,6 @@ import {
   openNetworkSettings,
   checkBatteryOptimization,
   copyDiagnosticReport,
-  showNativeToast,
 } from '../../utils/appFunctions';
 import { getCustomDnsConfig } from '../../utils/dnsUtils';
 import { ModalType } from '../../App';
@@ -20,7 +19,6 @@ import { NotificationsModal } from '../modals/NotificationsModal';
 import { useAutoConnectContext } from '../../context/AutoConnectContext';
 import { useAppNotifications } from '../../context/AppNotificationsContext';
 import { useAppLayout } from '../../hooks/useAppLayout';
-import { useToast } from '../../hooks/useToast';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -42,7 +40,6 @@ interface MenuCategory {
 
 export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
   const { insets } = useAppLayout();
-  const { showToast } = useToast();
   const [showServersModal, setShowServersModal] = useState(false);
   const [showNotificationsModal, setShowNotificationsModal] = useState(false);
   const autoConnect = useAutoConnectContext();
@@ -51,9 +48,7 @@ export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
 
   const handleCopyReport = useCallback(() => {
     copyDiagnosticReport();
-    showToast('Relatório de erros copiado para o clipboard!', 'success');
-    showNativeToast('Relatório de erros copiado!');
-  }, [showToast]);
+  }, []);
   const listRef = useRef<HTMLDivElement>(null);
   const asideRef = useRef<HTMLElement>(null);
   const [mobileSettledClosed, setMobileSettledClosed] = useState(!isOpen);
