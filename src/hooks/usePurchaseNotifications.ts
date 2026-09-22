@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { paymentNotificationManager, PaymentNotification } from '../utils/paymentNotificationManager';
-import { purchaseStorage, PendingPurchase } from '../utils/purchaseStorageManager';
+import { PendingPurchase } from '../utils/purchaseStorageManager';
 import { CredentialsResponse } from '../types/sales';
 
 export interface UsePurchaseNotificationsResult {
@@ -38,7 +38,7 @@ export function usePurchaseNotifications(): UsePurchaseNotificationsResult {
 
   // Callback de pagamento aprovado (para usar em background monitor)
   const handlePaymentApproved = useCallback(
-    (purchase: PendingPurchase, credentials: CredentialsResponse) => {
+    (purchase: PendingPurchase, _credentials: CredentialsResponse) => {
       paymentNotificationManager.notifyPaymentApproved(
         purchase.order_id,
         purchase.amount,

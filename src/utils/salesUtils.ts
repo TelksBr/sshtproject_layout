@@ -91,9 +91,7 @@ import {
   InvoiceStatus,
   PaymentStatus,
   CredentialsResponse,
-  ApiResponse,
-  RenewalValidationData,
-  RenewalOrderResponse
+  ApiResponse
 } from '../types/sales';
 
 // URL permanece a mesma (legado)

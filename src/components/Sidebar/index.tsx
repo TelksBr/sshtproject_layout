@@ -11,6 +11,7 @@ import {
   openNetworkSettings,
   checkBatteryOptimization,
 } from '../../utils/appFunctions';
+import { getCustomDnsConfig } from '../../utils/dnsUtils';
 import { ModalType } from '../../App';
 import { ServersModal } from '../modals/ServersModal';
 import { ImportKeyModal } from '../modals/ImportKeyModal';
@@ -33,6 +34,7 @@ interface MenuCategory {
     onClick: () => void;
     highlight?: boolean;
     badge?: number;
+    badgeText?: string;
   }[];
 }
 
@@ -43,6 +45,7 @@ export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
   const [showNotificationsModal, setShowNotificationsModal] = useState(false);
   const autoConnect = useAutoConnectContext();
   const { unreadCount, markAllRead } = useAppNotifications();
+  const isDnsActive = isOpen ? getCustomDnsConfig().enabled : false;
   const listRef = useRef<HTMLDivElement>(null);
   const asideRef = useRef<HTMLElement>(null);
   const [mobileSettledClosed, setMobileSettledClosed] = useState(!isOpen);
@@ -117,7 +120,13 @@ export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
     {
       title: "Configurações",
       items: [
-        { icon: <Globe className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "DNS Customizado", onClick: () => onNavigate('dns'), highlight: true },
+        {
+          icon: <Globe className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />,
+          label: "DNS Customizado",
+          onClick: () => onNavigate('dns'),
+          highlight: isDnsActive,
+          badgeText: isDnsActive ? 'Ativo' : undefined,
+        },
         { icon: <FileKey className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Chave de importação", onClick: () => setShowImportKeyModal(true) },
         { icon: <Battery className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Bateria", onClick: checkBatteryOptimization },
         { icon: <Wifi className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Ajustes de APN", onClick: openApnSettings },
@@ -195,6 +204,7 @@ export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
                       className={item.highlight ? 'bg-[var(--accent-dim)]' : ''}
                       iconClassName={item.highlight ? 'text-[var(--text-muted)]' : ''}
                       badge={item.badge}
+                      badgeText={item.badgeText}
                     />
                   ))}
                 </div>
@@ -260,9 +270,10 @@ interface MenuItemProps {
   className?: string;
   iconClassName?: string;
   badge?: number;
+  badgeText?: string;
 }
 
-function MenuItem({ icon, label, onClick, className = '', iconClassName = '', badge }: MenuItemProps) {
+function MenuItem({ icon, label, onClick, className = '', iconClassName = '', badge, badgeText }: MenuItemProps) {
   return (
     <button
       onClick={onClick}
@@ -283,6 +294,18 @@ function MenuItem({ icon, label, onClick, className = '', iconClassName = '', ba
           style={{ background: 'var(--accent)' }}
         >
           {badge > 9 ? '9+' : badge}
+        </span>
+      )}
+      {badgeText && (
+        <span
+          className="px-2 py-0.5 rounded-full text-[10px] lg:text-xs font-bold flex items-center justify-center flex-shrink-0 tracking-wide uppercase"
+          style={{
+            background: 'rgba(16, 185, 129, 0.15)',
+            color: '#34d399',
+            border: '1px solid rgba(16, 185, 129, 0.3)',
+          }}
+        >
+          {badgeText}
         </span>
       )}
     </button>

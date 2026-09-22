@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import {
   Globe,
   Check,
@@ -7,6 +7,7 @@ import {
   ShieldCheck,
   AlertCircle,
   Sparkles,
+  Loader,
 } from '../../utils/icons';
 import { Modal } from './Modal';
 import {
@@ -18,6 +19,7 @@ import {
   type DnsPreset,
 } from '../../utils/dnsUtils';
 import { useToast } from '../../hooks/useToast';
+import { showNativeToast, vibrate } from '../../utils/appFunctions';
 
 interface DnsModalProps {
   onClose: () => void;
@@ -31,6 +33,9 @@ export function DnsModal({ onClose }: DnsModalProps) {
   const [enabled, setEnabled] = useState<boolean>(initialConfig.enabled);
   const [primary, setPrimary] = useState<string>(initialConfig.primary);
   const [secondary, setSecondary] = useState<string>(initialConfig.secondary);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const [selectedPresetId, setSelectedPresetId] = useState<string | null>(() => {
     const match = DEFAULT_DNS_PRESETS.find(
       (p) => p.primary === initialConfig.primary && p.secondary === initialConfig.secondary
@@ -38,7 +43,21 @@ export function DnsModal({ onClose }: DnsModalProps) {
     return match ? match.id : 'custom';
   });
 
+  const handleToggle = (newVal: boolean) => {
+    try {
+      vibrate(25);
+    } catch {
+      /* ignore */
+    }
+    setEnabled(newVal);
+  };
+
   const handleSelectPreset = (preset: DnsPreset) => {
+    try {
+      vibrate(20);
+    } catch {
+      /* ignore */
+    }
     setSelectedPresetId(preset.id);
     setPrimary(preset.primary);
     setSecondary(preset.secondary);
@@ -57,49 +76,105 @@ export function DnsModal({ onClose }: DnsModalProps) {
   );
 
   const canSave = useMemo(() => {
+    if (saveStatus !== 'idle') return false;
     if (!enabled) return true;
     if (!primary.trim()) return false;
     return isPrimaryValid && isSecondaryValid;
-  }, [enabled, primary, isPrimaryValid, isSecondaryValid]);
+  }, [enabled, primary, isPrimaryValid, isSecondaryValid, saveStatus]);
 
   const handleSave = () => {
+    if (saveStatus !== 'idle') return;
+
     if (enabled) {
       if (!primary.trim()) {
+        try {
+          vibrate(80);
+        } catch {
+          /* ignore */
+        }
         showError('Informe ao menos o servidor DNS primário.');
+        showNativeToast('Informe ao menos o servidor DNS primário.');
         return;
       }
       if (!isValidIpAddress(primary)) {
+        try {
+          vibrate(80);
+        } catch {
+          /* ignore */
+        }
         showError('O servidor DNS primário informado é inválido.');
+        showNativeToast('O servidor DNS primário informado é inválido.');
         return;
       }
       if (secondary.trim() && !isValidIpAddress(secondary)) {
+        try {
+          vibrate(80);
+        } catch {
+          /* ignore */
+        }
         showError('O servidor DNS secundário informado é inválido.');
+        showNativeToast('O servidor DNS secundário informado é inválido.');
         return;
       }
     }
 
-    setCustomDnsConfig({
-      enabled,
-      primary: primary.trim(),
-      secondary: secondary.trim(),
-    });
+    setSaveStatus('saving');
 
-    showSuccess(
-      enabled
+    try {
+      // Salva no storage e no SDK VTunnel
+      setCustomDnsConfig({
+        enabled,
+        primary: primary.trim(),
+        secondary: secondary.trim(),
+      });
+
+      // Feedback tátil no dispositivo
+      vibrate(40);
+
+      const msg = enabled
         ? 'DNS personalizado ativado com sucesso!'
-        : 'DNS personalizado desativado (usando padrão).'
-    );
-    onClose();
+        : 'DNS personalizado desativado (usando padrão).';
+
+      // Feedback visual duplo: web e nativo Android
+      showSuccess(msg);
+      showNativeToast(msg);
+
+      setSaveStatus('saved');
+
+      // Aguarda 650ms para que o usuário veja a confirmação no próprio botão
+      closeTimeoutRef.current = setTimeout(() => {
+        onClose();
+      }, 650);
+    } catch (err) {
+      setSaveStatus('idle');
+      console.error('Erro ao salvar DNS:', err);
+      showError('Erro ao salvar configuração de DNS.');
+      showNativeToast('Erro ao salvar configuração de DNS.');
+    }
   };
 
   const handleOpenNativeDialog = () => {
+    try {
+      vibrate(25);
+    } catch {
+      /* ignore */
+    }
     const opened = openNativeDnsDialog();
     if (opened) {
       showInfo('Abrindo diálogo nativo de DNS do Android...');
+      showNativeToast('Abrindo diálogo nativo do Android...');
     } else {
       showInfo('Diálogo nativo disponível apenas no aplicativo Android.');
+      showNativeToast('Diálogo nativo disponível apenas no aplicativo Android.');
     }
   };
+
+  const currentPresetName = useMemo(() => {
+    if (!enabled) return 'Desativado (Padrão)';
+    const found = DEFAULT_DNS_PRESETS.find((p) => p.id === selectedPresetId);
+    if (found) return found.name;
+    return 'Personalizado';
+  }, [enabled, selectedPresetId]);
 
   return (
     <Modal onClose={onClose} title="DNS Customizado" icon={Globe}>
@@ -108,38 +183,52 @@ export function DnsModal({ onClose }: DnsModalProps) {
         <div
           className="p-4 rounded-2xl flex items-center justify-between gap-4 transition-all"
           style={{
-            background: enabled ? 'rgba(59, 130, 246, 0.08)' : 'var(--bg-elevated)',
-            border: enabled ? '1px solid rgba(59, 130, 246, 0.35)' : '1px solid var(--border)',
+            background: enabled ? 'rgba(16, 185, 129, 0.08)' : 'var(--bg-elevated)',
+            border: enabled ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid var(--border)',
           }}
         >
           <div className="flex items-center gap-3">
             <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center transition-colors"
+              className="w-10 h-10 rounded-xl flex items-center justify-center transition-colors flex-shrink-0"
               style={{
-                background: enabled ? 'rgba(59, 130, 246, 0.2)' : 'var(--border)',
-                color: enabled ? '#60a5fa' : 'var(--text-muted)',
+                background: enabled ? 'rgba(16, 185, 129, 0.2)' : 'var(--border)',
+                color: enabled ? '#34d399' : 'var(--text-muted)',
               }}
             >
               <Globe className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-sm sm:text-base font-bold" style={{ color: 'var(--text)' }}>
-                DNS Personalizado
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm sm:text-base font-bold" style={{ color: 'var(--text)' }}>
+                  DNS Personalizado
+                </h3>
+                {enabled && (
+                  <span
+                    className="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                    style={{
+                      background: 'rgba(16, 185, 129, 0.15)',
+                      color: '#34d399',
+                      border: '1px solid rgba(16, 185, 129, 0.3)',
+                    }}
+                  >
+                    ATIVO
+                  </span>
+                )}
+              </div>
               <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                {enabled ? 'Ativo na conexão VPN' : 'Desativado (usando padrão)'}
+                {enabled ? `Provedor: ${currentPresetName}` : 'Desativado (usando DNS padrão da rede/VPN)'}
               </p>
             </div>
           </div>
 
-          <label className="relative inline-flex items-center cursor-pointer select-none">
+          <label className="relative inline-flex items-center cursor-pointer select-none flex-shrink-0">
             <input
               type="checkbox"
               checked={enabled}
-              onChange={(e) => setEnabled(e.target.checked)}
+              onChange={(e) => handleToggle(e.target.checked)}
               className="sr-only peer"
             />
-            <div className="w-12 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            <div className="w-12 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
           </label>
         </div>
 
@@ -158,6 +247,7 @@ export function DnsModal({ onClose }: DnsModalProps) {
               onClick={handleOpenNativeDialog}
               className="text-xs flex items-center gap-1 font-medium hover:underline transition-all"
               style={{ color: 'var(--accent)' }}
+              title="Abrir a tela nativa de DNS do aplicativo Android"
             >
               <Smartphone className="w-3.5 h-3.5" />
               Diálogo Nativo
@@ -196,7 +286,14 @@ export function DnsModal({ onClose }: DnsModalProps) {
 
             <button
               type="button"
-              onClick={() => setSelectedPresetId('custom')}
+              onClick={() => {
+                try {
+                  vibrate(20);
+                } catch {
+                  /* ignore */
+                }
+                setSelectedPresetId('custom');
+              }}
               className="p-2.5 sm:p-3 rounded-xl text-left transition-all border touch-manipulation active:scale-[0.98]"
               style={{
                 background: selectedPresetId === 'custom' ? 'rgba(59, 130, 246, 0.12)' : 'var(--bg-elevated)',
@@ -288,12 +385,13 @@ export function DnsModal({ onClose }: DnsModalProps) {
           </div>
         </div>
 
-        {/* Botões de Ação */}
+        {/* Botões de Ação com Feedback de Estado */}
         <div className="grid grid-cols-2 gap-3 pt-2">
           <button
             type="button"
             onClick={onClose}
-            className="w-full h-11 rounded-xl text-xs sm:text-sm font-semibold transition-all border touch-manipulation active:scale-[0.98]"
+            disabled={saveStatus !== 'idle'}
+            className="w-full h-11 rounded-xl text-xs sm:text-sm font-semibold transition-all border touch-manipulation active:scale-[0.98] disabled:opacity-50"
             style={{
               background: 'var(--bg-elevated)',
               borderColor: 'var(--border)',
@@ -307,13 +405,28 @@ export function DnsModal({ onClose }: DnsModalProps) {
             type="button"
             onClick={handleSave}
             disabled={!canSave}
-            className="w-full h-11 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 touch-manipulation active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed text-white"
-            style={{
-              background: 'var(--accent, #3b82f6)',
-            }}
+            className={`w-full h-11 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 touch-manipulation active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed text-white shadow-md ${
+              saveStatus === 'saved'
+                ? 'bg-emerald-600 border border-emerald-500'
+                : 'bg-blue-600 hover:bg-blue-500'
+            }`}
           >
-            <Save className="w-4 h-4" />
-            Salvar
+            {saveStatus === 'saving' ? (
+              <>
+                <Loader className="w-4 h-4 animate-spin" />
+                <span>Salvando...</span>
+              </>
+            ) : saveStatus === 'saved' ? (
+              <>
+                <Check className="w-4 h-4 text-white" />
+                <span>Salvo com Sucesso!</span>
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                <span>Salvar</span>
+              </>
+            )}
           </button>
         </div>
       </div>

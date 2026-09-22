@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { CheckCircle, X } from '../../utils/icons';
 import { useNotificationPosition } from '../../hooks/useNotificationPosition';
 
