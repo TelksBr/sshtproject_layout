@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Modal } from './Modal';
 import { Loader, RefreshCw, Server } from '../../utils/icons';
+import { vibrate } from '../../utils/appFunctions';
 
 interface ServerConfig {
   name: string;
@@ -344,6 +345,11 @@ export function ServersModal({ onClose }: ServersModalProps) {
 
   const handleRefresh = async () => {
     if (refreshing || serverConfigs.length === 0) return;
+    try {
+      vibrate(25);
+    } catch {
+      /* ignore */
+    }
     setRefreshing(true);
     
     // Atualiza configuração do GitHub Gist
@@ -375,34 +381,47 @@ export function ServersModal({ onClose }: ServersModalProps) {
           </div>
         )}
 
-        {/* Cabeçalho fixo com refresh */}
-        <div className="flex items-center justify-between mb-2 sticky top-0 z-10 rounded-t-lg p-2 md:p-0" style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
-          <div className="flex items-center gap-4">
-            <span className="font-semibold text-base md:text-lg lg:text-xl 2xl:text-2xl" style={{ color: 'var(--text)' }}>Status dos Servidores</span>
+        {/* Barra de resumo com estatísticas e botão de refresh */}
+        <div
+          className="flex items-center justify-between gap-2 p-2.5 sm:p-3 mb-3 sticky top-0 z-10 rounded-xl"
+          style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}
+        >
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap min-w-0 flex-1">
+            <span className="hidden md:inline font-semibold text-xs sm:text-sm" style={{ color: 'var(--text)' }}>
+              Conectados:
+            </span>
             {!loading && servers.length > 0 && (
-              <div className="text-xs md:text-sm lg:text-base flex gap-3 lg:gap-4" style={{ color: 'var(--text-muted)' }}>
-                <span>V2Ray: <span className="font-semibold" style={{ color: 'var(--text)' }}>{totals.v2ray}</span></span>
-                <span>VTProxy: <span className="font-semibold" style={{ color: 'var(--text)' }}>{totals.vtProxy}</span></span>
-                <span>Total: <span className="text-emerald-400 font-semibold">{totals.total}</span></span>
+              <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-medium flex-wrap">
+                <span className="px-2 py-1 rounded-lg" style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+                  V2Ray: <strong className="font-mono font-semibold" style={{ color: 'var(--text)' }}>{totals.v2ray}</strong>
+                </span>
+                <span className="px-2 py-1 rounded-lg" style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+                  VTProxy: <strong className="font-mono font-semibold" style={{ color: 'var(--text)' }}>{totals.vtProxy}</strong>
+                </span>
+                <span className="px-2 py-1 rounded-lg text-emerald-400 font-semibold" style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
+                  Total: <strong className="font-mono">{totals.total}</strong>
+                </span>
               </div>
             )}
           </div>
+
           <button
             onClick={handleRefresh}
             disabled={refreshing || serverConfigs.length === 0}
             className={`
-              p-2 rounded-lg transition-all duration-200
+              w-9 h-9 sm:w-10 sm:h-10 rounded-xl transition-all duration-200 flex-shrink-0 flex items-center justify-center touch-manipulation
               ${refreshing || serverConfigs.length === 0
                 ? 'opacity-40 cursor-not-allowed' 
-                : 'active:scale-95'
+                : 'active:scale-95 hover:opacity-85'
               }
             `}
-            style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}
+            style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
             aria-label="Atualizar lista de servidores"
+            title="Atualizar lista de servidores"
           >
             <RefreshCw 
               className={`
-                w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8
+                w-4 h-4 sm:w-5 sm:h-5
                 ${refreshing ? 'animate-spin text-[var(--accent)]' : 'transition-colors'}
               `}
               style={{ color: 'var(--text-muted)' }}

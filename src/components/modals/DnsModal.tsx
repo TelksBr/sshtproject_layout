@@ -203,15 +203,23 @@ export function DnsModal({ onClose }: DnsModalProps) {
             </div>
           </div>
 
-          <label className="relative inline-flex items-center cursor-pointer select-none flex-shrink-0">
-            <input
-              type="checkbox"
-              checked={enabled}
-              onChange={(e) => handleToggle(e.target.checked)}
-              className="sr-only peer"
+          <button
+            type="button"
+            role="switch"
+            aria-checked={enabled}
+            onClick={() => handleToggle(!enabled)}
+            className={`relative inline-flex h-7 w-12 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none touch-manipulation active:scale-95 ${
+              enabled ? 'bg-emerald-500' : 'bg-gray-700/80'
+            }`}
+            aria-label="Ativar ou desativar DNS personalizado"
+          >
+            <span
+              aria-hidden="true"
+              className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                enabled ? 'translate-x-5' : 'translate-x-0'
+              }`}
             />
-            <div className="w-12 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
-          </label>
+          </button>
         </div>
 
         {/* Provedores Rápidos (Presets) */}
