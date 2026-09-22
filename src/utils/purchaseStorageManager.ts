@@ -525,23 +525,25 @@ class PurchaseStorageManager {
   }
 
   isCredentialExpired(credential: SavedCredential): boolean {
+    const expiresAt = parseExpiration(credential.validation?.expiration_date);
+    if (expiresAt) return expiresAt.getTime() < Date.now();
     const days = credential.validation?.expiration_days;
     if (typeof days === 'number' && !Number.isNaN(days)) {
       return days <= 0;
     }
-    const expiresAt = parseExpiration(credential.validation?.expiration_date);
-    if (!expiresAt) return false;
-    return expiresAt.getTime() < Date.now();
+    return false;
   }
 
   getDaysUntilExpiration(credential: SavedCredential): number {
+    const expiresAt = parseExpiration(credential.validation?.expiration_date);
+    if (expiresAt) {
+      return Math.ceil((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+    }
     const days = credential.validation?.expiration_days;
     if (typeof days === 'number' && !Number.isNaN(days)) {
       return days;
     }
-    const expiresAt = parseExpiration(credential.validation?.expiration_date);
-    if (!expiresAt) return 999;
-    return Math.ceil((expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+    return 999;
   }
 
   updateValidation(id: string, validation: SavedCredential['validation']): boolean {

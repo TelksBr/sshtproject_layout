@@ -25,7 +25,7 @@ import { useViewportHeight } from './hooks/useViewportHeight';
 import PaymentApprovedNotification from './components/modals/PaymentApprovedNotification';
 import { LogsModal } from './components/modals/LogsModal';
 
-export type ModalType = 'buy' | 'recovery' | 'tutorials' | 'support' | 'speedtest' | 'terms' | 'privacy' | 'checkuser' | 'cleandata' | 'hotspot' | 'services' | 'ipfinder' | 'faq' | 'testgenerate' | 'renewal' | 'credentials' | null;
+export type ModalType = 'buy' | 'recovery' | 'tutorials' | 'support' | 'speedtest' | 'terms' | 'privacy' | 'checkuser' | 'cleandata' | 'hotspot' | 'services' | 'ipfinder' | 'faq' | 'testgenerate' | 'renewal' | 'credentials' | 'dns' | null;
 
 function App() {
   const [showMenu, setShowMenu] = useState(false);

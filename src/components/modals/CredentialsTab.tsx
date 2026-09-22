@@ -6,10 +6,10 @@ import { useCredentialsManager } from '../../hooks/useCredentialsManager';
 import { useToast } from '../../hooks/useToast';
 import {
   getCredentialIdentifier,
-  parseExpiration,
   purchaseStorage,
   SavedCredential,
 } from '../../utils/purchaseStorageManager';
+import { formatBrazilDateTime, getValidityRemaining } from '../../utils/checkUserUtils';
 import { copyToClipboard } from '../../utils/nativeClipboard';
 import { setUsername, setPassword, setUUID, verifyCredentialsSetted } from '../../utils/appFunctions';
 import { emit } from '../../utils/dtunnelEventBridge';
@@ -31,13 +31,7 @@ interface CredentialsTabProps {
 }
 
 function formatDate(dateString?: string) {
-  const parsed = parseExpiration(dateString);
-  if (!parsed) return dateString || '—';
-  return parsed.toLocaleDateString('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
+  return formatBrazilDateTime(dateString);
 }
 
 function formatCheckedAgo(iso?: string): string | null {
@@ -54,17 +48,21 @@ function formatCheckedAgo(iso?: string): string | null {
 
 function getStatus(credential: SavedCredential) {
   const expired = purchaseStorage.isCredentialExpired(credential);
-  const days = purchaseStorage.getDaysUntilExpiration(credential);
+  const remaining = getValidityRemaining({
+    expiration_date: credential.validation?.expiration_date || '',
+    expiration_days: credential.validation?.expiration_days ?? NaN,
+  });
   const checked = formatCheckedAgo(credential.validation?.last_checked);
 
   if (expired) {
     return { label: 'Expirada', detail: checked, tone: 'expired' as const };
   }
   if (credential.validation?.expiration_date || typeof credential.validation?.expiration_days === 'number') {
+    const soon = remaining.unit === 'hours' || remaining.unit === 'minutes' || remaining.days <= 3;
     return {
-      label: days <= 0 ? 'Expirada' : `Expira em ${days}d`,
+      label: remaining.expired ? 'Expirada' : `Expira em ${remaining.label}`,
       detail: checked,
-      tone: days <= 3 ? 'warn' as const : 'ok' as const,
+      tone: soon ? 'warn' as const : 'ok' as const,
     };
   }
   return { label: 'Não verificada', detail: checked, tone: 'muted' as const };

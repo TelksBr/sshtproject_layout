@@ -108,6 +108,136 @@ function isTruthyFlag(value: unknown): boolean {
   return value === true || value === 1 || value === '1' || value === 'true';
 }
 
+const HOUR_MS = 60 * 60 * 1000;
+const DAY_MS = 24 * HOUR_MS;
+
+export function parseCheckUserDate(value?: string | null): Date | null {
+  if (!value || typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  if (/^\d{4}-\d{2}-\d{2}T/.test(trimmed) || /Z$/i.test(trimmed)) {
+    const iso = new Date(trimmed);
+    return Number.isNaN(iso.getTime()) ? null : iso;
+  }
+
+  const br = trimmed.match(
+    /^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[ T](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/
+  );
+  if (br) {
+    const date = new Date(
+      parseInt(br[3], 10),
+      parseInt(br[2], 10) - 1,
+      parseInt(br[1], 10),
+      br[4] ? parseInt(br[4], 10) : 23,
+      br[5] ? parseInt(br[5], 10) : 59,
+      br[6] ? parseInt(br[6], 10) : 59
+    );
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    const [year, month, day] = trimmed.split('-').map(Number);
+    return new Date(year, month - 1, day, 23, 59, 59);
+  }
+
+  const parsed = new Date(trimmed);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+export function formatBrazilDateTime(value?: string | null): string {
+  const date = parseCheckUserDate(value);
+  if (!date) return String(value || '').trim() || '—';
+  return date.toLocaleString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+export interface ValidityRemaining {
+  expired: boolean;
+  remainingMs: number | null;
+  days: number;
+  hours: number;
+  minutes: number;
+  unit: 'days' | 'hours' | 'minutes' | 'expired';
+  label: string;
+}
+
+function remainingFromMs(ms: number): ValidityRemaining {
+  if (ms <= 0) {
+    const abs = Math.abs(ms);
+    const days = Math.floor(abs / DAY_MS);
+    const hours = Math.floor(abs / HOUR_MS);
+    return {
+      expired: true,
+      remainingMs: ms,
+      days,
+      hours,
+      minutes: Math.floor(abs / 60000),
+      unit: 'expired',
+      label: days >= 1 ? `Expirado há ${days}d` : hours >= 1 ? `Expirado há ${hours}h` : 'Expirado',
+    };
+  }
+
+  const days = Math.floor(ms / DAY_MS);
+  const hours = Math.max(1, Math.ceil(ms / HOUR_MS));
+  const minutes = Math.max(1, Math.ceil(ms / 60000));
+
+  if (ms < HOUR_MS) {
+    return {
+      expired: false,
+      remainingMs: ms,
+      days: 0,
+      hours: 0,
+      minutes,
+      unit: 'minutes',
+      label: minutes === 1 ? '1 min' : `${minutes} min`,
+    };
+  }
+
+  if (ms < DAY_MS) {
+    return {
+      expired: false,
+      remainingMs: ms,
+      days: 0,
+      hours,
+      minutes,
+      unit: 'hours',
+      label: hours === 1 ? '1 hora' : `${hours} horas`,
+    };
+  }
+
+  return {
+    expired: false,
+    remainingMs: ms,
+    days,
+    hours,
+    minutes,
+    unit: 'days',
+    label: days === 1 ? '1 dia' : `${days} dias`,
+  };
+}
+
+export function getValidityRemaining(
+  info: Pick<UserInfo, 'expiration_date' | 'expiration_days'>
+): ValidityRemaining {
+  const date = parseCheckUserDate(info.expiration_date);
+  if (date) return remainingFromMs(date.getTime() - Date.now());
+
+  const days = Number(info.expiration_days);
+  if (!Number.isFinite(days)) {
+    return { expired: false, remainingMs: null, days: 0, hours: 0, minutes: 0, unit: 'days', label: '—' };
+  }
+  if (days <= 0) {
+    return remainingFromMs(days * DAY_MS || -1);
+  }
+  return remainingFromMs(days * DAY_MS);
+}
+
 export function normalizeUserInfo(raw: Record<string, unknown>): UserInfo | null {
   const username = String(raw.username ?? '').trim();
   if (!username) return null;
@@ -133,20 +263,27 @@ export function normalizeUserInfo(raw: Record<string, unknown>): UserInfo | null
 /** Usuários a até este número de dias da validade veem o botão de renovar. */
 export const CHECKUSER_RENEWAL_SOON_DAYS = 7;
 
-export function isUserExpired(info: Pick<UserInfo, 'expiration_days' | 'error' | 'status'>): boolean {
+export function isUserExpired(
+  info: Pick<UserInfo, 'expiration_days' | 'expiration_date' | 'error' | 'status'>
+): boolean {
   if (info.error === true) return true;
   const status = String(info.status || '').toLowerCase();
   if (status === 'inactive' || status === 'expired') return true;
-  return Number(info.expiration_days) <= 0;
+  return getValidityRemaining(info).expired;
 }
 
-export function isUserNearExpiration(info: Pick<UserInfo, 'expiration_days' | 'error' | 'status'>): boolean {
+export function isUserNearExpiration(
+  info: Pick<UserInfo, 'expiration_days' | 'expiration_date' | 'error' | 'status'>
+): boolean {
   if (isUserExpired(info)) return false;
-  const days = Number(info.expiration_days);
-  return Number.isFinite(days) && days > 0 && days <= CHECKUSER_RENEWAL_SOON_DAYS;
+  const remaining = getValidityRemaining(info);
+  if (remaining.remainingMs == null) return false;
+  return remaining.remainingMs <= CHECKUSER_RENEWAL_SOON_DAYS * DAY_MS;
 }
 
-export function shouldOfferRenewal(info: Pick<UserInfo, 'expiration_days' | 'error' | 'status'>): boolean {
+export function shouldOfferRenewal(
+  info: Pick<UserInfo, 'expiration_days' | 'expiration_date' | 'error' | 'status'>
+): boolean {
   return isUserExpired(info) || isUserNearExpiration(info);
 }
 

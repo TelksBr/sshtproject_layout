@@ -33,9 +33,8 @@ interface SystemResources {
 interface ServerStatus {
   name: string;
   host: string;
-  sshUsers: number;
   v2rayUsers: number;
-  dtProtoUsers: number;
+  vtProxyUsers: number;
   totalUsers: number;
   isOnline: boolean;
   order: number;
@@ -43,9 +42,8 @@ interface ServerStatus {
 }
 
 interface ServerTotals {
-  ssh: number;
   v2ray: number;
-  dtProto: number;
+  vtProxy: number;
   total: number;
 }
 
@@ -57,7 +55,7 @@ export function ServersModal({ onClose }: ServersModalProps) {
   const [serverConfigs, setServerConfigs] = useState<ServerConfig[]>([]);
   const [servers, setServers] = useState<ServerStatus[]>([]);
   const [loading, setLoading] = useState(true);
-  const [totals, setTotals] = useState<ServerTotals>({ ssh: 0, v2ray: 0, dtProto: 0, total: 0 });
+  const [totals, setTotals] = useState<ServerTotals>({ v2ray: 0, vtProxy: 0, total: 0 });
   const [refreshing, setRefreshing] = useState(false);
   const [failedServers, setFailedServers] = useState<Set<string>>(new Set());
   const [configError, setConfigError] = useState<string | null>(null);
@@ -142,12 +140,11 @@ export function ServersModal({ onClose }: ServersModalProps) {
 
   // Função para atualizar totais baseada na lista de servidores
   const updateTotals = (serverList: ServerStatus[]) => {
-    const newTotals = { ssh: 0, v2ray: 0, dtProto: 0, total: 0 };
+    const newTotals = { v2ray: 0, vtProxy: 0, total: 0 };
     serverList.forEach(server => {
       if (server.isOnline) {
-        newTotals.ssh += server.sshUsers;
         newTotals.v2ray += server.v2rayUsers;
-        newTotals.dtProto += server.dtProtoUsers;
+        newTotals.vtProxy += server.vtProxyUsers;
         newTotals.total += server.totalUsers;
       }
     });
@@ -215,13 +212,42 @@ export function ServersModal({ onClose }: ServersModalProps) {
         // Falha silenciosa ao buscar recursos
       }
       
+      const v2rayCount = typeof dataOnlines.total_v2ray === 'number'
+        ? dataOnlines.total_v2ray
+        : typeof dataOnlines.v2ray_users === 'number'
+          ? dataOnlines.v2ray_users
+          : Array.isArray(dataOnlines.v2ray_users)
+            ? dataOnlines.v2ray_users.length
+            : 0;
+
+      const vtProxyCount = typeof dataOnlines.total_vtproxy === 'number'
+        ? dataOnlines.total_vtproxy
+        : typeof dataOnlines.VTproxy === 'number'
+          ? dataOnlines.VTproxy
+          : typeof dataOnlines.vtproxy_users === 'number'
+            ? dataOnlines.vtproxy_users
+            : Array.isArray(dataOnlines.VTproxy)
+              ? dataOnlines.VTproxy.length
+              : Array.isArray(dataOnlines.vtproxy_users)
+                ? dataOnlines.vtproxy_users.length
+                : typeof dataOnlines.total_dt_proto === 'number'
+                  ? dataOnlines.total_dt_proto
+                  : typeof dataOnlines.dt_proto_users === 'number'
+                    ? dataOnlines.dt_proto_users
+                    : Array.isArray(dataOnlines.dt_proto_users)
+                      ? dataOnlines.dt_proto_users.length
+                      : 0;
+
+      const totalCount = typeof dataOnlines.total_users === 'number'
+        ? dataOnlines.total_users
+        : (v2rayCount + vtProxyCount);
+
       const serverStatus: ServerStatus = {
         name: config.name,
         host: config.host,
-        sshUsers: dataOnlines.ssh_users ?? 0,
-        v2rayUsers: dataOnlines.v2ray_users ?? 0,
-        dtProtoUsers: dataOnlines.dt_proto_users ?? 0,
-        totalUsers: dataOnlines.total_users ?? 0,
+        v2rayUsers: v2rayCount,
+        vtProxyUsers: vtProxyCount,
+        totalUsers: totalCount,
         isOnline: true,
         order: config.order ?? 999,
         resources
@@ -241,9 +267,8 @@ export function ServersModal({ onClose }: ServersModalProps) {
       upsertServer({
         name: config.name,
         host: config.host,
-        sshUsers: 0,
         v2rayUsers: 0,
-        dtProtoUsers: 0,
+        vtProxyUsers: 0,
         totalUsers: 0,
         isOnline: false,
         order: config.order ?? 999
@@ -356,9 +381,8 @@ export function ServersModal({ onClose }: ServersModalProps) {
             <span className="font-semibold text-base md:text-lg lg:text-xl 2xl:text-2xl" style={{ color: 'var(--text)' }}>Status dos Servidores</span>
             {!loading && servers.length > 0 && (
               <div className="text-xs md:text-sm lg:text-base flex gap-3 lg:gap-4" style={{ color: 'var(--text-muted)' }}>
-                <span>SSH: <span className="font-semibold" style={{ color: 'var(--text)' }}>{totals.ssh}</span></span>
                 <span>V2Ray: <span className="font-semibold" style={{ color: 'var(--text)' }}>{totals.v2ray}</span></span>
-                <span>DT Proto: <span className="font-semibold" style={{ color: 'var(--text)' }}>{totals.dtProto}</span></span>
+                <span>VTProxy: <span className="font-semibold" style={{ color: 'var(--text)' }}>{totals.vtProxy}</span></span>
                 <span>Total: <span className="text-emerald-400 font-semibold">{totals.total}</span></span>
               </div>
             )}
@@ -430,18 +454,14 @@ export function ServersModal({ onClose }: ServersModalProps) {
                   
                   {server.isOnline && (
                     <>
-                      <div className="grid grid-cols-4 gap-2 lg:gap-3 2xl:gap-4 text-xs md:text-sm lg:text-base mb-2">
-                        <div className="p-2 lg:p-3 2xl:p-4 rounded-xl" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
-                          <span className="block text-[10px] sm:text-xs" style={{ color: 'var(--text-muted)' }}>SSH</span>
-                          <span className="font-mono font-semibold" style={{ color: 'var(--text)' }}>{server.sshUsers}</span>
-                        </div>
+                      <div className="grid grid-cols-3 gap-2 lg:gap-3 2xl:gap-4 text-xs md:text-sm lg:text-base mb-2">
                         <div className="p-2 lg:p-3 2xl:p-4 rounded-xl" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
                           <span className="block text-[10px] sm:text-xs" style={{ color: 'var(--text-muted)' }}>V2Ray</span>
                           <span className="font-mono font-semibold" style={{ color: 'var(--text)' }}>{server.v2rayUsers}</span>
                         </div>
                         <div className="p-2 lg:p-3 2xl:p-4 rounded-xl" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
-                          <span className="block text-[10px] sm:text-xs" style={{ color: 'var(--text-muted)' }}>DT Proto</span>
-                          <span className="font-mono font-semibold" style={{ color: 'var(--text)' }}>{server.dtProtoUsers}</span>
+                          <span className="block text-[10px] sm:text-xs" style={{ color: 'var(--text-muted)' }}>VTProxy</span>
+                          <span className="font-mono font-semibold" style={{ color: 'var(--text)' }}>{server.vtProxyUsers}</span>
                         </div>
                         <div className="p-2 lg:p-3 2xl:p-4 rounded-xl" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
                           <span className="block text-[10px] sm:text-xs" style={{ color: 'var(--text-muted)' }}>Total</span>

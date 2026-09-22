@@ -2,6 +2,8 @@ import { useState, type ReactNode } from 'react';
 import { Calendar, Clock, RefreshCw, User, AlertTriangle } from '../../utils/icons';
 import RenewalModal from './RenewalModal';
 import {
+  formatBrazilDateTime,
+  getValidityRemaining,
   isUserExpired,
   isUserNearExpiration,
   shouldOfferRenewal,
@@ -13,17 +15,13 @@ interface CheckUserDetailsProps {
   headerAction?: ReactNode;
 }
 
-function daysLabel(info: UserInfo): string {
-  const days = Number(info.expiration_days);
-  if (isUserExpired(info)) {
-    if (days < 0) return `Expirado há ${Math.abs(days)}d`;
-    return 'Expirado';
-  }
-  if (days === 1) return '1 dia';
-  return `${days} dias`;
+function remainingCaption(unit: ReturnType<typeof getValidityRemaining>['unit']): string {
+  if (unit === 'hours' || unit === 'minutes') return 'Horas restantes';
+  return 'Dias restantes';
 }
 
 function statusCopy(info: UserInfo): { label: string; detail?: string } {
+  const remaining = getValidityRemaining(info);
   if (isUserExpired(info)) {
     return {
       label: 'Usuário expirado',
@@ -31,9 +29,14 @@ function statusCopy(info: UserInfo): { label: string; detail?: string } {
     };
   }
   if (isUserNearExpiration(info)) {
-    const days = Number(info.expiration_days);
+    if (remaining.unit === 'minutes' || remaining.unit === 'hours') {
+      return {
+        label: `Expira em ${remaining.label}`,
+        detail: 'Renove agora para não perder o acesso.',
+      };
+    }
     return {
-      label: days === 1 ? 'Expira amanhã' : `Expira em ${days} dias`,
+      label: remaining.days === 1 ? 'Expira amanhã' : `Expira em ${remaining.days} dias`,
       detail: 'Renove agora para não perder o acesso.',
     };
   }
@@ -46,6 +49,7 @@ export function CheckUserDetails({ userInfo, headerAction }: CheckUserDetailsPro
   const near = isUserNearExpiration(userInfo);
   const offerRenewal = shouldOfferRenewal(userInfo);
   const status = statusCopy(userInfo);
+  const remaining = getValidityRemaining(userInfo);
   const toneColor = expired ? '#fca5a5' : near ? '#fcd34d' : 'var(--text)';
   const toneBorder = expired ? 'rgba(248,113,113,0.35)' : near ? 'rgba(251,191,36,0.35)' : 'var(--border)';
   const toneBg = expired ? 'rgba(248,113,113,0.12)' : near ? 'rgba(251,191,36,0.12)' : 'var(--bg-elevated)';
@@ -86,10 +90,12 @@ export function CheckUserDetails({ userInfo, headerAction }: CheckUserDetailsPro
             >
               <div className="flex items-center gap-2 mb-2">
                 <Clock className="w-4 h-4" style={{ color: 'var(--accent)' }} />
-                <span className="text-sm" style={{ color: 'var(--text-muted)' }}>Dias restantes</span>
+                <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                  {remainingCaption(remaining.unit)}
+                </span>
               </div>
               <span className="text-xl font-bold" style={{ color: toneColor }}>
-                {daysLabel(userInfo)}
+                {remaining.label}
               </span>
             </div>
 
@@ -101,7 +107,9 @@ export function CheckUserDetails({ userInfo, headerAction }: CheckUserDetailsPro
                 <Calendar className="w-4 h-4" style={{ color: 'var(--accent)' }} />
                 <span className="text-sm" style={{ color: 'var(--text-muted)' }}>Expira em</span>
               </div>
-              <span style={{ color: 'var(--text)' }}>{userInfo.expiration_date || '—'}</span>
+              <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>
+                {formatBrazilDateTime(userInfo.expiration_date)}
+              </span>
             </div>
           </div>
         </div>

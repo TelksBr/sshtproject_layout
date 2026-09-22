@@ -17,6 +17,7 @@ import { IpFinder } from './IpFinder';
 import { Faq } from './Faq';
 import { CredentialsTab } from './CredentialsTab';
 import TestGenerateModal from './TestGenerateModal';
+import { DnsModal } from './DnsModal';
 
 export interface ModalComponentProps {
   onClose: () => void;
@@ -41,4 +42,5 @@ export const modalComponents: Record<Exclude<ModalType, null>, React.ComponentTy
   testgenerate: TestGenerateModal,
   renewal: RenewalModal,
   credentials: CredentialsTab,
+  dns: DnsModal,
 };

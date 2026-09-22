@@ -1,4 +1,4 @@
-import DTunnelSDK from 'dtunnel-sdk';
+import VTunnelSDK from 'vtunnel-sdk';
 
 export interface DebugEventLogEntry {
   id: string;
@@ -67,7 +67,7 @@ export function clearEventDebugLogs(): void {
 }
 
 function sdkEventNames(): string[] {
-  const defs = DTunnelSDK?.EVENT_DEFINITIONS;
+  const defs = VTunnelSDK?.EVENT_DEFINITIONS;
   if (defs && typeof defs === 'object') {
     const names = Object.keys(defs);
     if (names.length > 0) return names;

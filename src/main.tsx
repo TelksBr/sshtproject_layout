@@ -1,14 +1,14 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import DTunnelSDK from 'dtunnel-sdk';
+import VTunnelSDK from 'vtunnel-sdk';
 import App from './App.tsx';
 import { ToastProvider } from './hooks/useToast';
 import './index.css';
 import { registerSdkInstance } from './utils/sdkInstance';
 import { registerSdkForEvents } from './utils/dtunnelEventBridge';
 
-// ✅ Usa APENAS SDK DTunnel (sem fallback para window.Dt*)
-const sdk = new DTunnelSDK({
+// ✅ Inicializa VTunnelSDK v2.1.0
+const sdk = new VTunnelSDK({
   strict: false,
   autoRegisterNativeEvents: true,
   logger: { error: () => {} },

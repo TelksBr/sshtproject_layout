@@ -2,8 +2,8 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Settings, Download,
-  Wifi, Battery, Network, Book,
-  RefreshCw, DollarSign, Share2, CalendarClock, BriefcaseBusiness, Search, Zap, Phone, Key, FileKey, Bell, X
+  Wifi, Battery, Network, Book, Globe,
+  RefreshCw, /* DollarSign, */ Share2, CalendarClock, BriefcaseBusiness, Search, Zap, Phone, Key, FileKey, Bell, X
 } from '../../utils/icons';
 import {
   checkForUpdates,
@@ -88,9 +88,10 @@ export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
           },
         },
         { icon: <Key className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Minhas Credenciais", onClick: () => onNavigate('credentials'), highlight: true },
-        { icon: <DollarSign className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Comprar Login", onClick: () => onNavigate('buy'), highlight: true },
+        // Temporariamente removido do menu:
+        // { icon: <DollarSign className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Comprar Login", onClick: () => onNavigate('buy'), highlight: true },
         { icon: <BriefcaseBusiness className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Gerar Teste (Email)", onClick: () => onNavigate('testgenerate') },
-        { icon: <RefreshCw className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Renovar Login", onClick: () => onNavigate('renewal') },
+        // { icon: <RefreshCw className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Renovar Login", onClick: () => onNavigate('renewal') },
         { icon: <Search className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Recuperar Login", onClick: () => onNavigate('recovery') },
       ]
     },
@@ -109,13 +110,14 @@ export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
         { icon: <Download className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Speed Test", onClick: () => onNavigate('speedtest') },
         { icon: <Share2 className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Hotspot", onClick: () => onNavigate('hotspot') },
         { icon: <Search className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Buscador de IP", onClick: () => onNavigate('ipfinder') },
-        { icon: <BriefcaseBusiness className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Serviços", onClick: () => onNavigate('services') },
+        // { icon: <BriefcaseBusiness className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Serviços", onClick: () => onNavigate('services') },
         { icon: <Phone className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Suporte", onClick: () => onNavigate('support'), highlight: true }
       ]
     },
     {
       title: "Configurações",
       items: [
+        { icon: <Globe className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "DNS Customizado", onClick: () => onNavigate('dns'), highlight: true },
         { icon: <FileKey className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Chave de importação", onClick: () => setShowImportKeyModal(true) },
         { icon: <Battery className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Bateria", onClick: checkBatteryOptimization },
         { icon: <Wifi className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Ajustes de APN", onClick: openApnSettings },

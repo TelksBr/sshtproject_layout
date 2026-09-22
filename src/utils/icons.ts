@@ -40,6 +40,7 @@ export {
   EthernetPort,
   Network,
   Battery,
+  Globe,
   
   // Usuário e autenticação
   User,
