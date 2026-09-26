@@ -140,7 +140,9 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
 
   const { username: showUsernameInput, password: showPasswordInput, uuid: showUUIDInput } = useMemo(() => {
     if (autoConnect.homeEnabled) {
-      const allConfigs = getAllConfigs().flatMap((category) => category.items);
+      const allConfigs = (getAllConfigs() || []).flatMap((category) =>
+        Array.isArray(category?.items) ? category.items : []
+      );
       return getAutoConnectCredentialFields(allConfigs);
     }
     return getVisibleCredentialFields(selectedConfig);
@@ -392,6 +394,34 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
         >
           {getButtonText()}
         </button>
+
+        <div
+          className="flex items-center justify-center gap-2 min-h-[40px] px-3 rounded-xl"
+          style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}
+        >
+          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+            vpnState === 'CONNECTED'
+              ? 'bg-[var(--ok)]'
+              : vpnState === 'CONNECTING' || vpnState === 'AUTH'
+                ? 'bg-amber-400'
+                : 'bg-[var(--danger)]'
+          }`} />
+          <span className="text-sm font-medium truncate" id="vpn-status" style={{ color: 'var(--text)' }}>
+            {vpnState === 'CONNECTED'
+              ? t('header.connected')
+              : vpnState === 'CONNECTING'
+                ? t('header.connecting')
+                : vpnState === 'STOPPING'
+                  ? t('header.stopping')
+                  : vpnState === 'NO_NETWORK'
+                    ? t('header.noNetwork')
+                    : vpnState === 'AUTH'
+                      ? t('header.auth')
+                      : vpnState === 'AUTH_FAILED'
+                        ? t('header.authFailed')
+                        : t('header.disconnected')}
+          </span>
+        </div>
 
         {/* Exibição de erro */}
         {formError && (

@@ -132,6 +132,8 @@ export const es: TranslationSchema = {
     configsLabel: 'configs',
   },
   autoConnect: {
+    modalTitle: 'Filtros y Acceso',
+    confirmTitle: 'Confirmar Prueba',
     regionFilter: 'Región / País',
     allRegions: 'Todas las Regiones',
     categoriesFilter: 'Categorías',

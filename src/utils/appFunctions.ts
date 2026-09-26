@@ -3,6 +3,7 @@ import type { VpnState } from '../types/vpn';
 import { configRequiresField } from './configCredentials';
 import { getSdk } from './sdkInstance';
 import { call, callJson, callVoid } from './dtunnelBridge';
+import type { VTunnelHotSpotInfo } from 'vtunnel-sdk';
 
 // Utilitários para modo Hysteria
 export function buildHysteriaPassword(username: string, password: string): string {
@@ -360,10 +361,66 @@ export function getLocalIP(): string | null {
   const sdk = getSdk();
   if (sdk?.main) {
     const v = sdk.main.getLocalIp();
-    return v == null ? null : String(v);
+    return v == null || v === '' ? null : String(v);
   }
-  const v = call('DtGetLocalIP', 'execute');
-  return v == null ? null : String(v);
+  const v = call('DtGetLocalIP', 'execute') ?? call('VtGetLocalIP', 'execute');
+  return v == null || v === '' ? null : String(v);
+}
+
+export function getLocalIPv6(): string | null {
+  const sdk = getSdk();
+  try {
+    if (typeof sdk?.main?.getLocalIpv6 === 'function') {
+      const v = sdk.main.getLocalIpv6();
+      return v == null || v === '' ? null : String(v);
+    }
+  } catch {
+    /* fallback */
+  }
+  const v = call('DtGetLocalIPv6', 'execute') ?? call('VtGetLocalIPv6', 'execute');
+  return v == null || v === '' ? null : String(v);
+}
+
+export interface LocalIps {
+  ipv4: string | null;
+  ipv6: string | null;
+}
+
+function parseLocalIpsPayload(raw: unknown): LocalIps | null {
+  let data: unknown = raw;
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim();
+    if (!trimmed) return null;
+    try {
+      data = JSON.parse(trimmed);
+    } catch {
+      return null;
+    }
+  }
+  if (!data || typeof data !== 'object') return null;
+  const rec = data as Record<string, unknown>;
+  const ipv4 = rec.ipv4 == null || rec.ipv4 === '' ? null : String(rec.ipv4);
+  const ipv6 = rec.ipv6 == null || rec.ipv6 === '' ? null : String(rec.ipv6);
+  if (!ipv4 && !ipv6) return null;
+  return { ipv4, ipv6 };
+}
+
+export function getLocalIPs(): LocalIps {
+  const sdk = getSdk();
+  try {
+    if (typeof sdk?.main?.getLocalIps === 'function') {
+      const parsed = parseLocalIpsPayload(sdk.main.getLocalIps());
+      if (parsed) return parsed;
+    }
+  } catch {
+    /* fallback */
+  }
+  const parsed = parseLocalIpsPayload(call('DtGetLocalIPs', 'execute') ?? call('VtGetLocalIPs', 'execute'));
+  if (parsed) return parsed;
+  return {
+    ipv4: getLocalIP(),
+    ipv6: getLocalIPv6(),
+  };
 }
 
 export function checkUserStatus(): void {
@@ -470,19 +527,40 @@ export function getAllConfigs(): ConfigCategory[] {
   try {
     const sdk = getSdk();
     let configs: ConfigCategory[] | null = null;
-    if (sdk?.config) {
+    if (sdk?.config && typeof sdk.config.getConfigs === 'function') {
       configs = sdk.config.getConfigs();
     }
-    if (!configs) {
+    if (!configs || !Array.isArray(configs)) {
       configs = callJson<ConfigCategory[]>('DtGetConfigs', 'execute');
     }
-    if (!configs) return [];
-    configs.sort((a, b) => a.sorter - b.sorter);
-    configs.forEach((cat) => {
-      cat.items.sort((a, b) => a.sorter - b.sorter);
+    if (!configs || !Array.isArray(configs)) return [];
+
+    const sanitizedConfigs: ConfigCategory[] = configs
+      .filter((cat): cat is ConfigCategory => Boolean(cat && typeof cat === 'object'))
+      .map((cat) => ({
+        ...cat,
+        id: Number(cat.id) || 0,
+        name: String(cat.name || ''),
+        sorter: Number(cat.sorter) || 0,
+        items: Array.isArray(cat.items)
+          ? cat.items
+              .filter((item): item is ConfigItem => Boolean(item && typeof item === 'object'))
+              .map((item) => ({
+                ...item,
+                id: Number(item.id) || 0,
+                name: String(item.name || ''),
+                sorter: Number(item.sorter) || 0,
+              }))
+          : [],
+      }));
+
+    sanitizedConfigs.sort((a, b) => (Number(a.sorter) || 0) - (Number(b.sorter) || 0));
+    sanitizedConfigs.forEach((cat) => {
+      cat.items.sort((a, b) => (Number(a.sorter) || 0) - (Number(b.sorter) || 0));
     });
-    return configs;
-  } catch {
+    return sanitizedConfigs;
+  } catch (e) {
+    console.error('getAllConfigs error:', e);
     return [];
   }
 }
@@ -531,17 +609,48 @@ export function getHotspotNativeStatus(): string | null {
     const v = sdk.android.getHotSpotStatus();
     return v == null ? null : String(v);
   }
-  const v = call('DtGetStatusHotSpotService', 'execute');
+  const v = call('VtGetStatusHotSpotService', 'execute') ?? call('DtGetStatusHotSpotService', 'execute');
   return v == null ? null : String(v);
 }
 
-export function startHotspotNative(): void {
+export function getHotspotNativeInfo(): VTunnelHotSpotInfo | null {
   const sdk = getSdk();
+  if (sdk?.android && typeof sdk.android.getHotSpotInfo === 'function') {
+    const info = sdk.android.getHotSpotInfo();
+    if (info) return info;
+  }
+  let v = call('VtGetHotSpotInfo', 'execute');
+  if (v == null) {
+    v = call('DtGetHotSpotInfo', 'execute');
+  }
+  if (typeof v === 'string') {
+    try {
+      return JSON.parse(v) as VTunnelHotSpotInfo;
+    } catch {
+      return null;
+    }
+  }
+  return (v as VTunnelHotSpotInfo) ?? null;
+}
+
+export function startHotspotNative(port?: number): void {
+  const sdk = getSdk();
+  const validPort = typeof port === 'number' && port >= 1024 && port <= 65535 ? port : undefined;
   if (sdk?.android) {
-    sdk.android.startHotSpotService();
+    if (validPort != null) {
+      sdk.android.startHotSpotService(validPort);
+    } else {
+      sdk.android.startHotSpotService();
+    }
     return;
   }
-  callVoid('DtStartHotSpotService', 'execute');
+  if (validPort != null) {
+    callVoid('VtStartHotSpotService', 'execute', [validPort]);
+    callVoid('DtStartHotSpotService', 'execute', [validPort]);
+  } else {
+    callVoid('VtStartHotSpotService', 'execute');
+    callVoid('DtStartHotSpotService', 'execute');
+  }
 }
 
 export function stopHotspotNative(): void {
@@ -550,7 +659,46 @@ export function stopHotspotNative(): void {
     sdk.android.stopHotSpotService();
     return;
   }
+  callVoid('VtStopHotSpotService', 'execute');
   callVoid('DtStopHotSpotService', 'execute');
+}
+
+export function getLocalIpsNative(): { ipv4: string | null; ipv6: string | null } {
+  const sdk = getSdk();
+  let ipv4: string | null = null;
+  let ipv6: string | null = null;
+
+  if (sdk?.main) {
+    try {
+      const raw = sdk.main.getLocalIps();
+      if (raw) {
+        const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+        if (parsed && typeof parsed === 'object') {
+          ipv4 = parsed.ipv4 ? String(parsed.ipv4) : null;
+          ipv6 = parsed.ipv6 ? String(parsed.ipv6) : null;
+        }
+      }
+    } catch {
+      // ignore
+    }
+    if (!ipv4 && typeof sdk.main.getLocalIp === 'function') {
+      ipv4 = sdk.main.getLocalIp() || null;
+    }
+    if (!ipv6 && typeof sdk.main.getLocalIpv6 === 'function') {
+      ipv6 = sdk.main.getLocalIpv6() || null;
+    }
+  }
+
+  if (!ipv4) {
+    const raw = call('VtGetLocalIP', 'execute') ?? call('DtGetLocalIP', 'execute');
+    if (raw) ipv4 = String(raw);
+  }
+  if (!ipv6) {
+    const raw = call('VtGetLocalIPv6', 'execute') ?? call('DtGetLocalIPv6', 'execute');
+    if (raw) ipv6 = String(raw);
+  }
+
+  return { ipv4, ipv6 };
 }
 
 // URLs: WebView interno e browser externo
@@ -1111,6 +1259,7 @@ export interface SdkDiagnosticSnapshot {
     lastVpnError: string | null;
     networkName: string | null;
     localIp: string | null;
+    localIpv6: string | null;
   };
   config: {
     selectedConfigId: number | string | null;
@@ -1146,6 +1295,7 @@ export function getSdkDiagnosticSnapshot(): SdkDiagnosticSnapshot {
     'DtGetPendingConfigImportDetails', 'DtUsername', 'DtPassword', 'DtGetLocalConfigVersion', 'DtCDNCount',
     'DtEndpointCount', 'DtUuid', 'DtGetUser', 'DtGetLogs', 'DtClearLogs', 'DtExecuteVpnStart', 'DtExecuteVpnStop',
     'DtGetVpnState', 'DtIsVpnRunning', 'DtStartAppUpdate', 'DtStartCheckUser', 'DtShowLoggerDialog', 'DtGetLocalIP',
+    'DtGetLocalIPv6', 'DtGetLocalIPs',
     'DtAirplaneActivate', 'DtAirplaneDeactivate', 'DtAirplaneState', 'DtAppIsCurrentAssistant', 'DtShowMenuDialog',
     'DtShowDialogAdsRewarded', 'DtIsAdsEnabled', 'DtGetRemainingConnectionTime', 'DtGetRemainingConnectionTimerText',
     'DtGetLastVpnError', 'DtGetNetworkName'
@@ -1175,6 +1325,7 @@ export function getSdkDiagnosticSnapshot(): SdkDiagnosticSnapshot {
       lastVpnError: getLastVpnError(),
       networkName: getNetworkName(),
       localIp: getLocalIP(),
+      localIpv6: getLocalIPv6(),
     },
     config: {
       selectedConfigId: details.selectedConfigId,

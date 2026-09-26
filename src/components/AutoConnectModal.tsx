@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Modal } from './modals/Modal';
+import type { ConfigItem } from '../types/config';
 import {
   Globe,
   RefreshCw,
@@ -20,6 +21,7 @@ import {
   AutoConnectPhase,
   CONNECTION_TIMEOUT_MAX,
   CONNECTION_TIMEOUT_MIN,
+  DEFAULT_AUTO_CONNECT_CONFIG,
   FETCH_TIMEOUT_MAX,
   FETCH_TIMEOUT_MIN,
   TIMEOUT_STEP,
@@ -64,12 +66,21 @@ const TYPE_LABEL: Record<AutoConnectConfig['configType'], string> = {
   v2ray: 'V2Ray',
 };
 
-function formatDuration(ms: number) {
-  return `${(ms / 1000).toFixed(1)}s`;
+function formatDuration(ms: unknown) {
+  const num = Number(ms);
+  if (!Number.isFinite(num) || num < 0) return '0.0s';
+  return `${(num / 1000).toFixed(1)}s`;
 }
 
-function formatTime(date: Date) {
-  return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+function formatTime(date: unknown) {
+  try {
+    if (!date) return '';
+    const d = date instanceof Date ? date : new Date(date as any);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  } catch {
+    return '';
+  }
 }
 
 export function AutoConnectModal() {
@@ -100,50 +111,85 @@ export function AutoConnectModal() {
   const wasRunningRef = useRef(false);
 
   // Estados locais para credenciais
-  const [username, setUsername] = useState(() => getUsername() || '');
-  const [password, setPassword] = useState(() => getPassword() || '');
-  const [uuid, setUuid] = useState(() => getUUID() || '');
+  const [username, setUsername] = useState(() => {
+    try {
+      return getUsername() || '';
+    } catch {
+      return '';
+    }
+  });
+  const [password, setPassword] = useState(() => {
+    try {
+      return getPassword() || '';
+    } catch {
+      return '';
+    }
+  });
+  const [uuid, setUuid] = useState(() => {
+    try {
+      return getUUID() || '';
+    } catch {
+      return '';
+    }
+  });
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  const allCategories = useMemo(() => getAllConfigs(), [open]);
+  const allCategories = useMemo(() => {
+    try {
+      const res = getAllConfigs();
+      return Array.isArray(res) ? res : [];
+    } catch {
+      return [];
+    }
+  }, [open]);
 
   const {
     countries: availableCountries,
     hasOtherWithoutFlag,
     totalConfigs: totalConfigsCount,
   } = useMemo(() => {
-    return getAvailableCountries(allCategories);
+    try {
+      return getAvailableCountries(allCategories);
+    } catch {
+      return { countries: [], hasOtherWithoutFlag: false, totalCategories: 0, totalConfigs: 0 };
+    }
   }, [allCategories]);
 
   // Região ativa (auto-detectada com base no país do app/WebView ou salva)
   const activeCountry = useMemo(() => {
-    if (autoConnectConfig.selectedCountry) {
-      return autoConnectConfig.selectedCountry;
+    try {
+      if (autoConnectConfig?.selectedCountry) {
+        return autoConnectConfig.selectedCountry;
+      }
+      if (currentI18nCountry && availableCountries.some((c) => c?.code === currentI18nCountry)) {
+        return currentI18nCountry;
+      }
+      const initial = determineInitialCountry(availableCountries, hasOtherWithoutFlag);
+      return initial || 'all';
+    } catch {
+      return 'all';
     }
-    if (currentI18nCountry && availableCountries.some((c) => c.code === currentI18nCountry)) {
-      return currentI18nCountry;
-    }
-    const initial = determineInitialCountry(availableCountries, hasOtherWithoutFlag);
-    return initial || 'all';
-  }, [autoConnectConfig.selectedCountry, currentI18nCountry, availableCountries, hasOtherWithoutFlag]);
+  }, [autoConnectConfig?.selectedCountry, currentI18nCountry, availableCountries, hasOtherWithoutFlag]);
 
   const activeCountryObj = useMemo(() => {
     if (activeCountry === 'all' || !activeCountry) return null;
-    return availableCountries.find((c) => c.code === activeCountry) || null;
+    return availableCountries.find((c) => c?.code === activeCountry) || null;
   }, [activeCountry, availableCountries]);
 
   const activeCountryDisplayName = useMemo(() => {
     if (!activeCountryObj) {
       return activeCountry === 'OTHER' ? (t('countryFilter.other') || 'Outros') : (t('autoConnect.allRegions') || 'Todas as Regiões');
     }
-    return `${activeCountryObj.flag} ${activeCountryObj.name}`;
+    return `${activeCountryObj.flag || '🌐'} ${activeCountryObj.name || activeCountry}`;
   }, [activeCountryObj, activeCountry, t]);
 
   const visibleCategories = useMemo(() => {
+    if (!Array.isArray(allCategories)) return [];
     if (!activeCountry || activeCountry === 'all') {
       return allCategories;
     }
     return allCategories.filter((cat) => {
+      if (!cat) return false;
       const extracted = extractCountryFromText(cat.name);
       if (activeCountry === 'OTHER') {
         return !extracted;
@@ -153,35 +199,177 @@ export function AutoConnectModal() {
   }, [allCategories, activeCountry]);
 
   const filteredConfigs = useMemo(() => {
-    const flat = allCategories.flatMap((cat) =>
-      cat.items.map((item) => ({ ...item, category_id: cat.id, categoryName: cat.name }))
-    );
-    return filterConfigsForAutoConnect(flat, {
-      ...autoConnectConfig,
-      selectedCountry: activeCountry,
-    }, allCategories);
+    try {
+      const flat = (allCategories || []).flatMap((cat) =>
+        Array.isArray(cat?.items)
+          ? cat.items
+              .filter((item): item is ConfigItem => Boolean(item && typeof item === 'object'))
+              .map((item) => ({ ...item, category_id: cat.id, categoryName: cat.name }))
+          : []
+      );
+      return filterConfigsForAutoConnect(flat, {
+        ...(autoConnectConfig || DEFAULT_AUTO_CONNECT_CONFIG),
+        selectedCountry: activeCountry,
+      }, allCategories);
+    } catch (e) {
+      console.error('Error filtering configs in modal:', e);
+      return [];
+    }
   }, [allCategories, autoConnectConfig, activeCountry]);
 
   const filteredCount = filteredConfigs.length;
 
   const requiredCredentials = useMemo(() => {
-    return getAutoConnectCredentialFields(filteredConfigs);
+    try {
+      return getAutoConnectCredentialFields(filteredConfigs);
+    } catch {
+      return { username: false, password: false, uuid: false };
+    }
   }, [filteredConfigs]);
+
+  const updateConfig = useCallback((updates: Partial<AutoConnectConfig>) => {
+    if (running) return;
+    setValidationError(null);
+    setAutoConnectConfig({ ...(autoConnectConfig || DEFAULT_AUTO_CONNECT_CONFIG), ...updates });
+  }, [running, autoConnectConfig, setAutoConnectConfig]);
+
+  const handleCountryChange = useCallback((countryCode: string) => {
+    if (running) return;
+    try {
+      vibrate(20);
+    } catch {
+      /* ignore */
+    }
+    updateConfig({
+      selectedCountry: countryCode,
+      selectedCategories: [], // Limpa filtros manuais de categoria para testar toda a região escolhida
+    });
+  }, [running, updateConfig]);
+
+  const toggleCategory = useCallback((categoryId: number) => {
+    if (running) return;
+    setValidationError(null);
+    const current = Array.isArray(autoConnectConfig?.selectedCategories)
+      ? autoConnectConfig.selectedCategories
+      : [];
+    const updated = current.includes(categoryId)
+      ? current.filter((id) => id !== categoryId)
+      : [...current, categoryId];
+    updateConfig({ selectedCategories: updated });
+  }, [running, autoConnectConfig?.selectedCategories, updateConfig]);
+
+  const handleUsernameChange = useCallback((val: string) => {
+    setUsername(val);
+    try {
+      setUsernameApp(val);
+    } catch {
+      /* ignore */
+    }
+    setValidationError(null);
+  }, []);
+
+  const handlePasswordChange = useCallback((val: string) => {
+    setPassword(val);
+    try {
+      setPasswordApp(val);
+    } catch {
+      /* ignore */
+    }
+    setValidationError(null);
+  }, []);
+
+  const handleUuidChange = useCallback((val: string) => {
+    setUuid(val);
+    try {
+      setUUIDApp(val);
+    } catch {
+      /* ignore */
+    }
+    setValidationError(null);
+  }, []);
+
+  const validateCredentials = useCallback((): boolean => {
+    if (requiredCredentials.username && !username.trim()) {
+      setValidationError('Informe o Usuário para testar as configurações SSH.');
+      return false;
+    }
+    if (requiredCredentials.password && !password.trim()) {
+      setValidationError('Informe a Senha para testar as configurações SSH.');
+      return false;
+    }
+    if (requiredCredentials.uuid && !uuid.trim()) {
+      setValidationError('Informe o UUID V2Ray para testar as configurações V2Ray.');
+      return false;
+    }
+    setValidationError(null);
+    return true;
+  }, [requiredCredentials, username, password, uuid]);
+
+  const handleContinue = useCallback(() => {
+    if (filteredCount === 0) return;
+    if (!validateCredentials()) return;
+    setStep('confirm');
+  }, [filteredCount, validateCredentials]);
+
+  const selectedCategoryNames = useMemo(() => {
+    const selected = autoConnectConfig?.selectedCategories;
+    if (!Array.isArray(selected) || selected.length === 0) {
+      return activeCountry !== 'all'
+        ? `${t('autoConnect.allCategories')} (${activeCountryDisplayName})`
+        : t('autoConnect.allCategories');
+    }
+    return (
+      (allCategories || [])
+        .filter((c) => c && selected.includes(c.id))
+        .map((c) => c.name)
+        .join(', ') || t('autoConnect.allCategories')
+    );
+  }, [autoConnectConfig?.selectedCategories, allCategories, activeCountry, activeCountryDisplayName, t]);
+
+  const title =
+    step === 'setup'
+      ? (t('autoConnect.modalTitle') || 'Filtros e Acesso')
+      : step === 'confirm'
+        ? (t('autoConnect.confirmTitle') || 'Confirmar Teste')
+        : step === 'run'
+          ? `Testando ${tested}/${total}`
+          : success
+            ? 'Pronto'
+            : 'Resultado';
+
+  const handleStart = useCallback(() => {
+    if (!validateCredentials()) {
+      setStep('setup');
+      return;
+    }
+    try {
+      if (requiredCredentials.uuid && uuid.trim()) setUUIDApp(uuid.trim());
+      if (requiredCredentials.username && username.trim()) setUsernameApp(username.trim());
+      if (requiredCredentials.password && password.trim()) setPasswordApp(password.trim());
+    } catch {
+      /* ignore */
+    }
+    startAutoConnect({ selectedCountry: activeCountry });
+  }, [validateCredentials, requiredCredentials, uuid, username, password, startAutoConnect, activeCountry]);
 
   // Recarrega credenciais e sincroniza país inicial ao abrir o modal
   useEffect(() => {
     if (open) {
-      setUsername(getUsername() || '');
-      setPassword(getPassword() || '');
-      setUuid(getUUID() || '');
+      try {
+        setUsername(getUsername() || '');
+        setPassword(getPassword() || '');
+        setUuid(getUUID() || '');
+      } catch {
+        /* ignore */
+      }
       setValidationError(null);
       setStep(running ? 'run' : 'setup');
 
-      if (!autoConnectConfig.selectedCountry) {
+      if (!autoConnectConfig?.selectedCountry) {
         updateConfig({ selectedCountry: activeCountry });
       }
     }
-  }, [open, running]);
+  }, [open, running, activeCountry, autoConnectConfig?.selectedCountry, updateConfig]);
 
   useEffect(() => {
     if (running) {
@@ -197,116 +385,18 @@ export function AutoConnectModal() {
 
   useEffect(() => {
     if (step !== 'run') return;
-    logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    try {
+      logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    } catch {
+      try {
+        logsEndRef.current?.scrollIntoView();
+      } catch {
+        /* ignore */
+      }
+    }
   }, [logs, step]);
 
   if (!open) return null;
-
-  const updateConfig = (updates: Partial<AutoConnectConfig>) => {
-    if (running) return;
-    setValidationError(null);
-    setAutoConnectConfig({ ...autoConnectConfig, ...updates });
-  };
-
-  const handleCountryChange = (countryCode: string) => {
-    if (running) return;
-    try {
-      vibrate(20);
-    } catch {
-      /* ignore */
-    }
-    updateConfig({
-      selectedCountry: countryCode,
-      selectedCategories: [], // Limpa filtros manuais de categoria para testar toda a região escolhida
-    });
-  };
-
-  const toggleCategory = (categoryId: number) => {
-    if (running) return;
-    setValidationError(null);
-    const current = autoConnectConfig.selectedCategories;
-    const updated = current.includes(categoryId)
-      ? current.filter((id) => id !== categoryId)
-      : [...current, categoryId];
-    updateConfig({ selectedCategories: updated });
-  };
-
-  const handleUsernameChange = (val: string) => {
-    setUsername(val);
-    setUsernameApp(val);
-    setValidationError(null);
-  };
-
-  const handlePasswordChange = (val: string) => {
-    setPassword(val);
-    setPasswordApp(val);
-    setValidationError(null);
-  };
-
-  const handleUuidChange = (val: string) => {
-    setUuid(val);
-    setUUIDApp(val);
-    setValidationError(null);
-  };
-
-  const validateCredentials = (): boolean => {
-    if (requiredCredentials.username && !username.trim()) {
-      setValidationError('Informe o Usuário para testar as configurações SSH.');
-      return false;
-    }
-    if (requiredCredentials.password && !password.trim()) {
-      setValidationError('Informe a Senha para testar as configurações SSH.');
-      return false;
-    }
-    if (requiredCredentials.uuid && !uuid.trim()) {
-      setValidationError('Informe o UUID V2Ray para testar as configurações V2Ray.');
-      return false;
-    }
-    setValidationError(null);
-    return true;
-  };
-
-  const handleContinue = () => {
-    if (filteredCount === 0) return;
-    if (!validateCredentials()) return;
-    setStep('confirm');
-  };
-
-  const selectedCategoryNames = useMemo(() => {
-    if (autoConnectConfig.selectedCategories.length === 0) {
-      return activeCountry !== 'all'
-        ? `${t('autoConnect.allCategories')} (${activeCountryDisplayName})`
-        : t('autoConnect.allCategories');
-    }
-    return (
-      allCategories
-        .filter((c) => autoConnectConfig.selectedCategories.includes(c.id))
-        .map((c) => c.name)
-        .join(', ') || t('autoConnect.allCategories')
-    );
-  }, [autoConnectConfig.selectedCategories, allCategories, activeCountry, activeCountryDisplayName, t]);
-
-  const title =
-    step === 'setup'
-      ? (t('autoConnect.modalTitle') || 'Filtros e Acesso')
-      : step === 'confirm'
-        ? (t('autoConnect.confirmTitle') || 'Confirmar Teste')
-        : step === 'run'
-          ? `Testando ${tested}/${total}`
-          : success
-            ? 'Pronto'
-            : 'Resultado';
-
-  const handleStart = () => {
-    if (!validateCredentials()) {
-      setStep('setup');
-      return;
-    }
-    if (requiredCredentials.uuid && uuid.trim()) setUUIDApp(uuid.trim());
-    if (requiredCredentials.username && username.trim()) setUsernameApp(username.trim());
-    if (requiredCredentials.password && password.trim()) setPasswordApp(password.trim());
-    startAutoConnect({ selectedCountry: activeCountry });
-  };
 
   return (
     <Modal onClose={closeModal} title={title} icon={Zap}>
@@ -626,8 +716,8 @@ function SetupStep({
           onClick={() => updateConfig({ selectedCategories: [] })}
           className={`w-full min-h-[44px] mb-2 px-3 rounded-xl text-left text-sm font-semibold touch-manipulation transition-all flex items-center justify-between`}
           style={{
-            background: autoConnectConfig.selectedCategories.length === 0 ? 'var(--accent)' : 'var(--bg-elevated)',
-            color: autoConnectConfig.selectedCategories.length === 0 ? '#ffffff' : 'var(--text)',
+            background: (autoConnectConfig?.selectedCategories || []).length === 0 ? 'var(--accent)' : 'var(--bg-elevated)',
+            color: (autoConnectConfig?.selectedCategories || []).length === 0 ? '#ffffff' : 'var(--text)',
             border: '1px solid var(--border)',
           }}
         >
@@ -637,7 +727,7 @@ function SetupStep({
               : t('autoConnect.allCategories')}
           </span>
           <span className="text-xs opacity-80">
-            {visibleCategories.reduce((acc, cat) => acc + cat.items.length, 0)} configs
+            {visibleCategories.reduce((acc, cat) => acc + (Array.isArray(cat?.items) ? cat.items.length : 0), 0)} configs
           </span>
         </button>
 
@@ -648,8 +738,9 @@ function SetupStep({
         ) : (
           <div className="space-y-1.5 max-h-40 overflow-y-auto custom-scrollbar">
             {visibleCategories.map((category) => {
-              const selected = autoConnectConfig.selectedCategories.includes(category.id);
-              const count = category.items.length;
+              if (!category) return null;
+              const selected = Array.isArray(autoConnectConfig?.selectedCategories) && autoConnectConfig.selectedCategories.includes(category.id);
+              const count = Array.isArray(category?.items) ? category.items.length : 0;
               return (
                 <button
                   key={category.id}
@@ -1024,7 +1115,8 @@ function RunStep({
 }
 
 function LogLine({ log }: { log: TestLog }) {
-  const sanitizedMessage = sanitizeLogHtml(log.message);
+  if (!log) return null;
+  const sanitizedMessage = sanitizeLogHtml(log.message || '');
   const prefix = log.configName ? `<strong style="color: var(--text)" class="font-semibold">${log.configName}: </strong>` : '';
 
   return (

@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import {
   Settings, Download,
   Wifi, Battery, Network, Book, Globe, Bug,
-  RefreshCw, /* DollarSign, */ Share2, CalendarClock, BriefcaseBusiness, Search, Zap, Phone, Key, Bell, X
+  RefreshCw, /* DollarSign, */ Share2, CalendarClock, BriefcaseBusiness, Search, Zap, Phone, Key, Bell
 } from '../../utils/icons';
 import {
   checkForUpdates,
@@ -85,18 +85,32 @@ export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
   }, []);
 
   const closeMenu = useCallback((event?: React.SyntheticEvent) => {
-    event?.stopPropagation();
-    resetMenuScroll();
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      if ('blur' in event.currentTarget) {
+        (event.currentTarget as HTMLElement).blur();
+      }
+    }
+    try {
+      vibrate(20);
+    } catch {
+      /* ignore */
+    }
     onClose();
-  }, [onClose, resetMenuScroll]);
+  }, [onClose]);
 
   useEffect(() => {
     if (isOpen) {
       setMobileSettledClosed(false);
       return;
     }
-    resetMenuScroll();
-    const id = window.setTimeout(() => setMobileSettledClosed(true), 320);
+    // Aguarda a animação de saída (300ms) terminar antes de ocultar e resetar o scroll
+    // Evita travamento no Android WebView e previne pulos visuais bruscos
+    const id = window.setTimeout(() => {
+      setMobileSettledClosed(true);
+      resetMenuScroll();
+    }, 320);
     return () => window.clearTimeout(id);
   }, [isOpen, resetMenuScroll]);
 
@@ -171,12 +185,15 @@ export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
 
   return (
     <>
-      {/* Backdrop — só no mobile (< lg) */}
-      {isOpen && (
+      {/* Backdrop com transição suave — só no mobile (< lg) */}
+      {(!mobileSettledClosed || isOpen) && (
         <div 
-          className="fixed inset-0 z-40 lg:hidden"
-          style={{ background: 'rgba(0,0,0,0.55)' }}
+          className={`fixed inset-0 z-40 lg:hidden transition-opacity duration-300 ease-out ${
+            isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          }`}
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
           onClick={closeMenu}
+          aria-hidden="true"
         />
       )}
 
@@ -199,25 +216,16 @@ export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
       >
         <div className="flex flex-col h-full min-h-0">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 lg:p-6 flex-shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
-            <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center p-4 lg:p-6 flex-shrink-0" style={{ borderBottom: '1px solid var(--border)' }}>
+            <div className="flex items-center gap-3 min-w-0 flex-1">
               <div className="w-10 h-10 lg:w-12 lg:h-12 2xl:w-14 2xl:h-14 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'var(--accent)' }}>
                 <Settings className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9 text-white" />
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <span className="font-medium text-sm lg:text-base 2xl:text-lg block truncate" style={{ color: 'var(--text)' }}>SSH T PROJECT</span>
                 <span className="text-sm lg:text-base block truncate" style={{ color: 'var(--text-muted)' }}>{t('sidebar.settings')}</span>
               </div>
             </div>
-            <button
-              onClick={closeMenu}
-              type="button"
-              className="lg:hidden min-w-[44px] min-h-[44px] lg:min-w-[48px] lg:min-h-[48px] 2xl:min-w-[56px] 2xl:min-h-[56px] flex items-center justify-center rounded-xl flex-shrink-0 touch-manipulation transition-opacity active:opacity-70"
-              style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-              aria-label={t('common.close')}
-            >
-              <X className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" style={{ color: 'var(--text)' }} strokeWidth={2.5} />
-            </button>
           </div>
 
           {/* Menu Items com novas categorias */}
@@ -245,17 +253,17 @@ export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
                       type="button"
                       onClick={() => handleLanguageSelect(item.locale, item.country)}
                       className={`
-                        flex flex-col items-center justify-center py-2 px-1.5 rounded-xl border text-center transition-all duration-200 touch-manipulation
+                        flex flex-col items-center justify-center py-2 px-1.5 rounded-xl border text-center transition-colors duration-150 touch-manipulation active:scale-95
                         ${
                           isSelected
-                            ? 'border-[var(--accent)] bg-[var(--accent-dim)] shadow-sm'
-                            : 'border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)] opacity-85 hover:opacity-100'
+                            ? 'border-[var(--accent)] bg-[var(--accent-dim)]'
+                            : 'border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-hover)]'
                         }
                       `}
                       aria-pressed={isSelected}
                       aria-label={item.name}
                     >
-                      <span className="text-xl sm:text-2xl mb-1 leading-none drop-shadow-sm">{item.flag}</span>
+                      <span className="text-xl sm:text-2xl mb-1 leading-none select-none">{item.flag}</span>
                       <span
                         className="text-xs font-semibold leading-tight truncate w-full"
                         style={{ color: isSelected ? 'var(--accent)' : 'var(--text)' }}
@@ -263,7 +271,7 @@ export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
                         {item.name}
                       </span>
                       <span
-                        className="text-[10px] leading-none mt-0.5 truncate w-full opacity-80"
+                        className="text-[10px] leading-none mt-0.5 truncate w-full"
                         style={{ color: 'var(--text-muted)' }}
                       >
                         {item.sub}
@@ -356,10 +364,11 @@ interface MenuItemProps {
 function MenuItem({ icon, label, onClick, className = '', iconClassName = '', badge, badgeText }: MenuItemProps) {
   return (
     <button
+      type="button"
       onClick={onClick}
       className={`
         w-full flex items-center gap-3 lg:gap-4 3xl:gap-5 px-4 lg:px-6 3xl:px-8 min-h-[44px] lg:min-h-[48px] 2xl:min-h-[56px] 3xl:min-h-[64px] rounded-xl
-        touch-manipulation
+        touch-manipulation transition-colors duration-150 active:opacity-75 cursor-pointer
         ${className}
       `}
       style={{ color: 'var(--text-muted)' }}

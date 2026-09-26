@@ -261,18 +261,36 @@ export function useAutoConnect() {
     logCountRef.current = getVpnLogs().length;
 
     const allConfigCategories = getAllConfigs();
-    const allConfigs: ConfigItem[] = allConfigCategories.flatMap((category) =>
-      category.items.map((item) => ({
-        ...item,
-        category_id: category.id,
-        categoryName: category.name,
-        categoryColor: category.color,
-      }))
+    const allConfigs: ConfigItem[] = (allConfigCategories || []).flatMap((category) =>
+      Array.isArray(category?.items)
+        ? category.items
+            .filter((item): item is ConfigItem => Boolean(item && typeof item === 'object'))
+            .map((item) => ({
+              ...item,
+              category_id: category.id,
+              categoryName: category.name,
+              categoryColor: category.color,
+            }))
+        : []
     );
 
     const filteredConfigs = filterConfigsForAutoConnect(allConfigs, runConfig, allConfigCategories);
     setTotal(filteredConfigs.length);
     setTested(0);
+
+    if (filteredConfigs.length === 0) {
+      setError('Nenhuma configuração encontrada para os filtros selecionados.');
+      pushLog({
+        source: 'test',
+        configName: 'Sistema',
+        status: 'failed',
+        message: 'Nenhuma configuração encontrada para os filtros selecionados.',
+      });
+      setRunning(false);
+      setPhase(null);
+      stopDurationTimer();
+      return;
+    }
 
     const regionText = runConfig.selectedCountry && runConfig.selectedCountry !== 'all'
       ? ` [Região: ${runConfig.selectedCountry}]`

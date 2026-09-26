@@ -86,6 +86,11 @@ export {
   // Tecnologia e desenvolvimento
   GitFork,
   Smartphone,
+  Monitor,
+  Tv,
+  Radio,
+  ExternalLink,
+  QrCode,
   Plane,
   PlaneLanding,
   Bug,

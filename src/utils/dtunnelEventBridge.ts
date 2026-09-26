@@ -32,11 +32,13 @@ const SDK_EVENTS = [
   'showErrorToast',
   'notification',
   'localIp',
+  'localIpv6',
   'networkName',
   'pingResult',
   'checkingAppUpdate',
   'airplaneState',
   'hotSpotState',
+  'hotSpotInfo',
   'reloadRequest',
 ];
 

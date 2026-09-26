@@ -132,6 +132,8 @@ export interface TranslationSchema {
     configsLabel: string;
   };
   autoConnect: {
+    modalTitle: string;
+    confirmTitle: string;
     regionFilter: string;
     allRegions: string;
     categoriesFilter: string;

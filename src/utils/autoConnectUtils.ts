@@ -54,15 +54,18 @@ export function filterConfigsForAutoConnect<
   autoConnectConfig: AutoConnectConfig,
   categories?: { id: number; name: string }[]
 ): T[] {
-  let filtered = configs;
+  if (!Array.isArray(configs)) return [];
+  let filtered = configs.filter((c): c is T => Boolean(c && typeof c === 'object'));
 
   // Filtro por Região / País
-  if (autoConnectConfig.selectedCountry && autoConnectConfig.selectedCountry !== 'all') {
-    const cats = categories || getAllConfigs();
+  if (autoConnectConfig?.selectedCountry && autoConnectConfig.selectedCountry !== 'all') {
+    const rawCats = Array.isArray(categories) ? categories : getAllConfigs();
+    const cats = Array.isArray(rawCats) ? rawCats : [];
     const targetCountry = autoConnectConfig.selectedCountry;
     const allowedCategoryIds = new Set(
       cats
         .filter((cat) => {
+          if (!cat) return false;
           const extracted = extractCountryFromText(cat.name);
           if (targetCountry === 'OTHER') {
             return !extracted;
@@ -87,14 +90,14 @@ export function filterConfigsForAutoConnect<
   }
 
   // Filtro por Categorias selecionadas
-  if (autoConnectConfig.selectedCategories.length > 0) {
+  if (Array.isArray(autoConnectConfig?.selectedCategories) && autoConnectConfig.selectedCategories.length > 0) {
     filtered = filtered.filter((config) =>
       autoConnectConfig.selectedCategories.includes(config.category_id ?? config.categoryId ?? -1)
     );
   }
 
   // Filtro por Tipo de configuração (SSH / V2Ray)
-  if (autoConnectConfig.configType !== 'all') {
+  if (autoConnectConfig?.configType && autoConnectConfig.configType !== 'all') {
     filtered = filtered.filter((config) => matchesConfigType(config.mode, autoConnectConfig.configType));
   }
 
@@ -153,23 +156,33 @@ export async function autoConnectTest({
   onPhase?: (phase: AutoConnectPhase, configName: string) => void;
   autoConnectConfig?: AutoConnectConfig;
 }): Promise<boolean> {
-  const filteredConfigs = filterConfigsForAutoConnect(configs, autoConnectConfig);
+  const filteredConfigs = filterConfigsForAutoConnect(configs || [], autoConnectConfig);
+
+  if (filteredConfigs.length === 0) {
+    setSuccess(null);
+    return false;
+  }
 
   for (let i = 0; i < filteredConfigs.length; i++) {
     if (cancelRef.current.cancelled) return false;
     const config = filteredConfigs[i];
-    onPhase?.('select', config.name);
-    setCurrentName(config.name);
+    if (!config) continue;
+    const configName = config.name || `Config ${i + 1}`;
+
+    onPhase?.('select', configName);
+    setCurrentName(configName);
     setTested(i + 1);
 
-    setActiveConfig(config.id);
+    if (config.id != null) {
+      setActiveConfig(config.id);
+    }
     setActiveConfigState(config);
 
     try {
-      onPhase?.('connecting', config.name);
+      onPhase?.('connecting', configName);
       startConnection();
 
-      onPhase?.('wait_vpn', config.name);
+      onPhase?.('wait_vpn', configName);
       const connected = await waitForConnectionState(
         'CONNECTED',
         autoConnectConfig.connectionTimeout,
@@ -179,30 +192,37 @@ export async function autoConnectTest({
       if (cancelRef.current.cancelled) return false;
 
       if (connected) {
-        onPhase?.('check_internet', config.name);
+        onPhase?.('check_internet', configName);
         const internetOk = await testInternet(autoConnectConfig.fetchTimeout);
         if (cancelRef.current.cancelled) return false;
 
         if (internetOk) {
-          setActiveConfig(config.id);
-          setSuccess(config.name);
+          if (config.id != null) {
+            setActiveConfig(config.id);
+          }
+          setSuccess(configName);
           setSelectedCategory(null);
-          onTestResult?.(config.name, true, 'Conexão bem-sucedida com internet');
+          onTestResult?.(configName, true, 'Conexão bem-sucedida com internet');
           return true;
         } else {
-          onTestResult?.(config.name, false, 'VPN conectou, mas sem acesso à internet');
+          onTestResult?.(configName, false, 'VPN conectou, mas sem acesso à internet');
         }
       } else {
-        onTestResult?.(config.name, false, 'Timeout aguardando estado CONNECTED');
+        onTestResult?.(configName, false, 'Timeout aguardando estado CONNECTED');
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Erro desconhecido';
-      onTestResult?.(config.name, false, errorMsg);
+      onTestResult?.(configName, false, errorMsg);
     }
 
-    stopConnection();
+    try {
+      stopConnection();
+    } catch {
+      /* ignore */
+    }
+
     if (i < filteredConfigs.length - 1) {
-      onPhase?.('next', config.name);
+      onPhase?.('next', configName);
     }
   }
 

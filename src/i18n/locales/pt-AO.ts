@@ -132,6 +132,8 @@ export const ptAO: TranslationSchema = {
     configsLabel: 'configs',
   },
   autoConnect: {
+    modalTitle: 'Filtros e Acesso',
+    confirmTitle: 'Confirmar Teste',
     regionFilter: 'Região / País',
     allRegions: 'Todas as Regiões',
     categoriesFilter: 'Categorias',

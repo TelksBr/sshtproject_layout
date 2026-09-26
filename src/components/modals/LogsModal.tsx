@@ -328,6 +328,9 @@ export function LogsModal({ onClose, initialTab = 'vpn', enableDebug }: LogsModa
                 <div className="p-2 rounded-lg bg-[var(--bg-elevated)] flex flex-col gap-0.5" style={{ border: '1px solid var(--border)' }}>
                   <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>IP Local</span>
                   <span className="font-mono font-bold truncate" style={{ color: 'var(--text)' }}>{snapshot.main.localIp ?? 'N/A'}</span>
+                  {snapshot.main.localIpv6 ? (
+                    <span className="font-mono text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>{snapshot.main.localIpv6}</span>
+                  ) : null}
                 </div>
               </div>
             </div>

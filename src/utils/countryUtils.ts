@@ -149,8 +149,17 @@ export function getAvailableCountries(categories: ConfigCategory[]): {
   let totalCategories = 0;
   let totalConfigs = 0;
 
+  if (!Array.isArray(categories)) {
+    return {
+      countries: [],
+      hasOtherWithoutFlag: false,
+      totalCategories: 0,
+      totalConfigs: 0,
+    };
+  }
+
   for (const category of categories) {
-    if (!category.items || category.items.length === 0) continue;
+    if (!category || !Array.isArray(category.items) || category.items.length === 0) continue;
 
     totalCategories++;
     const itemCount = category.items.length;
@@ -222,7 +231,7 @@ export function determineInitialCountry(
   availableCountries: AvailableCountry[],
   hasOtherWithoutFlag = false
 ): string {
-  if (availableCountries.length === 0) {
+  if (!Array.isArray(availableCountries) || availableCountries.length === 0) {
     return 'all';
   }
 
@@ -231,7 +240,7 @@ export function determineInitialCountry(
   if (saved) {
     if (saved === 'all') return 'all';
     if (saved === 'OTHER' && hasOtherWithoutFlag) return 'OTHER';
-    if (availableCountries.some((c) => c.code === saved)) {
+    if (availableCountries.some((c) => c?.code === saved)) {
       return saved;
     }
   }
@@ -239,7 +248,7 @@ export function determineInitialCountry(
   // 2. Pré-filtra com base no locale do WebView
   const webViewCountry = getWebViewLocaleCountry();
   if (webViewCountry) {
-    const match = availableCountries.find((c) => c.code === webViewCountry);
+    const match = availableCountries.find((c) => c?.code === webViewCountry);
     if (match) {
       return match.code;
     }

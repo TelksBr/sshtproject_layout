@@ -81,8 +81,10 @@ export function ServerSelector() {
     const nextState = !homeEnabled;
     setHomeEnabled(nextState);
     if (nextState) {
-      const allConfigs = configs.flatMap((category) => category.items);
-      const hasV2Ray = allConfigs.some((config) => configRequiresField(config, 'uuid'));
+      const allConfigs = (configs || []).flatMap((category) =>
+        Array.isArray(category?.items) ? category.items : []
+      );
+      const hasV2Ray = allConfigs.some((config) => config && configRequiresField(config, 'uuid'));
       const currentUuid = getUUID() || '';
       if (hasV2Ray && !currentUuid.trim()) {
         showToast('Preencha seu UUID V2Ray no formulário para incluir servidores V2Ray no teste', 'info');

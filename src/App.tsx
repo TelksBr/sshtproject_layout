@@ -25,6 +25,7 @@ import { usePurchaseNotifications } from './hooks/usePurchaseNotifications';
 import { useViewportHeight } from './hooks/useViewportHeight';
 import PaymentApprovedNotification from './components/modals/PaymentApprovedNotification';
 import { LogsModal } from './components/modals/LogsModal';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 export type ModalType = 'buy' | 'recovery' | 'tutorials' | 'support' | 'speedtest' | 'terms' | 'privacy' | 'checkuser' | 'cleandata' | 'hotspot' | 'services' | 'ipfinder' | 'faq' | 'testgenerate' | 'renewal' | 'credentials' | 'dns' | null;
 
@@ -34,7 +35,7 @@ function App() {
   const [showDebugLogs, setShowDebugLogs] = useState(false);
   
   // 🚀 OTIMIZAÇÃO: Hook global que substitui todos os pollings
-  const { vpnState, localIP } = useGlobalPolling();
+  const { vpnState, localIP, localIPv6 } = useGlobalPolling();
   
   // 📐 VIEWPORT: Sync --vh com viewport visual (teclado Android)
   useViewportHeight();
@@ -169,7 +170,7 @@ function App() {
                 <Header 
                   onMenuClick={handleMenuClick}
                   localIP={localIP}
-                  vpnState={vpnState}
+                  localIPv6={localIPv6}
                   onOpenDebug={() => setShowDebugLogs(true)}
                 />
 
@@ -182,7 +183,9 @@ function App() {
           </section>
 
           {getModal(currentModal, setCurrentModal)}
-          <AutoConnectModal />
+          <ErrorBoundary fallbackTitle="Auto Conect">
+            <AutoConnectModal />
+          </ErrorBoundary>
           <SdkCheckUserModal />
           <PlayStoreReviewHost vpnState={vpnState} blockingModal={currentModal} />
           <ToastContainer />

@@ -1,11 +1,18 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { 
   getConnectionState, 
-  getLocalIP, 
+  getLocalIPs, 
   getDownloadBytes, 
   getUploadBytes 
 } from '../utils/appFunctions';
-import { getHotspotStatus, startHotspot, stopHotspot } from '../utils/hotspotUtils';
+import {
+  getHotspotStatus,
+  startHotspot,
+  stopHotspot,
+  getHotspotInfo,
+  getResolvedHotspotInfo,
+  type VTunnelHotSpotInfo,
+} from '../utils/hotspotUtils';
 import { useDTunnelEvent } from './useDTunnelEvent';
 import { debounce, throttle } from '../utils/performanceUtils';
 import { VpnState } from '../types/vpn';
@@ -13,6 +20,7 @@ import { VpnState } from '../types/vpn';
 interface GlobalPollingState {
   vpnState: VpnState;
   localIP: string;
+  localIPv6: string;
   networkStats: {
     downloadSpeed: string;
     uploadSpeed: string;
@@ -22,6 +30,7 @@ interface GlobalPollingState {
     formattedTotalUploaded: string;
   };
   hotspotState: 'RUNNING' | 'STOPPED';
+  hotspotInfo: VTunnelHotSpotInfo | null;
   lastUpdate: number;
 }
 
@@ -29,6 +38,7 @@ interface GlobalPollingState {
 let globalState: GlobalPollingState = {
   vpnState: 'DISCONNECTED',
   localIP: '0.0.0.0',
+  localIPv6: '',
   networkStats: {
     downloadSpeed: '0 KB/s',
     uploadSpeed: '0 KB/s',
@@ -38,6 +48,7 @@ let globalState: GlobalPollingState = {
     formattedTotalUploaded: '0 KB'
   },
   hotspotState: 'STOPPED',
+  hotspotInfo: null,
   lastUpdate: Date.now()
 };
 let globalStateInitialized = false;
@@ -69,9 +80,11 @@ function createInitialGlobalState(): GlobalPollingState {
 
   let vpnState: VpnState = 'DISCONNECTED';
   let localIP = '0.0.0.0';
+  let localIPv6 = '';
   let downloadBytes = 0;
   let uploadBytes = 0;
   let hotspotState: 'RUNNING' | 'STOPPED' = 'STOPPED';
+  let hotspotInfo: VTunnelHotSpotInfo | null = null;
 
   try {
     const s = getConnectionState() as VpnState | null;
@@ -83,10 +96,9 @@ function createInitialGlobalState(): GlobalPollingState {
   }
 
   try {
-    const ip = getLocalIP();
-    if (ip) {
-      localIP = ip;
-    }
+    const ips = getLocalIPs();
+    if (ips.ipv4) localIP = ips.ipv4;
+    if (ips.ipv6) localIPv6 = ips.ipv6;
   } catch {
     // mantém 0.0.0.0
   }
@@ -113,6 +125,7 @@ function createInitialGlobalState(): GlobalPollingState {
     const status = getHotspotStatus();
     if (status === 'RUNNING') {
       hotspotState = 'RUNNING';
+      hotspotInfo = getHotspotInfo() || getResolvedHotspotInfo();
     }
   } catch {
     // mantém STOPPED
@@ -121,6 +134,7 @@ function createInitialGlobalState(): GlobalPollingState {
   return {
     vpnState,
     localIP,
+    localIPv6,
     networkStats: {
       downloadSpeed: '0 KB/s',
       uploadSpeed: '0 KB/s',
@@ -130,6 +144,7 @@ function createInitialGlobalState(): GlobalPollingState {
       formattedTotalUploaded: formatBytes(uploadBytes)
     },
     hotspotState,
+    hotspotInfo,
     lastUpdate: now
   };
 }
@@ -163,9 +178,11 @@ const updateGlobalStateImmediate = () => {
   // Valores baseados no estado anterior (fallback seguro)
   let vpnState: VpnState = previous.vpnState;
   let localIP: string = previous.localIP;
+  let localIPv6: string = previous.localIPv6;
   let downloadBytes: number = previous.networkStats.totalDownloaded;
   let uploadBytes: number = previous.networkStats.totalUploaded;
   let hotspotState: 'RUNNING' | 'STOPPED' = previous.hotspotState;
+  let hotspotInfo: VTunnelHotSpotInfo | null = previous.hotspotInfo;
 
   // Atualiza estado VPN
   try {
@@ -177,18 +194,14 @@ const updateGlobalStateImmediate = () => {
     // Mantém valor anterior em caso de erro
   }
 
-  // Atualiza IP local
+  // Atualiza IPv4 / IPv6 local
   try {
-    const ip = getLocalIP();
-    if (ip) {
-      localIP = ip;
-    } else if (!localIP) {
-      localIP = '0.0.0.0';
-    }
+    const ips = getLocalIPs();
+    if (ips.ipv4) localIP = ips.ipv4;
+    else if (!localIP) localIP = '0.0.0.0';
+    localIPv6 = ips.ipv6 || '';
   } catch {
-    if (!localIP) {
-      localIP = '0.0.0.0';
-    }
+    if (!localIP) localIP = '0.0.0.0';
   }
 
   // Atualiza bytes de download
@@ -224,10 +237,12 @@ const updateGlobalStateImmediate = () => {
     const status = getHotspotStatus();
     if (status === 'RUNNING') {
       hotspotState = 'RUNNING';
-    } else if (status === 'STOPPED') {
-      hotspotState = 'STOPPED';
+      hotspotInfo = getHotspotInfo() || (hotspotInfo ? { ...hotspotInfo, running: true, state: 'RUNNING' } : getResolvedHotspotInfo());
     } else {
       hotspotState = 'STOPPED';
+      if (hotspotInfo) {
+        hotspotInfo = { ...hotspotInfo, running: false, state: 'STOPPED' };
+      }
     }
   } catch {
     // Se falhar, mantém o último valor conhecido (ou STOPPED já definido acima)
@@ -237,6 +252,7 @@ const updateGlobalStateImmediate = () => {
   globalState = {
     vpnState,
     localIP,
+    localIPv6,
     networkStats: {
       downloadSpeed: formatSpeed(downloadSpeed),
       uploadSpeed: formatSpeed(uploadSpeed),
@@ -246,6 +262,7 @@ const updateGlobalStateImmediate = () => {
       formattedTotalUploaded: formatBytes(uploadBytes)
     },
     hotspotState,
+    hotspotInfo,
     lastUpdate: now
   };
 
@@ -306,8 +323,34 @@ export function useGlobalPolling() {
   useDTunnelEvent('vpnStartedSuccess', handleVpnEvents);
   useDTunnelEvent('vpnStoppedSuccess', handleVpnEvents);
   useDTunnelEvent('localIp', handleVpnEvents);
+  useDTunnelEvent('localIpv6', handleVpnEvents);
   useDTunnelEvent('hotSpotState', handleVpnEvents);
   useDTunnelEvent('airplaneState', handleVpnEvents);
+
+  const handleHotspotInfoEvent = useCallback((payload?: unknown) => {
+    try {
+      const data =
+        payload && typeof payload === 'object' && 'payload' in payload
+          ? (payload as { payload?: unknown }).payload
+          : payload;
+
+      if (data && typeof data === 'object') {
+        const info = data as VTunnelHotSpotInfo;
+        const isRunning = info.running === true || String(info.state).toUpperCase() === 'RUNNING';
+        globalState = {
+          ...globalState,
+          hotspotInfo: info,
+          hotspotState: isRunning ? 'RUNNING' : 'STOPPED',
+          lastUpdate: Date.now(),
+        };
+        notifyListeners();
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useDTunnelEvent('hotSpotInfo', handleHotspotInfoEvent);
   
   useEffect(() => {
     // Cria listener para este hook
@@ -359,10 +402,10 @@ export function useNetworkStatsGlobal() {
  * Hook específico para hotspot (compatibilidade)  
  */
 export function useHotspotGlobal() {
-  const { hotspotState, forceUpdate } = useGlobalPolling();
+  const { hotspotState, hotspotInfo, vpnState, forceUpdate } = useGlobalPolling();
   const [loading, setLoading] = useState(false);
   
-  const toggleHotspot = useCallback(async () => {
+  const toggleHotspot = useCallback(async (customPort?: number) => {
     setLoading(true);
     
     try {
@@ -373,16 +416,16 @@ export function useHotspotGlobal() {
         success = stopHotspot();
       } else {
         // Inicia o hotspot se estiver parado
-        success = startHotspot();
+        success = startHotspot(customPort);
       }
       
       if (success) {
         // Aguarda processamento com verificações periódicas
         let attempts = 0;
-        const maxAttempts = 10; // 5 segundos total
+        const maxAttempts = 10;
         
         while (attempts < maxAttempts) {
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise(resolve => setTimeout(resolve, 400));
           
           // Força verificação do novo status
           updateGlobalStateImmediate();
@@ -400,24 +443,63 @@ export function useHotspotGlobal() {
         // Força atualização final
         forceUpdate();
       }
-    } catch (error) {
+    } catch {
       // Error toggling hotspot
     } finally {
       setLoading(false);
     }
   }, [hotspotState, forceUpdate]);
 
+  const start = useCallback(async (port?: number) => {
+    setLoading(true);
+    try {
+      const ok = startHotspot(port);
+      if (ok) {
+        await new Promise(resolve => setTimeout(resolve, 400));
+        updateGlobalStateImmediate();
+        forceUpdate();
+      }
+      return ok;
+    } finally {
+      setLoading(false);
+    }
+  }, [forceUpdate]);
+
+  const stop = useCallback(async () => {
+    setLoading(true);
+    try {
+      const ok = stopHotspot();
+      if (ok) {
+        await new Promise(resolve => setTimeout(resolve, 400));
+        updateGlobalStateImmediate();
+        forceUpdate();
+      }
+      return ok;
+    } finally {
+      setLoading(false);
+    }
+  }, [forceUpdate]);
+
   const checkStatus = useCallback(() => {
     // Força verificação imediata do status
     updateGlobalStateImmediate();
     forceUpdate();
   }, [forceUpdate]);
+
+  const resolvedInfo = useMemo(() => {
+    return hotspotInfo || getResolvedHotspotInfo();
+  }, [hotspotInfo]);
   
   return {
     isEnabled: hotspotState === 'RUNNING',
     hotspotState,
+    hotspotInfo: resolvedInfo,
+    rawHotspotInfo: hotspotInfo,
+    vpnState,
     loading,
     toggleHotspot,
+    start,
+    stop,
     checkStatus
   };
 }
