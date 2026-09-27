@@ -5,6 +5,7 @@ import { CheckUserDetails } from './CheckUserDetails';
 import { useSdkCheckUserListener } from '../../hooks/useSdkCheckUserListener';
 import { parseSdkCheckUserPayload, UserInfo } from '../../utils/checkUserUtils';
 import { purchaseStorage } from '../../utils/purchaseStorageManager';
+import { sanitizeLogHtml } from '../../utils/appFunctions';
 
 export function SdkCheckUserModal() {
   const [open, setOpen] = useState(false);
@@ -80,9 +81,11 @@ export function SdkCheckUserModal() {
     return (
       <Modal onClose={handleClose} title="Check User" icon={AlertTriangle}>
         <div className="p-4 rounded-lg glass-effect text-center">
-          <p className="text-sm mb-4" style={{ color: 'var(--text-muted)' }}>
-            {error}
-          </p>
+          <p
+            className="text-sm mb-4"
+            style={{ color: 'var(--text-muted)' }}
+            dangerouslySetInnerHTML={{ __html: sanitizeLogHtml(error) }}
+          />
           <button
             type="button"
             onClick={handleClose}

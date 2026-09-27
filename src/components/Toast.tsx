@@ -1,6 +1,7 @@
 import { useToast } from '../hooks/useToast';
 import { useNotificationPosition } from '../hooks/useNotificationPosition';
 import { CheckCircle, XCircle, AlertTriangle, Info, X } from '../utils/icons';
+import { sanitizeLogHtml } from '../utils/appFunctions';
 
 export function ToastContainer() {
   const { toasts, removeToast } = useToast();
@@ -57,7 +58,10 @@ export function ToastContainer() {
             {getIcon(toast.type)}
           </div>
           <div className="flex-1">
-            <p className="text-sm lg:text-base font-medium">{toast.message}</p>
+            <p
+              className="text-sm lg:text-base font-medium"
+              dangerouslySetInnerHTML={{ __html: sanitizeLogHtml(toast.message) }}
+            />
           </div>
           <button
             onClick={() => removeToast(toast.id)}
