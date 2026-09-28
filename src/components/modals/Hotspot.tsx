@@ -18,6 +18,13 @@ import {
   MessageCircle,
   Send,
   Power,
+  Share2,
+  Zap,
+  Download,
+  Sparkles,
+  Star,
+  Activity,
+  ArrowRight,
   type LucideIcon,
 } from '../../utils/icons';
 import { Modal } from './Modal';
@@ -30,7 +37,13 @@ interface HotspotProps {
 }
 
 type HotspotTab = 'connect' | 'guides' | 'advanced';
-type GuideId = 'whatsapp' | 'android' | 'ios' | 'windows' | 'tv' | 'telegram';
+type GuideId = 'vtshare' | 'whatsapp' | 'android' | 'windows' | 'ios' | 'tv' | 'telegram';
+
+const VT_SHARE_RELEASES_URL = 'https://github.com/TelksBr/vtunnel-share-releases/releases/latest';
+const VT_SHARE_APK_UNIVERSAL_URL = 'https://github.com/TelksBr/vtunnel-share-releases/releases/download/v0.1.0-pre/VTunnelShare-v0.1.0-universal.apk';
+const VT_SHARE_APK_ARM64_URL = 'https://github.com/TelksBr/vtunnel-share-releases/releases/download/v0.1.0-pre/VTunnelShare-v0.1.0-arm64-v8a.apk';
+const VT_SHARE_EXE_X64_URL = 'https://github.com/TelksBr/vtunnel-share-releases/releases/download/v0.1.0-pre/VTunnelShare-v0.1.0-windows-amd64.exe';
+const VT_SHARE_EXE_ARM64_URL = 'https://github.com/TelksBr/vtunnel-share-releases/releases/download/v0.1.0-pre/VTunnelShare-v0.1.0-windows-arm64.exe';
 type Tone = 'green' | 'sky' | 'violet' | 'amber' | 'emerald';
 
 const DEFAULT_PORT = 8578;
@@ -268,10 +281,11 @@ const TABS: { id: HotspotTab; label: string; icon: LucideIcon }[] = [
 ];
 
 const GUIDES: { id: GuideId; label: string; icon: LucideIcon }[] = [
+  { id: 'vtshare', label: 'VT Share ⭐', icon: Share2 },
   { id: 'whatsapp', label: 'WhatsApp', icon: MessageCircle },
-  { id: 'android', label: 'Android', icon: Smartphone },
+  { id: 'android', label: 'Android (Proxy)', icon: Smartphone },
+  { id: 'windows', label: 'Windows (Proxy)', icon: Monitor },
   { id: 'ios', label: 'iPhone', icon: Smartphone },
-  { id: 'windows', label: 'Windows', icon: Monitor },
   { id: 'tv', label: 'Smart TV', icon: Tv },
   { id: 'telegram', label: 'Telegram', icon: Send },
 ];
@@ -280,7 +294,8 @@ const Hotspot = memo(function Hotspot({ onClose }: HotspotProps) {
   const { isEnabled, hotspotInfo, vpnState, loading, start, stop, checkStatus } = useHotspotGlobal();
 
   const [activeTab, setActiveTab] = useState<HotspotTab>('connect');
-  const [guide, setGuide] = useState<GuideId>('whatsapp');
+  const [guide, setGuide] = useState<GuideId>('vtshare');
+  const [vtPlatform, setVtPlatform] = useState<'android' | 'windows'>('android');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [portInput, setPortInput] = useState<string>(readSavedPort);
   const [localIps, setLocalIps] = useState(getLocalIpsData);
@@ -481,13 +496,151 @@ const Hotspot = memo(function Hotspot({ onClose }: HotspotProps) {
 
         {/* ABA: CONEXÕES */}
         {activeTab === 'connect' && (
-          <div className="space-y-3 animate-fadeIn">
+          <div className="space-y-3.5 animate-fadeIn">
             {!isEnabled && (
               <Notice>
-                Ligue o <strong>hotspot Wi-Fi do Android</strong> e toque em <strong>Ativar hotspot</strong>. Os dados
-                abaixo são os que os outros aparelhos vão usar.
+                Ligue o <strong>hotspot Wi-Fi do Android</strong> e toque em <strong>Ativar hotspot</strong>. Em seguida, conecte os outros aparelhos no Wi-Fi deste celular.
               </Notice>
             )}
+
+            {/* ⭐ MÉTODO RECOMENDADO: VTUNNEL SHARE */}
+            <section
+              className="p-4 sm:p-5 rounded-2xl relative overflow-hidden transition-all duration-300 border shadow-xl"
+              style={{
+                background: 'linear-gradient(135deg, rgba(124, 58, 237, 0.18) 0%, rgba(16, 185, 129, 0.10) 50%, rgba(99, 102, 241, 0.15) 100%)',
+                borderColor: 'rgba(124, 58, 237, 0.45)',
+              }}
+            >
+              <div
+                className="absolute -top-12 -right-12 w-44 h-44 rounded-full blur-3xl pointer-events-none opacity-30"
+                style={{ background: 'var(--accent, #7c3aed)' }}
+              />
+
+              <div className="relative z-10 space-y-3.5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <div
+                      className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg"
+                      style={{
+                        background: 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)',
+                      }}
+                    >
+                      <Share2 className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-bold text-base text-[var(--text)] flex items-center gap-1.5">
+                          VTunnel Share Client
+                        </h3>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1">
+                          <Star className="w-3 h-3 fill-amber-300 text-amber-300" />
+                          Melhor Solução
+                        </span>
+                      </div>
+                      <p className="text-xs mt-0.5 leading-relaxed text-[var(--text-muted)]">
+                        Roteamento <strong>100% transparente</strong> de todo o sistema operacional (TCP + UDP) sem root e sem configurar proxy manual.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Vantagens em destaque */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
+                  <div className="p-2.5 rounded-xl border flex items-center gap-2" style={fieldStyle}>
+                    <Zap className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                    <div>
+                      <strong className="block font-semibold text-[var(--text)]">Todos os Apps</strong>
+                      <span className="text-[10px] text-[var(--text-muted)]">YouTube, Jogos, etc.</span>
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl border flex items-center gap-2" style={fieldStyle}>
+                    <Activity className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                    <div>
+                      <strong className="block font-semibold text-[var(--text)]">UDP & Speedtest</strong>
+                      <span className="text-[10px] text-[var(--text-muted)]">Sem perda de pacotes</span>
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl border flex items-center gap-2" style={fieldStyle}>
+                    <ShieldCheck className="w-4 h-4 text-sky-400 flex-shrink-0" />
+                    <div>
+                      <strong className="block font-semibold text-[var(--text)]">Túnel VPN TUN</strong>
+                      <span className="text-[10px] text-[var(--text-muted)]">Sem root no aparelho</span>
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl border flex items-center gap-2" style={fieldStyle}>
+                    <Sparkles className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                    <div>
+                      <strong className="block font-semibold text-[var(--text)]">Auto Detecção</strong>
+                      <span className="text-[10px] text-[var(--text-muted)]">Conecta em 1 toque</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dados da conexão rápida para o VT Share */}
+                <div className="grid grid-cols-2 gap-2 pt-0.5">
+                  <CopyField label="Gateway (IP Hotspot)" value={ip} copyKey="vt_ip" api={api} />
+                  <CopyField
+                    label="Porta SOCKS5 (VT Share)"
+                    value={String(hotspotInfo.socksPort)}
+                    copyKey="vt_port"
+                    api={api}
+                    valueClassName={TONES.violet.text}
+                  />
+                </div>
+
+                {/* Botões de Ação */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => openUrl(VT_SHARE_RELEASES_URL)}
+                    className="w-full min-h-[42px] px-3.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 cursor-pointer touch-manipulation text-white shadow-md hover:brightness-110 active:scale-95 transition-all"
+                    style={{
+                      background: 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)',
+                    }}
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Baixar VT Share</span>
+                    <ExternalLink className="w-3.5 h-3.5 opacity-70" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => openGuide('vtshare')}
+                    className={`w-full min-h-[42px] px-3.5 rounded-xl font-semibold text-xs flex items-center justify-center gap-1.5 cursor-pointer touch-manipulation transition-colors ${TONES.violet.button}`}
+                  >
+                    <Smartphone className="w-4 h-4" />
+                    <span>Como usar (Guia)</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => copy(VT_SHARE_RELEASES_URL, 'Link do VTunnel Share', 'vt_share_link')}
+                    className="w-full min-h-[42px] px-3.5 rounded-xl font-semibold text-xs flex items-center justify-center gap-1.5 cursor-pointer touch-manipulation hover:bg-[var(--surface-hover)] transition-colors"
+                    style={fieldStyle}
+                  >
+                    {copiedKey === 'vt_share_link' ? (
+                      <Check className="w-4 h-4 text-[var(--ok)]" />
+                    ) : (
+                      <Copy className="w-4 h-4 text-[var(--accent)]" />
+                    )}
+                    <span>{copiedKey === 'vt_share_link' ? 'Link copiado!' : 'Copiar link de download'}</span>
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            {/* Separador elegante para métodos manuais */}
+            <div className="flex items-center gap-3 py-1">
+              <div className="h-px flex-1 bg-[var(--border)]" />
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                Ou configure manualmente (Métodos Legados)
+              </span>
+              <div className="h-px flex-1 bg-[var(--border)]" />
+            </div>
 
             {waSupported && (
               <MethodCard
@@ -682,7 +835,170 @@ const Hotspot = memo(function Hotspot({ onClose }: HotspotProps) {
               ))}
             </div>
 
-            <section className="p-3.5 sm:p-4 rounded-xl space-y-3" style={cardStyle}>
+            <section className="p-3.5 sm:p-4 rounded-xl space-y-3.5" style={cardStyle}>
+              {guide === 'vtshare' && (
+                <div className="space-y-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h4 className="font-bold text-sm sm:text-base text-[var(--text)] flex items-center gap-2">
+                        <Share2 className="w-5 h-5 text-[var(--accent)]" />
+                        VTunnel Share Client (Recomendado)
+                      </h4>
+                      <p className="text-xs text-[var(--text-muted)] mt-1 leading-relaxed">
+                        A solução ideal: cria uma interface virtual TUN que roteia 100% de todo o tráfego do sistema (inclusive Speedtest, jogos e chamadas de vídeo) sem precisar configurar proxy individual em nenhum aplicativo.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Seletor de Plataforma no Guia */}
+                  <div className="grid grid-cols-2 p-1 rounded-xl gap-1" style={fieldStyle}>
+                    <button
+                      type="button"
+                      onClick={() => setVtPlatform('android')}
+                      className={`min-h-[38px] px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                        vtPlatform === 'android'
+                          ? 'bg-[var(--accent)] text-white shadow-md'
+                          : 'text-[var(--text-muted)] hover:text-[var(--text)]'
+                      }`}
+                    >
+                      <Smartphone className="w-4 h-4" />
+                      <span>No Android (APK)</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setVtPlatform('windows')}
+                      className={`min-h-[38px] px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                        vtPlatform === 'windows'
+                          ? 'bg-[var(--accent)] text-white shadow-md'
+                          : 'text-[var(--text-muted)] hover:text-[var(--text)]'
+                      }`}
+                    >
+                      <Monitor className="w-4 h-4" />
+                      <span>No Windows (PC)</span>
+                    </button>
+                  </div>
+
+                  {vtPlatform === 'android' ? (
+                    <div className="space-y-3">
+                      <Steps
+                        items={[
+                          <>
+                            Conecte o outro celular na rede Wi-Fi deste aparelho (Hotspot).
+                          </>,
+                          <>
+                            Instale o app <strong>VTunnel Share</strong> no outro aparelho:
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              <button
+                                type="button"
+                                onClick={() => openUrl(VT_SHARE_APK_UNIVERSAL_URL)}
+                                className="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 bg-[var(--accent)] text-white hover:brightness-110 cursor-pointer shadow-sm"
+                              >
+                                <Download className="w-3.5 h-3.5" /> Baixar APK Universal
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => openUrl(VT_SHARE_APK_ARM64_URL)}
+                                className="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border hover:bg-[var(--surface-hover)] cursor-pointer"
+                                style={fieldStyle}
+                              >
+                                <Download className="w-3.5 h-3.5 text-[var(--accent)]" /> ARM64 (64-bit)
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => copy(VT_SHARE_APK_UNIVERSAL_URL, 'Link do APK', 'g_apk_link')}
+                                className="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border hover:bg-[var(--surface-hover)] cursor-pointer"
+                                style={fieldStyle}
+                              >
+                                {copiedKey === 'g_apk_link' ? (
+                                  <Check className="w-3.5 h-3.5 text-[var(--ok)]" />
+                                ) : (
+                                  <Copy className="w-3.5 h-3.5" />
+                                )}
+                                <span>{copiedKey === 'g_apk_link' ? 'Copiado!' : 'Copiar link'}</span>
+                              </button>
+                            </div>
+                          </>,
+                          <>
+                            Abra o app <strong>VTunnel Share</strong>. Ele detecta automaticamente o IP do Gateway{' '}
+                            <CopyChip value={ip} label="IP Gateway" copyKey="g_vt_ip" api={api} /> e a Porta SOCKS5{' '}
+                            <CopyChip value={String(hotspotInfo.socksPort)} label="Porta SOCKS5" copyKey="g_vt_port" api={api} />.
+                          </>,
+                          <>
+                            Toque no botão central <strong>Conectar</strong> e confirme a permissão de VPN do Android.
+                          </>,
+                          <>
+                            <strong>Pronto!</strong> Todo o tráfego do sistema (YouTube, Speedtest, WhatsApp e jogos) passará de forma veloz e transparente pelo túnel.
+                          </>,
+                        ]}
+                      />
+
+                      <Notice tone="info">
+                        Diferente da configuração manual de proxy Wi-Fi, o <strong>VTunnel Share</strong> cria uma VPN nativa de tunelamento. Nenhum app conseguirá ignorar ou vazar a conexão!
+                      </Notice>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <Steps
+                        items={[
+                          <>
+                            Conecte seu computador ou notebook no Wi-Fi deste celular.
+                          </>,
+                          <>
+                            Baixe o executável oficial para Windows:
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              <button
+                                type="button"
+                                onClick={() => openUrl(VT_SHARE_EXE_X64_URL)}
+                                className="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 bg-[var(--accent)] text-white hover:brightness-110 cursor-pointer shadow-sm"
+                              >
+                                <Download className="w-3.5 h-3.5" /> Baixar Windows x64
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => openUrl(VT_SHARE_EXE_ARM64_URL)}
+                                className="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border hover:bg-[var(--surface-hover)] cursor-pointer"
+                                style={fieldStyle}
+                              >
+                                <Download className="w-3.5 h-3.5 text-[var(--accent)]" /> ARM64 (Surface)
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => copy(VT_SHARE_EXE_X64_URL, 'Link do Windows', 'g_win_link')}
+                                className="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border hover:bg-[var(--surface-hover)] cursor-pointer"
+                                style={fieldStyle}
+                              >
+                                {copiedKey === 'g_win_link' ? (
+                                  <Check className="w-3.5 h-3.5 text-[var(--ok)]" />
+                                ) : (
+                                  <Copy className="w-3.5 h-3.5" />
+                                )}
+                                <span>{copiedKey === 'g_win_link' ? 'Copiado!' : 'Copiar link'}</span>
+                              </button>
+                            </div>
+                          </>,
+                          <>
+                            Execute o programa como <strong>Administrador</strong> (necessário para criar a interface virtual TUN Wintun).
+                          </>,
+                          <>
+                            O programa abrirá na bandeja do sistema (Systray). Ele detecta automaticamente o IP{' '}
+                            <CopyChip value={ip} label="IP" copyKey="g_win_ip" api={api} /> e porta{' '}
+                            <CopyChip value={String(hotspotInfo.socksPort)} label="Porta" copyKey="g_win_port" api={api} />.
+                          </>,
+                          <>
+                            Clique em <strong>Conectar</strong>. Todo o tráfego do Windows será roteado automaticamente!
+                          </>,
+                        ]}
+                      />
+
+                      <Notice tone="info">
+                        O driver virtual de alta velocidade <strong>Wintun</strong> já vem integrado internamente no executável, sem requerer nenhuma instalação externa ou configuração adicional no Windows.
+                      </Notice>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {guide === 'whatsapp' && (
                 <>
                   <h4 className={`font-bold text-sm flex items-center gap-2 ${TONES.green.text}`}>
