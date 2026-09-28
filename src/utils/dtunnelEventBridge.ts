@@ -40,6 +40,8 @@ const SDK_EVENTS = [
   'hotSpotState',
   'hotSpotInfo',
   'reloadRequest',
+  'playUpdateState',
+  'configImport',
 ];
 
 export function recordDebugLog(source: string, name: string, payload: unknown): void {

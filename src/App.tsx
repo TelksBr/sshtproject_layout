@@ -17,6 +17,8 @@ import { I18nProvider } from './i18n';
 import { AutoConnectModal } from './components/AutoConnectModal';
 import { SdkCheckUserModal } from './components/modals/SdkCheckUserModal';
 import { PlayStoreReviewHost } from './components/PlayStoreReviewHost';
+import { PlayUpdateHost } from './components/PlayUpdateHost';
+import { ConfigImportHost } from './components/ConfigImportHost';
 import { useAppLayout } from './hooks/useAppLayout';
 import { useModalRenderer } from './hooks/useModalRenderer';
 import { useGlobalPolling } from './hooks/useGlobalPolling';
@@ -188,6 +190,8 @@ function App() {
           </ErrorBoundary>
           <SdkCheckUserModal />
           <PlayStoreReviewHost vpnState={vpnState} blockingModal={currentModal} />
+          <PlayUpdateHost blockingModal={currentModal} />
+          <ConfigImportHost />
           <ToastContainer />
           <IncomingNotificationHost />
           {showDebugLogs && (
