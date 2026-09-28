@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, memo } from 'react';
+import { useState, useEffect, useCallback, memo, type ReactNode } from 'react';
 import {
   Wifi,
   WifiOff,
@@ -10,77 +10,304 @@ import {
   Check,
   Settings,
   AlertTriangle,
-  QrCode,
   Smartphone,
   Monitor,
   Tv,
   Info,
   RefreshCw,
+  MessageCircle,
+  Send,
+  Power,
+  type LucideIcon,
 } from '../../utils/icons';
 import { Modal } from './Modal';
 import { useHotspotGlobal } from '../../hooks/useGlobalPolling';
-import { getLocalIpsData } from '../../utils/hotspotUtils';
+import { getLocalIpsData, WHATSAPP_CHAT_PORT, WHATSAPP_MEDIA_PORT } from '../../utils/hotspotUtils';
 import { copyToClipboard, vibrate, showNativeToast, openUrl } from '../../utils/appFunctions';
-import { generateQRCodeDataURL } from '../../utils/qrCodeGenerator';
 
 interface HotspotProps {
   onClose: () => void;
 }
 
-type HotspotTab = 'methods' | 'qrcode' | 'tutorials' | 'settings';
-type QrCodeType = 'pac' | 'http' | 'socks' | 'socks_udp' | 'telegram';
-type TutorialDevice = 'android' | 'ios' | 'windows' | 'tv' | 'telegram';
+type HotspotTab = 'connect' | 'guides' | 'advanced';
+type GuideId = 'whatsapp' | 'android' | 'ios' | 'windows' | 'tv' | 'telegram';
+type Tone = 'green' | 'sky' | 'violet' | 'amber' | 'emerald';
+
+const DEFAULT_PORT = 8578;
+const PORT_STORAGE_KEY = 'vtunnel_hotspot_port';
+const RESERVED_PORTS = [WHATSAPP_CHAT_PORT, WHATSAPP_MEDIA_PORT];
+
+const TONES: Record<Tone, { icon: string; badge: string; text: string; button: string }> = {
+  green: {
+    icon: 'bg-green-500/15 text-[var(--tone-green)]',
+    badge: 'bg-green-500/15 text-[var(--tone-green)] border-green-500/30',
+    text: 'text-[var(--tone-green)]',
+    button: 'bg-green-500/10 hover:bg-green-500/20 text-[var(--tone-green)] border border-green-500/30',
+  },
+  sky: {
+    icon: 'bg-sky-500/15 text-[var(--tone-sky)]',
+    badge: 'bg-sky-500/15 text-[var(--tone-sky)] border-sky-500/30',
+    text: 'text-[var(--tone-sky)]',
+    button: 'bg-sky-500/10 hover:bg-sky-500/20 text-[var(--tone-sky)] border border-sky-500/30',
+  },
+  violet: {
+    icon: 'bg-violet-500/15 text-[var(--tone-violet)]',
+    badge: 'bg-violet-500/15 text-[var(--tone-violet)] border-violet-500/30',
+    text: 'text-[var(--tone-violet)]',
+    button: 'bg-violet-500/10 hover:bg-violet-500/20 text-[var(--tone-violet)] border border-violet-500/30',
+  },
+  amber: {
+    icon: 'bg-amber-500/15 text-[var(--tone-amber)]',
+    badge: 'bg-amber-500/15 text-[var(--tone-amber)] border-amber-500/30',
+    text: 'text-[var(--tone-amber)]',
+    button: 'bg-amber-500/10 hover:bg-amber-500/20 text-[var(--tone-amber)] border border-amber-500/30',
+  },
+  emerald: {
+    icon: 'bg-emerald-500/15 text-[var(--tone-emerald)]',
+    badge: 'bg-emerald-500/15 text-[var(--tone-emerald)] border-emerald-500/30',
+    text: 'text-[var(--tone-emerald)]',
+    button: 'bg-emerald-500/10 hover:bg-emerald-500/20 text-[var(--tone-emerald)] border border-emerald-500/30',
+  },
+};
+
+const cardStyle = { background: 'var(--bg-elevated)', border: '1px solid var(--border)' };
+const fieldStyle = { background: 'var(--surface)', border: '1px solid var(--border)' };
+
+function derivedPorts(httpPort: number) {
+  return {
+    socks: httpPort === DEFAULT_PORT ? 8579 : httpPort + 1,
+    udp: httpPort === DEFAULT_PORT ? 8580 : httpPort + 2,
+  };
+}
+
+function validatePort(raw: string): string | null {
+  const port = Number(raw);
+  if (!raw.trim() || !Number.isInteger(port)) return 'Informe um número.';
+  if (port < 1024 || port > 65533) return 'Use uma porta entre 1024 e 65533.';
+  const { socks } = derivedPorts(port);
+  if (RESERVED_PORTS.includes(port) || RESERVED_PORTS.includes(socks)) {
+    return `As portas ${WHATSAPP_CHAT_PORT} e ${WHATSAPP_MEDIA_PORT} são do proxy do WhatsApp.`;
+  }
+  return null;
+}
+
+function readSavedPort(): string {
+  try {
+    const saved = localStorage.getItem(PORT_STORAGE_KEY);
+    if (saved && validatePort(saved) === null) return saved;
+  } catch {
+    /* ignore */
+  }
+  return String(DEFAULT_PORT);
+}
+
+function haptic(ms: number) {
+  try {
+    vibrate(ms);
+  } catch {
+    /* ignore */
+  }
+}
+
+interface CopyApi {
+  copiedKey: string | null;
+  copy: (text: string, label: string, key: string) => void;
+}
+
+function CopyField({
+  label,
+  value,
+  copyKey,
+  api,
+  valueClassName = '',
+  className = '',
+  small = false,
+}: {
+  label: string;
+  value: string;
+  copyKey: string;
+  api: CopyApi;
+  valueClassName?: string;
+  className?: string;
+  small?: boolean;
+}) {
+  const copied = api.copiedKey === copyKey;
+  return (
+    <button
+      type="button"
+      onClick={() => api.copy(value, label, copyKey)}
+      className={`w-full min-h-[52px] p-2.5 rounded-lg flex items-center justify-between gap-2 text-left cursor-pointer touch-manipulation transition-all duration-150 active:scale-[0.98] hover:brightness-110 ${className}`}
+      style={{ ...fieldStyle, borderColor: copied ? 'rgba(16, 185, 129, 0.5)' : 'var(--border)' }}
+      aria-label={`Copiar ${label}`}
+    >
+      <span className="min-w-0 flex-1">
+        <span
+          className="text-[10px] block font-medium uppercase tracking-wider truncate"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          {label}
+        </span>
+        <span
+          className={`font-mono font-bold block truncate ${small ? 'text-xs' : 'text-sm'} ${valueClassName}`}
+          style={valueClassName ? undefined : { color: 'var(--text)' }}
+        >
+          {value}
+        </span>
+      </span>
+      {copied ? (
+        <Check className="w-4 h-4 flex-shrink-0 text-[var(--ok)]" />
+      ) : (
+        <Copy className="w-4 h-4 flex-shrink-0 text-[var(--accent)]" />
+      )}
+    </button>
+  );
+}
+
+function CopyChip({ value, label, copyKey, api }: { value: string; label: string; copyKey: string; api: CopyApi }) {
+  const copied = api.copiedKey === copyKey;
+  return (
+    <button
+      type="button"
+      onClick={() => api.copy(value, label, copyKey)}
+      className="inline-flex items-center gap-1 max-w-full px-2 py-0.5 rounded-md font-mono font-bold text-[11px] align-middle cursor-pointer touch-manipulation active:scale-95 transition-transform"
+      style={{ ...fieldStyle, color: copied ? 'var(--ok)' : 'var(--text)' }}
+      aria-label={`Copiar ${label}`}
+    >
+      <span className="truncate">{value}</span>
+      {copied ? <Check className="w-3 h-3 flex-shrink-0" /> : <Copy className="w-3 h-3 flex-shrink-0 text-[var(--accent)]" />}
+    </button>
+  );
+}
+
+function MethodCard({
+  icon: Icon,
+  tone,
+  title,
+  subtitle,
+  badge,
+  children,
+}: {
+  icon: LucideIcon;
+  tone: Tone;
+  title: string;
+  subtitle: string;
+  badge?: ReactNode;
+  children: ReactNode;
+}) {
+  const t = TONES[tone];
+  return (
+    <section className="p-3.5 sm:p-4 rounded-xl space-y-3" style={cardStyle}>
+      <header className="flex items-start gap-2.5">
+        <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${t.icon}`}>
+          <Icon className="w-4 h-4" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="font-semibold text-sm" style={{ color: 'var(--text)' }}>
+              {title}
+            </h3>
+            {badge && (
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase border ${t.badge}`}>
+                {badge}
+              </span>
+            )}
+          </div>
+          <p className="text-[11px] leading-snug mt-0.5" style={{ color: 'var(--text-muted)' }}>
+            {subtitle}
+          </p>
+        </div>
+      </header>
+      {children}
+    </section>
+  );
+}
+
+function Steps({ items }: { items: ReactNode[] }) {
+  return (
+    <ol className="space-y-2.5">
+      {items.map((item, i) => (
+        <li key={i} className="flex gap-2.5 text-xs leading-relaxed" style={{ color: 'var(--text)' }}>
+          <span
+            className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-px text-white"
+            style={{ background: 'var(--accent)' }}
+          >
+            {i + 1}
+          </span>
+          <div className="min-w-0 flex-1">{item}</div>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function Notice({ tone = 'info', children }: { tone?: 'info' | 'warn'; children: ReactNode }) {
+  const warn = tone === 'warn';
+  return (
+    <div
+      className="p-2.5 rounded-lg flex items-start gap-2 text-[11px] leading-relaxed"
+      style={{
+        background: warn ? 'rgba(245, 158, 11, 0.1)' : 'var(--surface)',
+        border: `1px solid ${warn ? 'rgba(245, 158, 11, 0.3)' : 'var(--border)'}`,
+        color: warn ? 'var(--tone-amber)' : 'var(--text-muted)',
+      }}
+    >
+      {warn ? (
+        <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+      ) : (
+        <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-[var(--accent)]" />
+      )}
+      <div className="min-w-0">{children}</div>
+    </div>
+  );
+}
+
+const TABS: { id: HotspotTab; label: string; icon: LucideIcon }[] = [
+  { id: 'connect', label: 'Conexões', icon: Globe },
+  { id: 'guides', label: 'Como usar', icon: Smartphone },
+  { id: 'advanced', label: 'Avançado', icon: Settings },
+];
+
+const GUIDES: { id: GuideId; label: string; icon: LucideIcon }[] = [
+  { id: 'whatsapp', label: 'WhatsApp', icon: MessageCircle },
+  { id: 'android', label: 'Android', icon: Smartphone },
+  { id: 'ios', label: 'iPhone', icon: Smartphone },
+  { id: 'windows', label: 'Windows', icon: Monitor },
+  { id: 'tv', label: 'Smart TV', icon: Tv },
+  { id: 'telegram', label: 'Telegram', icon: Send },
+];
 
 const Hotspot = memo(function Hotspot({ onClose }: HotspotProps) {
-  const {
-    isEnabled,
-    hotspotInfo,
-    vpnState,
-    loading,
-    start,
-    stop,
-    checkStatus,
-  } = useHotspotGlobal();
+  const { isEnabled, hotspotInfo, vpnState, loading, start, stop, checkStatus } = useHotspotGlobal();
 
-  const [activeTab, setActiveTab] = useState<HotspotTab>('methods');
+  const [activeTab, setActiveTab] = useState<HotspotTab>('connect');
+  const [guide, setGuide] = useState<GuideId>('whatsapp');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
-
-  // Porta customizada (salva em localStorage)
-  const [customPort, setCustomPort] = useState<number>(() => {
-    try {
-      const saved = localStorage.getItem('vtunnel_hotspot_port');
-      if (saved) {
-        const p = parseInt(saved, 10);
-        if (!isNaN(p) && p >= 1024 && p <= 65534) return p;
-      }
-    } catch {
-      /* ignore */
-    }
-    return 8578;
-  });
-
-  // Tipo de dado do QR Code
-  const [qrType, setQrType] = useState<QrCodeType>('pac');
-  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
-  const [qrCodeLoading, setQrCodeLoading] = useState(false);
-
-  // Dispositivo ativo nos tutoriais
-  const [tutorialDevice, setTutorialDevice] = useState<TutorialDevice>('android');
-
-  // IPs detectados da rede
+  const [portInput, setPortInput] = useState<string>(readSavedPort);
   const [localIps, setLocalIps] = useState(getLocalIpsData);
 
   useEffect(() => {
     setLocalIps(getLocalIpsData());
   }, [isEnabled]);
 
-  // Salva preferência de porta
-  const handlePortChange = (val: string) => {
-    const p = parseInt(val, 10);
-    if (!isNaN(p)) {
-      setCustomPort(p);
+  const copy = useCallback((text: string, label: string, key: string) => {
+    haptic(25);
+    copyToClipboard(text);
+    setCopiedKey(key);
+    showNativeToast(`${label} copiado!`);
+    setTimeout(() => setCopiedKey((curr) => (curr === key ? null : curr)), 2000);
+  }, []);
+  const api: CopyApi = { copiedKey, copy };
+
+  const portError = validatePort(portInput);
+  const chosenPort = portError ? DEFAULT_PORT : Number(portInput);
+  const chosenDerived = derivedPorts(chosenPort);
+
+  const handlePortInput = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 5);
+    setPortInput(digits);
+    if (validatePort(digits) === null) {
       try {
-        localStorage.setItem('vtunnel_hotspot_port', String(p));
+        localStorage.setItem(PORT_STORAGE_KEY, digits);
       } catch {
         /* ignore */
       }
@@ -88,132 +315,74 @@ const Hotspot = memo(function Hotspot({ onClose }: HotspotProps) {
   };
 
   const handleResetPort = () => {
-    setCustomPort(8578);
-    try {
-      localStorage.setItem('vtunnel_hotspot_port', '8578');
-    } catch {
-      /* ignore */
-    }
-    try {
-      vibrate(20);
-    } catch {
-      /* ignore */
-    }
-    showNativeToast('Porta restaurada para o padrão (8578)');
+    handlePortInput(String(DEFAULT_PORT));
+    haptic(20);
+    showNativeToast(`Porta restaurada para o padrão (${DEFAULT_PORT})`);
   };
 
-  // Helper de cópia com feedback
-  const handleCopy = useCallback((text: string, label: string, key: string) => {
-    try {
-      vibrate(25);
-    } catch {
-      /* ignore */
-    }
-    copyToClipboard(text);
-    setCopiedKey(key);
-    showNativeToast(`${label} copiado!`);
-    setTimeout(() => {
-      setCopiedKey((curr) => (curr === key ? null : curr));
-    }, 2000);
-  }, []);
-
-  // Telegram direct link
-  const telegramProxyLink = useMemo(() => {
-    return `tg://socks?server=${encodeURIComponent(hotspotInfo.ip)}&port=${hotspotInfo.socksPort}`;
-  }, [hotspotInfo.ip, hotspotInfo.socksPort]);
-
-  // Conteúdo ativo para QR Code
-  const activeQrContent = useMemo(() => {
-    switch (qrType) {
-      case 'pac':
-        return hotspotInfo.pacUrl;
-      case 'http':
-        return hotspotInfo.httpProxy;
-      case 'socks':
-        return hotspotInfo.socksProxy;
-      case 'socks_udp':
-        return hotspotInfo.socksUdpProxy || `${hotspotInfo.ip}:${hotspotInfo.socksUdpPort || 8580}`;
-      case 'telegram':
-        return telegramProxyLink;
-      default:
-        return hotspotInfo.pacUrl;
-    }
-  }, [qrType, hotspotInfo, telegramProxyLink]);
-
-  // Gera o QR Code quando a aba ou conteúdo mudar
-  useEffect(() => {
-    let isCancelled = false;
-    if (activeTab === 'qrcode') {
-      setQrCodeLoading(true);
-      generateQRCodeDataURL(activeQrContent, {
-        size: 320,
-        margin: 3,
-        colorDark: '#0b0914',
-        colorLight: '#ffffff',
-      })
-        .then((url) => {
-          if (!isCancelled) {
-            setQrCodeUrl(url);
-            setQrCodeLoading(false);
-          }
-        })
-        .catch(() => {
-          if (!isCancelled) {
-            setQrCodeUrl(null);
-            setQrCodeLoading(false);
-          }
-        });
-    }
-    return () => {
-      isCancelled = true;
-    };
-  }, [activeTab, activeQrContent]);
-
-  // Ação mestre de iniciar / parar
   const handleMasterToggle = async () => {
-    try {
-      vibrate(35);
-    } catch {
-      /* ignore */
-    }
+    haptic(35);
     if (isEnabled) {
       await stop();
-    } else {
-      await start(customPort);
+      return;
     }
+    if (portError) {
+      showNativeToast('Porta inválida. Ajuste em Avançado.');
+      setActiveTab('advanced');
+      return;
+    }
+    await start(chosenPort);
+  };
+
+  const handleRestartOnPort = async () => {
+    haptic(30);
+    await stop();
+    await start(chosenPort);
   };
 
   const isVpnActive = vpnState === 'CONNECTED';
+  const ip = hotspotInfo.ip;
+  const udpPort = hotspotInfo.socksUdpPort || derivedPorts(hotspotInfo.httpPort).udp;
+  const udpProxy = hotspotInfo.socksUdpProxy || `${ip}:${udpPort}`;
+  const telegramLink = `tg://socks?server=${encodeURIComponent(ip)}&port=${hotspotInfo.socksPort}`;
+
+  // Hotspot ligado: campo ausente = app sem proxy do WhatsApp; 0 = porta não abriu. Desligado, o app manda 0.
+  const rawWaChat = hotspotInfo.whatsappChatPort;
+  const rawWaMedia = hotspotInfo.whatsappMediaPort;
+  const waSupported = !isEnabled || typeof rawWaChat === 'number';
+  const waAvailable = !isEnabled || (!!rawWaChat && !!rawWaMedia);
+  const waChatPort = rawWaChat || WHATSAPP_CHAT_PORT;
+  const waMediaPort = rawWaMedia || WHATSAPP_MEDIA_PORT;
+
+  const openGuide = (id: GuideId) => {
+    setGuide(id);
+    setActiveTab('guides');
+  };
 
   return (
     <Modal onClose={onClose} title="Hotspot & Compartilhamento" icon={Wifi}>
-      <div className="flex-1 p-3 sm:p-4 space-y-4 max-w-2xl mx-auto w-full">
-        {/* Banner do Status Principal */}
-        <div
-          className="p-4 sm:p-5 rounded-2xl transition-all duration-300 relative overflow-hidden"
+      <div className="flex-1 p-3 sm:p-4 space-y-3.5 max-w-2xl mx-auto w-full">
+        {/* Status + liga/desliga */}
+        <section
+          className="p-3.5 sm:p-5 rounded-2xl relative overflow-hidden transition-all duration-300"
           style={{
             background: isEnabled
               ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(139, 92, 246, 0.08) 100%)'
               : 'var(--bg-elevated)',
             border: `1px solid ${isEnabled ? 'rgba(16, 185, 129, 0.35)' : 'var(--border)'}`,
-            boxShadow: isEnabled ? '0 8px 32px -8px rgba(16, 185, 129, 0.2)' : 'none',
           }}
         >
-          {/* Efeito Glow de Fundo */}
           {isEnabled && (
             <div
-              className="absolute -top-12 -right-12 w-44 h-44 rounded-full blur-3xl pointer-events-none opacity-40"
+              className="absolute -top-12 -right-12 w-44 h-44 rounded-full blur-3xl pointer-events-none opacity-30"
               style={{ background: 'var(--ok, #10b981)' }}
             />
           )}
 
-          <div className="flex items-center justify-between gap-3 relative z-10">
-            <div className="flex items-center gap-3.5 min-w-0">
-              {/* Ícone com Pulse */}
+          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
               <div
-                className={`w-13 h-13 rounded-2xl flex items-center justify-center flex-shrink-0 transition-transform duration-300 relative ${
-                  isEnabled ? 'scale-105' : ''
-                }`}
+                className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 relative"
                 style={{
                   background: isEnabled ? 'rgba(16, 185, 129, 0.18)' : 'var(--surface)',
                   border: `1.5px solid ${isEnabled ? 'rgba(16, 185, 129, 0.45)' : 'var(--border)'}`,
@@ -221,7 +390,7 @@ const Hotspot = memo(function Hotspot({ onClose }: HotspotProps) {
               >
                 {isEnabled ? (
                   <>
-                    <Wifi className="w-6 h-6 text-emerald-400 animate-pulse" />
+                    <Wifi className="w-6 h-6 text-[var(--ok)]" />
                     <span className="absolute -top-1 -right-1 flex h-3 w-3">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                       <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
@@ -232,1075 +401,609 @@ const Hotspot = memo(function Hotspot({ onClose }: HotspotProps) {
                 )}
               </div>
 
-              {/* Informações de Status */}
               <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h2 className="font-bold text-base sm:text-lg" style={{ color: 'var(--text)' }}>
-                    {loading
-                      ? isEnabled
-                        ? 'Parando Hotspot...'
-                        : 'Iniciando Hotspot...'
-                      : isEnabled
-                      ? 'Hotspot Ativo'
-                      : 'Hotspot Inativo'}
-                  </h2>
-                  <span
-                    className={`text-[11px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider ${
-                      isEnabled
-                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                        : 'bg-zinc-500/20 text-zinc-400 border border-zinc-500/30'
-                    }`}
-                  >
-                    {isEnabled ? 'Servidor Online' : 'Desligado'}
-                  </span>
-                </div>
-
-                <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>
-                  {isEnabled
-                    ? `Proxy ativo em ${hotspotInfo.ip}:${hotspotInfo.httpPort}`
-                    : 'Compartilhe sua conexão VPN via Proxy HTTP, SOCKS5 e PAC'}
-                </p>
+                <h2 className="font-bold text-base sm:text-lg leading-tight" style={{ color: 'var(--text)' }}>
+                  {loading
+                    ? isEnabled
+                      ? 'Parando hotspot...'
+                      : 'Iniciando hotspot...'
+                    : isEnabled
+                    ? 'Hotspot ativo'
+                    : 'Hotspot desligado'}
+                </h2>
+                {isEnabled ? (
+                  <div className="flex items-center gap-1.5 mt-1 text-xs flex-wrap" style={{ color: 'var(--text-muted)' }}>
+                    <span>IP do hotspot:</span>
+                    <CopyChip value={ip} label="IP do hotspot" copyKey="hdr_ip" api={api} />
+                  </div>
+                ) : (
+                  <p className="text-xs mt-0.5 leading-snug" style={{ color: 'var(--text-muted)' }}>
+                    Compartilhe a VPN com outros aparelhos no Wi-Fi deste celular.
+                  </p>
+                )}
               </div>
             </div>
 
-            {/* Botão Liga / Desliga */}
             <button
+              type="button"
               onClick={handleMasterToggle}
               disabled={loading}
-              className={`
-                px-5 min-h-[46px] rounded-full font-bold text-sm transition-all duration-200 touch-manipulation
-                active:scale-95 flex items-center justify-center gap-2 flex-shrink-0 shadow-lg cursor-pointer
-                disabled:opacity-60 disabled:cursor-not-allowed
-                ${
-                  isEnabled
-                    ? 'bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 border border-rose-500/40'
-                    : 'text-white hover:brightness-110'
-                }
-              `}
-              style={{
-                background: isEnabled ? undefined : 'var(--accent)',
-                boxShadow: isEnabled
-                  ? '0 4px 16px -2px rgba(244, 63, 94, 0.25)'
-                  : '0 4px 20px -2px rgba(139, 92, 246, 0.4)',
-              }}
+              className={`w-full sm:w-auto px-5 min-h-[46px] rounded-xl sm:rounded-full font-bold text-sm transition-all duration-200 touch-manipulation active:scale-95 flex items-center justify-center gap-2 flex-shrink-0 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ${
+                isEnabled
+                  ? 'bg-rose-500/15 hover:bg-rose-500/25 text-[var(--danger)] border border-rose-500/40'
+                  : 'text-white hover:brightness-110 shadow-lg'
+              }`}
+              style={{ background: isEnabled ? undefined : 'var(--accent)' }}
             >
               {loading ? (
                 <>
                   <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                   <span>{isEnabled ? 'Parando...' : 'Iniciando...'}</span>
                 </>
-              ) : isEnabled ? (
-                'Desativar'
               ) : (
-                'Ativar Hotspot'
+                <>
+                  <Power className="w-4 h-4" />
+                  <span>{isEnabled ? 'Desativar' : 'Ativar hotspot'}</span>
+                </>
               )}
             </button>
           </div>
 
-          {/* Aviso se a VPN estiver desconectada */}
           {!isVpnActive && (
-            <div
-              className="mt-3.5 p-2.5 sm:p-3 rounded-xl flex items-start gap-2.5 text-xs transition-all duration-200"
-              style={{
-                background: 'rgba(245, 158, 11, 0.1)',
-                border: '1px solid rgba(245, 158, 11, 0.25)',
-                color: '#fbbf24',
-              }}
-            >
-              <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0 text-amber-400" />
-              <div className="flex-1">
-                <span className="font-semibold block mb-0.5">Aviso: A VPN principal está desconectada</span>
-                <span className="text-amber-200/80 leading-relaxed text-[11px] sm:text-xs">
-                  Para que os outros dispositivos consigam acessar a internet protegida, conecte a VPN antes de iniciar o compartilhamento.
-                </span>
-              </div>
+            <div className="relative z-10 mt-3">
+              <Notice tone="warn">
+                <strong className="block">A VPN está desconectada</strong>
+                Conecte a VPN antes de ativar o hotspot para os outros aparelhos navegarem por ela.
+              </Notice>
             </div>
           )}
-        </div>
+        </section>
 
-        {/* Abas Superiores (Segmented Control) */}
-        <div
-          className="flex p-1 rounded-xl gap-1 overflow-x-auto scrollbar-none"
-          style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}
-        >
-          <button
-            onClick={() => setActiveTab('methods')}
-            className={`flex-1 min-w-[95px] py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-150 cursor-pointer ${
-              activeTab === 'methods'
-                ? 'bg-[var(--accent)] text-white shadow-md'
-                : 'text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-hover)]'
-            }`}
-          >
-            <Globe className="w-3.5 h-3.5 flex-shrink-0" />
-            <span>Métodos IP</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('qrcode')}
-            className={`flex-1 min-w-[90px] py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-150 cursor-pointer ${
-              activeTab === 'qrcode'
-                ? 'bg-[var(--accent)] text-white shadow-md'
-                : 'text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-hover)]'
-            }`}
-          >
-            <QrCode className="w-3.5 h-3.5 flex-shrink-0" />
-            <span>QR Code</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('tutorials')}
-            className={`flex-1 min-w-[95px] py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-150 cursor-pointer ${
-              activeTab === 'tutorials'
-                ? 'bg-[var(--accent)] text-white shadow-md'
-                : 'text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-hover)]'
-            }`}
-          >
-            <Smartphone className="w-3.5 h-3.5 flex-shrink-0" />
-            <span>Como Usar</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('settings')}
-            className={`flex-1 min-w-[90px] py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-150 cursor-pointer ${
-              activeTab === 'settings'
-                ? 'bg-[var(--accent)] text-white shadow-md'
-                : 'text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-hover)]'
-            }`}
-          >
-            <Settings className="w-3.5 h-3.5 flex-shrink-0" />
-            <span>Avançado</span>
-          </button>
-        </div>
-
-        {/* ============================================================== */}
-        {/* ABA 1: TODOS OS MÉTODOS DE IP & PROXY                          */}
-        {/* ============================================================== */}
-        {activeTab === 'methods' && (
-          <div className="space-y-3.5 animate-fadeIn">
-            {/* 1. Método HTTP / HTTPS Proxy */}
-            <div
-              className="p-4 rounded-xl space-y-3 transition-all duration-200"
-              style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}
+        {/* Abas */}
+        <nav className="grid grid-cols-3 p-1 rounded-xl gap-1" style={cardStyle} aria-label="Seções do hotspot">
+          {TABS.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setActiveTab(id)}
+              className={`min-h-[40px] px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-150 cursor-pointer touch-manipulation ${
+                activeTab === id
+                  ? 'bg-[var(--accent)] text-white shadow-md'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-hover)]'
+              }`}
+              aria-pressed={activeTab === id}
             >
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-sky-500/15 text-sky-400 flex items-center justify-center flex-shrink-0">
-                    <Globe className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-sm" style={{ color: 'var(--text)' }}>
-                      Proxy HTTP / HTTPS
-                    </h3>
-                    <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                      Configuração padrão para celulares, PCs, Smart TVs e consoles
-                    </p>
-                  </div>
-                </div>
-                <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase bg-sky-500/15 text-sky-400 border border-sky-500/30">
-                  Universal
-                </span>
-              </div>
+              <Icon className="w-3.5 h-3.5 flex-shrink-0" />
+              <span className="truncate">{label}</span>
+            </button>
+          ))}
+        </nav>
 
-              {/* Grid com IP e Porta lado a lado */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-                {/* Campo IP */}
-                <div
-                  className="p-2.5 rounded-lg flex items-center justify-between gap-2"
-                  style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-                >
-                  <div className="min-w-0">
-                    <span className="text-[10px] block font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-                      Endereço IP (Host)
-                    </span>
-                    <span className="font-mono font-bold text-sm truncate block" style={{ color: 'var(--text)' }}>
-                      {hotspotInfo.ip}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => handleCopy(hotspotInfo.ip, 'Endereço IP', 'http_ip')}
-                    className="p-2 rounded-lg transition-colors hover:bg-[var(--surface-hover)] cursor-pointer text-[var(--accent)] flex-shrink-0"
-                    title="Copiar IP"
-                  >
-                    {copiedKey === 'http_ip' ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-                  </button>
-                </div>
+        {/* ABA: CONEXÕES */}
+        {activeTab === 'connect' && (
+          <div className="space-y-3 animate-fadeIn">
+            {!isEnabled && (
+              <Notice>
+                Ligue o <strong>hotspot Wi-Fi do Android</strong> e toque em <strong>Ativar hotspot</strong>. Os dados
+                abaixo são os que os outros aparelhos vão usar.
+              </Notice>
+            )}
 
-                {/* Campo Porta */}
-                <div
-                  className="p-2.5 rounded-lg flex items-center justify-between gap-2"
-                  style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-                >
-                  <div className="min-w-0">
-                    <span className="text-[10px] block font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-                      Porta HTTP
-                    </span>
-                    <span className="font-mono font-bold text-sm truncate block" style={{ color: 'var(--text)' }}>
-                      {hotspotInfo.httpPort}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => handleCopy(String(hotspotInfo.httpPort), 'Porta HTTP', 'http_port')}
-                    className="p-2 rounded-lg transition-colors hover:bg-[var(--surface-hover)] cursor-pointer text-[var(--accent)] flex-shrink-0"
-                    title="Copiar Porta"
-                  >
-                    {copiedKey === 'http_port' ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Botão Copiar Proxy Completo */}
-              <div className="flex items-center justify-between pt-1 text-xs">
-                <span className="font-mono text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                  String: <strong style={{ color: 'var(--text)' }}>{hotspotInfo.httpProxy}</strong>
-                </span>
-                <button
-                  onClick={() => handleCopy(hotspotInfo.httpProxy, 'Proxy HTTP completo', 'http_full')}
-                  className="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer bg-[var(--surface)] hover:bg-[var(--surface-hover)]"
-                  style={{ border: '1px solid var(--border)', color: 'var(--text)' }}
-                >
-                  {copiedKey === 'http_full' ? (
-                    <>
-                      <Check className="w-3.5 h-3.5 text-emerald-400" />
-                      <span className="text-emerald-400">Copiado!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3.5 h-3.5 text-[var(--accent)]" />
-                      <span>Copiar IP:Porta</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* 2. Método SOCKS5 Proxy com Relay UDP */}
-            <div
-              className="p-4 rounded-xl space-y-3 transition-all duration-200"
-              style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-violet-500/15 text-violet-400 flex items-center justify-center flex-shrink-0">
-                    <ShieldCheck className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-sm" style={{ color: 'var(--text)' }}>
-                      Proxy SOCKS5 & Relay UDP
-                    </h3>
-                    <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                      Suporte a tráfego TCP e UDP completo (Telegram, jogos, DNS e chamadas)
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5 flex-wrap justify-end">
-                  {hotspotInfo.udpSupported ? (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                      UDP Ativo
-                    </span>
-                  ) : (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase bg-violet-500/15 text-violet-400 border border-violet-500/30">
-                      SOCKS5
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Grid com IP, Porta SOCKS TCP e Porta SOCKS UDP */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
-                {/* Campo IP SOCKS */}
-                <div
-                  className="p-2.5 rounded-lg flex items-center justify-between gap-2"
-                  style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-                >
-                  <div className="min-w-0">
-                    <span className="text-[10px] block font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-                      Endereço IP (Host)
-                    </span>
-                    <span className="font-mono font-bold text-sm truncate block" style={{ color: 'var(--text)' }}>
-                      {hotspotInfo.ip}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => handleCopy(hotspotInfo.ip, 'Endereço IP', 'socks_ip')}
-                    className="p-1.5 rounded-lg transition-colors hover:bg-[var(--surface-hover)] cursor-pointer text-[var(--accent)] flex-shrink-0"
-                    title="Copiar IP"
-                  >
-                    {copiedKey === 'socks_ip' ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-                  </button>
-                </div>
-
-                {/* Campo Porta SOCKS (TCP) */}
-                <div
-                  className="p-2.5 rounded-lg flex items-center justify-between gap-2"
-                  style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-                >
-                  <div className="min-w-0">
-                    <span className="text-[10px] block font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-                      Porta SOCKS5 (TCP)
-                    </span>
-                    <span className="font-mono font-bold text-sm truncate block" style={{ color: 'var(--text)' }}>
-                      {hotspotInfo.socksPort}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => handleCopy(String(hotspotInfo.socksPort), 'Porta SOCKS5', 'socks_port')}
-                    className="p-1.5 rounded-lg transition-colors hover:bg-[var(--surface-hover)] cursor-pointer text-[var(--accent)] flex-shrink-0"
-                    title="Copiar Porta TCP"
-                  >
-                    {copiedKey === 'socks_port' ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-                  </button>
-                </div>
-
-                {/* Campo Porta Relay UDP */}
-                <div
-                  className="p-2.5 rounded-lg flex items-center justify-between gap-2"
-                  style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-                >
-                  <div className="min-w-0">
-                    <span className="text-[10px] block font-medium uppercase tracking-wider text-emerald-400">
-                      Relay UDP
-                    </span>
-                    <span className="font-mono font-bold text-sm truncate block text-emerald-300">
-                      {hotspotInfo.socksUdpPort || (hotspotInfo.httpPort === 8578 ? 8580 : hotspotInfo.httpPort + 2)}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() =>
-                      handleCopy(
-                        String(hotspotInfo.socksUdpPort || (hotspotInfo.httpPort === 8578 ? 8580 : hotspotInfo.httpPort + 2)),
-                        'Porta UDP Relay',
-                        'socks_udp_port'
-                      )
-                    }
-                    className="p-1.5 rounded-lg transition-colors hover:bg-[var(--surface-hover)] cursor-pointer text-emerald-400 flex-shrink-0"
-                    title="Copiar Porta UDP"
-                  >
-                    {copiedKey === 'socks_udp_port' ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Linha com Proxies formatados e botões de ação */}
-              <div className="space-y-2 pt-1 text-xs">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <div
-                    className="p-2 rounded-lg flex items-center justify-between gap-2"
-                    style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-                  >
-                    <div className="min-w-0 truncate">
-                      <span className="text-[10px] text-[var(--text-muted)] block">Proxy SOCKS5 (TCP):</span>
-                      <strong className="font-mono text-[11px]" style={{ color: 'var(--text)' }}>
-                        {hotspotInfo.socksProxy}
-                      </strong>
+            {waSupported && (
+              <MethodCard
+                icon={MessageCircle}
+                tone="green"
+                title="WhatsApp"
+                subtitle="Proxy próprio do WhatsApp — ele não aceita HTTP nem SOCKS5"
+                badge="Mensagens e mídia"
+              >
+                {waAvailable ? (
+                  <>
+                    <div className="grid grid-cols-2 gap-2">
+                      <CopyField label="Endereço do proxy" value={ip} copyKey="wa_ip" api={api} className="col-span-2" />
+                      <CopyField
+                        label="Porta do chat"
+                        value={String(waChatPort)}
+                        copyKey="wa_chat"
+                        api={api}
+                        valueClassName={TONES.green.text}
+                      />
+                      <CopyField
+                        label="Porta de mídia"
+                        value={String(waMediaPort)}
+                        copyKey="wa_media"
+                        api={api}
+                        valueClassName={TONES.green.text}
+                      />
                     </div>
+                    <Notice>
+                      Preencha as duas portas e deixe <strong>Usar TLS</strong> desligado. Chamadas de voz e vídeo não
+                      funcionam por proxy no WhatsApp.
+                    </Notice>
                     <button
-                      onClick={() => handleCopy(hotspotInfo.socksProxy, 'Proxy SOCKS5 completo', 'socks_full')}
-                      className="px-2.5 py-1 rounded text-[11px] font-semibold flex items-center gap-1 cursor-pointer bg-[var(--bg-elevated)] hover:bg-[var(--surface-hover)] flex-shrink-0"
-                      style={{ border: '1px solid var(--border)' }}
+                      type="button"
+                      onClick={() => openGuide('whatsapp')}
+                      className={`w-full min-h-[40px] rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer touch-manipulation transition-colors ${TONES.green.button}`}
                     >
-                      {copiedKey === 'socks_full' ? (
-                        <>
-                          <Check className="w-3 h-3 text-emerald-400" />
-                          <span className="text-emerald-400">Copiado!</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-3 h-3 text-[var(--accent)]" />
-                          <span>Copiar</span>
-                        </>
-                      )}
+                      <Smartphone className="w-3.5 h-3.5" />
+                      Ver passo a passo no WhatsApp
                     </button>
-                  </div>
-
-                  <div
-                    className="p-2 rounded-lg flex items-center justify-between gap-2"
-                    style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-                  >
-                    <div className="min-w-0 truncate">
-                      <span className="text-[10px] text-emerald-400 block">Endereço Relay UDP:</span>
-                      <strong className="font-mono text-[11px] text-emerald-300">
-                        {hotspotInfo.socksUdpProxy ||
-                          `${hotspotInfo.ip}:${hotspotInfo.socksUdpPort || (hotspotInfo.httpPort === 8578 ? 8580 : hotspotInfo.httpPort + 2)}`}
-                      </strong>
-                    </div>
-                    <button
-                      onClick={() =>
-                        handleCopy(
-                          hotspotInfo.socksUdpProxy ||
-                            `${hotspotInfo.ip}:${hotspotInfo.socksUdpPort || (hotspotInfo.httpPort === 8578 ? 8580 : hotspotInfo.httpPort + 2)}`,
-                          'Proxy UDP Relay',
-                          'socks_udp_full'
-                        )
-                      }
-                      className="px-2.5 py-1 rounded text-[11px] font-semibold flex items-center gap-1 cursor-pointer bg-[var(--bg-elevated)] hover:bg-[var(--surface-hover)] flex-shrink-0"
-                      style={{ border: '1px solid var(--border)' }}
-                    >
-                      {copiedKey === 'socks_udp_full' ? (
-                        <>
-                          <Check className="w-3 h-3 text-emerald-400" />
-                          <span className="text-emerald-400">Copiado!</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-3 h-3 text-emerald-400" />
-                          <span className="text-emerald-400">Copiar</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between pt-0.5">
-                  <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                    Atalho direto para configuração no Telegram:
-                  </span>
-                  <button
-                    onClick={() => handleCopy(telegramProxyLink, 'Link Telegram SOCKS5', 'socks_tg')}
-                    className="px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30"
-                  >
-                    {copiedKey === 'socks_tg' ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                    <span>Link Telegram</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* 3. Método Auto Proxy Script PAC */}
-            <div
-              className="p-4 rounded-xl space-y-3 transition-all duration-200"
-              style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-amber-500/15 text-amber-400 flex items-center justify-center flex-shrink-0">
-                    <Radio className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-sm" style={{ color: 'var(--text)' }}>
-                      Script Automático PAC
-                    </h3>
-                    <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                      Configuração automática via URL para iPhone (iOS), iPad, Mac e Windows
-                    </p>
-                  </div>
-                </div>
-                <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase bg-amber-500/15 text-amber-400 border border-amber-500/30">
-                  Auto-Config
-                </span>
-              </div>
-
-              {/* URL do PAC */}
-              <div
-                className="p-2.5 rounded-lg flex items-center justify-between gap-2"
-                style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-              >
-                <div className="min-w-0 flex-1">
-                  <span className="text-[10px] block font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-                    URL do Script de Configuração (PAC)
-                  </span>
-                  <span className="font-mono font-semibold text-xs truncate block text-amber-300 select-all">
-                    {hotspotInfo.pacUrl}
-                  </span>
-                </div>
-                <button
-                  onClick={() => handleCopy(hotspotInfo.pacUrl, 'URL PAC', 'pac_url')}
-                  className="p-2 rounded-lg transition-colors hover:bg-[var(--surface-hover)] cursor-pointer text-[var(--accent)] flex-shrink-0"
-                  title="Copiar URL PAC"
-                >
-                  {copiedKey === 'pac_url' ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-                </button>
-              </div>
-
-              {/* Ações do PAC */}
-              <div className="flex items-center justify-between pt-1">
-                <p className="text-[11px] leading-tight" style={{ color: 'var(--text-muted)' }}>
-                  Basta colar essa URL na opção <em>"Automático / URL do Script"</em> no Wi-Fi do iPhone.
-                </p>
-                <button
-                  onClick={() => {
-                    setQrType('pac');
-                    setActiveTab('qrcode');
-                  }}
-                  className="px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer bg-[var(--surface)] hover:bg-[var(--surface-hover)] flex-shrink-0"
-                  style={{ border: '1px solid var(--border)', color: 'var(--text)' }}
-                >
-                  <QrCode className="w-3.5 h-3.5 text-[var(--accent)]" />
-                  <span>Ver QR Code</span>
-                </button>
-              </div>
-            </div>
-
-            {/* 4. Página de Teste Web (Help URL) */}
-            <div
-              className="p-3.5 rounded-xl flex items-center justify-between gap-3 transition-all duration-200"
-              style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}
-            >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-7 h-7 rounded-lg bg-emerald-500/15 text-emerald-400 flex items-center justify-center flex-shrink-0">
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </div>
-                <div className="min-w-0">
-                  <h4 className="font-semibold text-xs" style={{ color: 'var(--text)' }}>
-                    Página de Teste Web
-                  </h4>
-                  <p className="text-[11px] truncate font-mono" style={{ color: 'var(--text-muted)' }}>
-                    {hotspotInfo.helpUrl}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <button
-                  onClick={() => handleCopy(hotspotInfo.helpUrl, 'URL de Teste', 'help_url')}
-                  className="px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 cursor-pointer bg-[var(--surface)] hover:bg-[var(--surface-hover)]"
-                  style={{ border: '1px solid var(--border)', color: 'var(--text)' }}
-                >
-                  {copiedKey === 'help_url' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-[var(--accent)]" />}
-                  <span>Copiar</span>
-                </button>
-                <button
-                  onClick={() => openUrl(hotspotInfo.helpUrl)}
-                  className="px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 cursor-pointer bg-[var(--surface)] hover:bg-[var(--surface-hover)]"
-                  style={{ border: '1px solid var(--border)', color: 'var(--text)' }}
-                >
-                  <ExternalLink className="w-3 h-3 text-[var(--accent)]" />
-                  <span>Testar</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ============================================================== */}
-        {/* ABA 2: QR CODE FÁCIL                                           */}
-        {/* ============================================================== */}
-        {activeTab === 'qrcode' && (
-          <div className="space-y-4 animate-fadeIn">
-            {/* Seletor de Tipo de QR Code */}
-            <div
-              className="p-1.5 rounded-xl flex gap-1 overflow-x-auto scrollbar-none"
-              style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}
-            >
-              <button
-                onClick={() => setQrType('pac')}
-                className={`flex-1 py-1.5 px-2.5 rounded-lg text-xs font-semibold cursor-pointer transition-colors whitespace-nowrap ${
-                  qrType === 'pac'
-                    ? 'bg-[var(--accent)] text-white shadow-sm'
-                    : 'text-[var(--text-muted)] hover:text-[var(--text)]'
-                }`}
-              >
-                URL PAC (iOS)
-              </button>
-              <button
-                onClick={() => setQrType('http')}
-                className={`flex-1 py-1.5 px-2.5 rounded-lg text-xs font-semibold cursor-pointer transition-colors whitespace-nowrap ${
-                  qrType === 'http'
-                    ? 'bg-[var(--accent)] text-white shadow-sm'
-                    : 'text-[var(--text-muted)] hover:text-[var(--text)]'
-                }`}
-              >
-                Proxy HTTP
-              </button>
-              <button
-                onClick={() => setQrType('socks')}
-                className={`flex-1 py-1.5 px-2.5 rounded-lg text-xs font-semibold cursor-pointer transition-colors whitespace-nowrap ${
-                  qrType === 'socks'
-                    ? 'bg-[var(--accent)] text-white shadow-sm'
-                    : 'text-[var(--text-muted)] hover:text-[var(--text)]'
-                }`}
-              >
-                SOCKS5 (TCP)
-              </button>
-              <button
-                onClick={() => setQrType('socks_udp')}
-                className={`flex-1 py-1.5 px-2.5 rounded-lg text-xs font-semibold cursor-pointer transition-colors whitespace-nowrap ${
-                  qrType === 'socks_udp'
-                    ? 'bg-[var(--accent)] text-white shadow-sm'
-                    : 'text-[var(--text-muted)] hover:text-[var(--text)]'
-                }`}
-              >
-                Relay UDP
-              </button>
-              <button
-                onClick={() => setQrType('telegram')}
-                className={`flex-1 py-1.5 px-2.5 rounded-lg text-xs font-semibold cursor-pointer transition-colors whitespace-nowrap ${
-                  qrType === 'telegram'
-                    ? 'bg-[var(--accent)] text-white shadow-sm'
-                    : 'text-[var(--text-muted)] hover:text-[var(--text)]'
-                }`}
-              >
-                Telegram Link
-              </button>
-            </div>
-
-            {/* Container do QR Code */}
-            <div
-              className="p-5 rounded-2xl flex flex-col items-center justify-center text-center space-y-3"
-              style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}
-            >
-              <div className="p-3 bg-white rounded-2xl shadow-xl border border-zinc-200 flex items-center justify-center min-w-[200px] min-h-[200px]">
-                {qrCodeLoading ? (
-                  <div className="flex flex-col items-center justify-center gap-2 p-8">
-                    <div className="w-8 h-8 border-3 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
-                    <span className="text-xs text-zinc-500 font-medium">Gerando QR Code...</span>
-                  </div>
-                ) : qrCodeUrl ? (
-                  <img src={qrCodeUrl} alt="QR Code de Conexão Hotspot" className="w-52 h-52 object-contain" />
+                  </>
                 ) : (
-                  <div className="p-8 text-xs text-zinc-500">Falha ao gerar QR Code</div>
+                  <Notice tone="warn">
+                    O app não conseguiu abrir as portas {WHATSAPP_CHAT_PORT}/{WHATSAPP_MEDIA_PORT} neste aparelho.
+                    Desative e ative o hotspot novamente.
+                  </Notice>
                 )}
+              </MethodCard>
+            )}
+
+            <MethodCard
+              icon={Globe}
+              tone="sky"
+              title="Proxy HTTP"
+              subtitle="Celulares, PCs, Smart TVs e consoles (configuração manual do Wi-Fi)"
+              badge="Universal"
+            >
+              <div className="grid grid-cols-2 gap-2">
+                <CopyField label="Endereço IP" value={ip} copyKey="http_ip" api={api} />
+                <CopyField label="Porta" value={String(hotspotInfo.httpPort)} copyKey="http_port" api={api} />
+                <CopyField
+                  label="IP:Porta"
+                  value={hotspotInfo.httpProxy}
+                  copyKey="http_full"
+                  api={api}
+                  className="col-span-2"
+                  small
+                />
               </div>
+            </MethodCard>
 
-              {/* Informação e Cópia do Conteúdo do QR */}
-              <div className="w-full max-w-sm space-y-2">
-                <div
-                  className="p-2 rounded-lg font-mono text-xs break-all truncate"
-                  style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}
-                >
-                  {activeQrContent}
-                </div>
+            <MethodCard
+              icon={ShieldCheck}
+              tone="violet"
+              title="Proxy SOCKS5"
+              subtitle="Telegram, navegadores e apps com SOCKS; UDP para DNS e jogos"
+              badge={hotspotInfo.udpSupported ? 'UDP ativo' : 'TCP'}
+            >
+              <div className="grid grid-cols-2 gap-2">
+                <CopyField label="Endereço IP" value={ip} copyKey="socks_ip" api={api} className="col-span-2" />
+                <CopyField label="Porta TCP" value={String(hotspotInfo.socksPort)} copyKey="socks_port" api={api} />
+                <CopyField
+                  label="Relay UDP"
+                  value={String(udpPort)}
+                  copyKey="socks_udp_port"
+                  api={api}
+                  valueClassName={TONES.emerald.text}
+                />
+                <CopyField
+                  label="SOCKS5 IP:Porta"
+                  value={hotspotInfo.socksProxy}
+                  copyKey="socks_full"
+                  api={api}
+                  className="col-span-2"
+                  small
+                />
+                <CopyField
+                  label="Relay UDP IP:Porta"
+                  value={udpProxy}
+                  copyKey="socks_udp_full"
+                  api={api}
+                  className="col-span-2"
+                  valueClassName={TONES.emerald.text}
+                  small
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => copy(telegramLink, 'Link do Telegram', 'socks_tg')}
+                className={`w-full min-h-[40px] rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer touch-manipulation transition-colors ${TONES.sky.button}`}
+              >
+                {copiedKey === 'socks_tg' ? <Check className="w-3.5 h-3.5" /> : <Send className="w-3.5 h-3.5" />}
+                {copiedKey === 'socks_tg' ? 'Link copiado!' : 'Copiar link de proxy do Telegram'}
+              </button>
+            </MethodCard>
 
-                <div className="flex items-center justify-center gap-2">
-                  <button
-                    onClick={() => handleCopy(activeQrContent, 'Dado do QR Code', 'qr_data')}
-                    className="px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer bg-[var(--surface)] hover:bg-[var(--surface-hover)]"
-                    style={{ border: '1px solid var(--border)', color: 'var(--text)' }}
-                  >
-                    {copiedKey === 'qr_data' ? (
-                      <>
-                        <Check className="w-3.5 h-3.5 text-emerald-400" />
-                        <span className="text-emerald-400">Copiado!</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3.5 h-3.5 text-[var(--accent)]" />
-                        <span>Copiar Conteúdo</span>
-                      </>
-                    )}
-                  </button>
-                </div>
+            <MethodCard
+              icon={Radio}
+              tone="amber"
+              title="Configuração automática (PAC)"
+              subtitle="iPhone, iPad, Mac e Windows: cole a URL em Proxy → Automático"
+              badge="Auto"
+            >
+              <CopyField
+                label="URL do script PAC"
+                value={hotspotInfo.pacUrl}
+                copyKey="pac_url"
+                api={api}
+                valueClassName={TONES.amber.text}
+                small
+              />
+            </MethodCard>
 
-                <p className="text-[11px] pt-1" style={{ color: 'var(--text-muted)' }}>
-                  Aponte a câmera de outro celular para ler ou copiar o proxy diretamente sem digitar.
+            <section className="p-3 rounded-xl flex items-center gap-3" style={cardStyle}>
+              <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${TONES.emerald.icon}`}>
+                <ExternalLink className="w-4 h-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h4 className="font-semibold text-xs" style={{ color: 'var(--text)' }}>
+                  Página de teste e ajuda
+                </h4>
+                <p className="text-[11px] truncate font-mono" style={{ color: 'var(--text-muted)' }}>
+                  {hotspotInfo.helpUrl}
                 </p>
               </div>
-            </div>
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={() => copy(hotspotInfo.helpUrl, 'URL de teste', 'help_url')}
+                  className="w-9 h-9 rounded-lg flex items-center justify-center cursor-pointer touch-manipulation hover:bg-[var(--surface-hover)]"
+                  style={fieldStyle}
+                  aria-label="Copiar URL de teste"
+                >
+                  {copiedKey === 'help_url' ? (
+                    <Check className="w-4 h-4 text-[var(--ok)]" />
+                  ) : (
+                    <Copy className="w-4 h-4 text-[var(--accent)]" />
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openUrl(hotspotInfo.helpUrl)}
+                  className="w-9 h-9 rounded-lg flex items-center justify-center cursor-pointer touch-manipulation hover:bg-[var(--surface-hover)]"
+                  style={fieldStyle}
+                  aria-label="Abrir página de teste"
+                >
+                  <ExternalLink className="w-4 h-4 text-[var(--accent)]" />
+                </button>
+              </div>
+            </section>
           </div>
         )}
 
-        {/* ============================================================== */}
-        {/* ABA 3: COMO USAR (TUTORIAIS)                                   */}
-        {/* ============================================================== */}
-        {activeTab === 'tutorials' && (
-          <div className="space-y-3.5 animate-fadeIn">
-            {/* Seletor de Aparelho */}
-            <div
-              className="flex p-1 rounded-xl gap-1 overflow-x-auto scrollbar-none"
-              style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}
-            >
-              <button
-                onClick={() => setTutorialDevice('android')}
-                className={`flex-1 py-1.5 px-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
-                  tutorialDevice === 'android'
-                    ? 'bg-[var(--accent)] text-white'
-                    : 'text-[var(--text-muted)] hover:text-[var(--text)]'
-                }`}
-              >
-                <Smartphone className="w-3.5 h-3.5" />
-                <span>Android</span>
-              </button>
-              <button
-                onClick={() => setTutorialDevice('ios')}
-                className={`flex-1 py-1.5 px-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
-                  tutorialDevice === 'ios'
-                    ? 'bg-[var(--accent)] text-white'
-                    : 'text-[var(--text-muted)] hover:text-[var(--text)]'
-                }`}
-              >
-                <Smartphone className="w-3.5 h-3.5" />
-                <span>iOS / iPhone</span>
-              </button>
-              <button
-                onClick={() => setTutorialDevice('windows')}
-                className={`flex-1 py-1.5 px-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
-                  tutorialDevice === 'windows'
-                    ? 'bg-[var(--accent)] text-white'
-                    : 'text-[var(--text-muted)] hover:text-[var(--text)]'
-                }`}
-              >
-                <Monitor className="w-3.5 h-3.5" />
-                <span>Windows PC</span>
-              </button>
-              <button
-                onClick={() => setTutorialDevice('tv')}
-                className={`flex-1 py-1.5 px-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
-                  tutorialDevice === 'tv'
-                    ? 'bg-[var(--accent)] text-white'
-                    : 'text-[var(--text-muted)] hover:text-[var(--text)]'
-                }`}
-              >
-                <Tv className="w-3.5 h-3.5" />
-                <span>Smart TV</span>
-              </button>
-              <button
-                onClick={() => setTutorialDevice('telegram')}
-                className={`flex-1 py-1.5 px-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
-                  tutorialDevice === 'telegram'
-                    ? 'bg-[var(--accent)] text-white'
-                    : 'text-[var(--text-muted)] hover:text-[var(--text)]'
-                }`}
-              >
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>Telegram</span>
-              </button>
+        {/* ABA: COMO USAR */}
+        {activeTab === 'guides' && (
+          <div className="space-y-3 animate-fadeIn">
+            <div className="grid grid-cols-3 gap-1.5">
+              {GUIDES.map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setGuide(id)}
+                  className={`min-h-[40px] px-2 rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1.5 cursor-pointer touch-manipulation transition-all duration-150 ${
+                    guide === id ? 'bg-[var(--accent)] text-white shadow-md' : 'text-[var(--text-muted)] hover:text-[var(--text)]'
+                  }`}
+                  style={guide === id ? undefined : cardStyle}
+                  aria-pressed={guide === id}
+                >
+                  <Icon className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span className="truncate">{label}</span>
+                </button>
+              ))}
             </div>
 
-            {/* Conteúdo do Tutorial Selecionado */}
-            <div
-              className="p-4 rounded-xl space-y-3.5 text-xs"
-              style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}
-            >
-              {tutorialDevice === 'android' && (
-                <div className="space-y-3">
-                  <h4 className="font-bold text-sm text-sky-400 flex items-center gap-2">
-                    <Smartphone className="w-4 h-4" /> Passo a Passo no Android
+            <section className="p-3.5 sm:p-4 rounded-xl space-y-3" style={cardStyle}>
+              {guide === 'whatsapp' && (
+                <>
+                  <h4 className={`font-bold text-sm flex items-center gap-2 ${TONES.green.text}`}>
+                    <MessageCircle className="w-4 h-4" /> WhatsApp pelo hotspot
                   </h4>
-                  <ol className="list-decimal list-inside space-y-2.5 text-[var(--text)] leading-relaxed">
-                    <li>Conecte o outro aparelho no Ponto de Acesso Wi-Fi do seu celular.</li>
-                    <li>Abra as <strong>Configurações de Wi-Fi</strong> do aparelho conectado.</li>
-                    <li>Toque na engrenagem da rede ou segure nela e escolha <strong>Modificar rede</strong>.</li>
-                    <li>Abra <strong>Opções Avançadas</strong> e em <strong>Proxy</strong> selecione <strong>Manual</strong>.</li>
-                    <li className="flex items-center gap-2 flex-wrap">
-                      <span>Nome do host / IP:</span>
-                      <code className="bg-[var(--surface)] px-2 py-0.5 rounded font-mono font-bold text-emerald-400 border border-[var(--border)]">
-                        {hotspotInfo.ip}
-                      </code>
-                      <button
-                        onClick={() => handleCopy(hotspotInfo.ip, 'IP', 'tut_and_ip')}
-                        className="text-[var(--accent)] underline font-medium cursor-pointer"
-                      >
-                        {copiedKey === 'tut_and_ip' ? 'Copiado!' : 'Copiar IP'}
-                      </button>
-                    </li>
-                    <li className="flex items-center gap-2 flex-wrap">
-                      <span>Porta do proxy:</span>
-                      <code className="bg-[var(--surface)] px-2 py-0.5 rounded font-mono font-bold text-emerald-400 border border-[var(--border)]">
-                        {hotspotInfo.httpPort}
-                      </code>
-                      <button
-                        onClick={() => handleCopy(String(hotspotInfo.httpPort), 'Porta', 'tut_and_port')}
-                        className="text-[var(--accent)] underline font-medium cursor-pointer"
-                      >
-                        {copiedKey === 'tut_and_port' ? 'Copiado!' : 'Copiar Porta'}
-                      </button>
-                    </li>
-                    <li>Toque em <strong>Salvar</strong> e comece a navegar!</li>
-                  </ol>
-                </div>
+                  {waSupported ? (
+                    <Steps
+                      items={[
+                        'Conecte o outro celular no Wi-Fi deste aparelho.',
+                        <>
+                          No WhatsApp, abra <strong>Configurações → Armazenamento e dados → Proxy</strong>.
+                        </>,
+                        <>
+                          Ative <strong>Usar proxy</strong> e toque em <strong>Configurar proxy</strong>.
+                        </>,
+                        <>
+                          Endereço do proxy: <CopyChip value={ip} label="Endereço" copyKey="g_wa_ip" api={api} />
+                        </>,
+                        <>
+                          Porta do chat:{' '}
+                          <CopyChip value={String(waChatPort)} label="Porta do chat" copyKey="g_wa_chat" api={api} /> · Porta
+                          de mídia:{' '}
+                          <CopyChip value={String(waMediaPort)} label="Porta de mídia" copyKey="g_wa_media" api={api} />
+                        </>,
+                        <>
+                          Deixe <strong>Usar TLS</strong> desligado e salve. O WhatsApp mostra <em>Conectado</em> quando
+                          funcionar.
+                        </>,
+                      ]}
+                    />
+                  ) : (
+                    <Notice tone="warn">Atualize o app para usar o proxy do WhatsApp pelo hotspot.</Notice>
+                  )}
+                  <Notice>
+                    Se preencher só o endereço, o WhatsApp tenta a porta 443 com TLS e não conecta. Chamadas não
+                    funcionam por proxy.
+                  </Notice>
+                </>
               )}
 
-              {tutorialDevice === 'ios' && (
-                <div className="space-y-3">
-                  <h4 className="font-bold text-sm text-amber-400 flex items-center gap-2">
-                    <Smartphone className="w-4 h-4" /> Passo a Passo no iPhone / iPad (iOS)
+              {guide === 'android' && (
+                <>
+                  <h4 className={`font-bold text-sm flex items-center gap-2 ${TONES.sky.text}`}>
+                    <Smartphone className="w-4 h-4" /> Android
                   </h4>
-                  <ol className="list-decimal list-inside space-y-2.5 text-[var(--text)] leading-relaxed">
-                    <li>Conecte o iPhone no Wi-Fi do seu Hotspot.</li>
-                    <li>Toque no ícone azul <strong>(i)</strong> ao lado do nome da rede Wi-Fi.</li>
-                    <li>Role até o fim da página e toque em <strong>Configurar Proxy</strong>.</li>
-                    <li>
-                      <strong>Método Recomendado:</strong> Escolha <strong>Automático</strong> e cole a URL do PAC:
-                      <div className="mt-1 flex items-center gap-2 flex-wrap">
-                        <code className="bg-[var(--surface)] px-2 py-1 rounded font-mono text-[11px] text-amber-300 border border-[var(--border)] max-w-full truncate">
-                          {hotspotInfo.pacUrl}
-                        </code>
-                        <button
-                          onClick={() => handleCopy(hotspotInfo.pacUrl, 'URL PAC', 'tut_ios_pac')}
-                          className="px-2 py-0.5 rounded bg-[var(--accent)] text-white text-[10px] font-bold cursor-pointer"
-                        >
-                          {copiedKey === 'tut_ios_pac' ? 'Copiado!' : 'Copiar Link'}
-                        </button>
-                      </div>
-                    </li>
-                    <li>
-                      <em>Ou Método Manual:</em> Escolha <strong>Manual</strong> e informe Servidor: <code>{hotspotInfo.ip}</code> e Porta: <code>{hotspotInfo.httpPort}</code>.
-                    </li>
-                    <li>Toque em <strong>Salvar</strong> no canto superior direito.</li>
-                  </ol>
-                </div>
+                  <Steps
+                    items={[
+                      'Conecte o outro aparelho no Wi-Fi deste celular.',
+                      <>
+                        Em <strong>Configurações de Wi-Fi</strong>, toque na engrenagem da rede (ou segure e escolha{' '}
+                        <strong>Modificar rede</strong>).
+                      </>,
+                      <>
+                        Em <strong>Opções avançadas → Proxy</strong>, escolha <strong>Manual</strong>.
+                      </>,
+                      <>
+                        Nome do host: <CopyChip value={ip} label="IP" copyKey="g_and_ip" api={api} /> · Porta:{' '}
+                        <CopyChip value={String(hotspotInfo.httpPort)} label="Porta" copyKey="g_and_port" api={api} />
+                      </>,
+                      <>
+                        Toque em <strong>Salvar</strong>.
+                      </>,
+                    ]}
+                  />
+                  <Notice>
+                    Alguns apps ignoram o proxy do Wi-Fi. Para o WhatsApp, use o{' '}
+                    <button
+                      type="button"
+                      onClick={() => setGuide('whatsapp')}
+                      className="underline font-semibold text-[var(--accent)] cursor-pointer"
+                    >
+                      guia do WhatsApp
+                    </button>
+                    .
+                  </Notice>
+                </>
               )}
 
-              {tutorialDevice === 'windows' && (
-                <div className="space-y-3">
-                  <h4 className="font-bold text-sm text-purple-400 flex items-center gap-2">
-                    <Monitor className="w-4 h-4" /> Passo a Passo no Windows (PC / Laptop)
+              {guide === 'ios' && (
+                <>
+                  <h4 className={`font-bold text-sm flex items-center gap-2 ${TONES.amber.text}`}>
+                    <Smartphone className="w-4 h-4" /> iPhone / iPad
                   </h4>
-                  <ol className="list-decimal list-inside space-y-2.5 text-[var(--text)] leading-relaxed">
-                    <li>Conecte o computador na rede Wi-Fi deste celular.</li>
-                    <li>Pressione as teclas <strong>Win + I</strong> para abrir as <strong>Configurações</strong>.</li>
-                    <li>Acesse <strong>Rede e Internet</strong> &rarr; <strong>Proxy</strong>.</li>
-                    <li>Em <strong>Configuração manual de proxy</strong>, clique em <strong>Configurar</strong> e ative <strong>"Usar um servidor proxy"</strong>.</li>
-                    <li className="flex items-center gap-2 flex-wrap">
-                      <span>Endereço IP:</span>
-                      <code className="bg-[var(--surface)] px-2 py-0.5 rounded font-mono font-bold text-purple-300 border border-[var(--border)]">
-                        {hotspotInfo.ip}
-                      </code>
-                      <span>| Porta:</span>
-                      <code className="bg-[var(--surface)] px-2 py-0.5 rounded font-mono font-bold text-purple-300 border border-[var(--border)]">
-                        {hotspotInfo.httpPort}
-                      </code>
-                    </li>
-                    <li>Clique em <strong>Salvar</strong>. Todo o tráfego do computador passará pela VPN!</li>
-                  </ol>
-                </div>
+                  <Steps
+                    items={[
+                      'Conecte o iPhone no Wi-Fi deste celular.',
+                      <>
+                        Toque no <strong>(i)</strong> ao lado da rede e depois em <strong>Configurar Proxy</strong>.
+                      </>,
+                      <>
+                        Recomendado: escolha <strong>Automático</strong> e cole a URL:{' '}
+                        <CopyChip value={hotspotInfo.pacUrl} label="URL PAC" copyKey="g_ios_pac" api={api} />
+                      </>,
+                      <>
+                        Ou <strong>Manual</strong>: servidor{' '}
+                        <CopyChip value={ip} label="IP" copyKey="g_ios_ip" api={api} /> · porta{' '}
+                        <CopyChip value={String(hotspotInfo.httpPort)} label="Porta" copyKey="g_ios_port" api={api} />
+                      </>,
+                      <>
+                        Toque em <strong>Salvar</strong>.
+                      </>,
+                    ]}
+                  />
+                </>
               )}
 
-              {tutorialDevice === 'tv' && (
-                <div className="space-y-3">
-                  <h4 className="font-bold text-sm text-emerald-400 flex items-center gap-2">
-                    <Tv className="w-4 h-4" /> Passo a Passo em Smart TV e TV Box
+              {guide === 'windows' && (
+                <>
+                  <h4 className={`font-bold text-sm flex items-center gap-2 ${TONES.violet.text}`}>
+                    <Monitor className="w-4 h-4" /> Windows
                   </h4>
-                  <ol className="list-decimal list-inside space-y-2.5 text-[var(--text)] leading-relaxed">
-                    <li>Conecte a TV ou TV Box no sinal Wi-Fi do seu celular.</li>
-                    <li>Acesse <strong>Configurações</strong> &rarr; <strong>Rede</strong> &rarr; <strong>Wi-Fi</strong>.</li>
-                    <li>Selecione a sua rede conectada e clique em <strong>Opções Avançadas</strong> ou <strong>Modificar</strong>.</li>
-                    <li>
-                      Altere a opção <strong>Proxy</strong> para <strong>Manual</strong>.
-                    </li>
-                    <li className="flex items-center gap-2 flex-wrap">
-                      <span>Servidor:</span>
-                      <code className="bg-[var(--surface)] px-2 py-0.5 rounded font-mono font-bold text-emerald-400 border border-[var(--border)]">
-                        {hotspotInfo.ip}
-                      </code>
-                      <span>Porta:</span>
-                      <code className="bg-[var(--surface)] px-2 py-0.5 rounded font-mono font-bold text-emerald-400 border border-[var(--border)]">
-                        {hotspotInfo.httpPort}
-                      </code>
-                    </li>
-                    <li>Salve as configurações. Se sua TV não possuir suporte a proxy, utilize o aplicativo auxiliar <em>VPN Hotspot</em>.</li>
-                  </ol>
-                </div>
+                  <Steps
+                    items={[
+                      'Conecte o computador no Wi-Fi deste celular.',
+                      <>
+                        Pressione <strong>Win + I</strong> e abra <strong>Rede e Internet → Proxy</strong>.
+                      </>,
+                      <>
+                        Mais simples: em <strong>Usar script de configuração</strong>, cole{' '}
+                        <CopyChip value={hotspotInfo.pacUrl} label="URL PAC" copyKey="g_win_pac" api={api} />
+                      </>,
+                      <>
+                        Ou em <strong>Configuração manual</strong>: endereço{' '}
+                        <CopyChip value={ip} label="IP" copyKey="g_win_ip" api={api} /> · porta{' '}
+                        <CopyChip value={String(hotspotInfo.httpPort)} label="Porta" copyKey="g_win_port" api={api} />
+                      </>,
+                      <>
+                        Clique em <strong>Salvar</strong>.
+                      </>,
+                    ]}
+                  />
+                </>
               )}
 
-              {tutorialDevice === 'telegram' && (
-                <div className="space-y-3">
-                  <h4 className="font-bold text-sm text-sky-400 flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4" /> Configuração Rápida no Telegram
+              {guide === 'tv' && (
+                <>
+                  <h4 className={`font-bold text-sm flex items-center gap-2 ${TONES.emerald.text}`}>
+                    <Tv className="w-4 h-4" /> Smart TV e TV Box
                   </h4>
-                  <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-                    O Telegram possui suporte nativo a proxy SOCKS5, ideal para chamadas e mensagens ultrarrápidas através do Hotspot.
-                  </p>
-                  <ol className="list-decimal list-inside space-y-2.5 text-[var(--text)] leading-relaxed">
-                    <li>No Telegram do outro aparelho, acesse <strong>Configurações &rarr; Dados e Armazenamento &rarr; Configurações de Proxy</strong>.</li>
-                    <li>Ative <strong>"Usar Proxy"</strong> e selecione <strong>SOCKS5</strong>.</li>
-                    <li className="flex items-center gap-2 flex-wrap">
-                      <span>Servidor:</span>
-                      <code className="bg-[var(--surface)] px-2 py-0.5 rounded font-mono font-bold text-sky-400 border border-[var(--border)]">
-                        {hotspotInfo.ip}
-                      </code>
-                      <span>Porta:</span>
-                      <code className="bg-[var(--surface)] px-2 py-0.5 rounded font-mono font-bold text-sky-400 border border-[var(--border)]">
-                        {hotspotInfo.socksPort}
-                      </code>
-                    </li>
-                    <li>
-                      Ou simplesmente compartilhe o link direto com um toque:
-                      <div className="mt-1">
-                        <button
-                          onClick={() => handleCopy(telegramProxyLink, 'Link Direto Telegram', 'tut_tg_link')}
-                          className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-sky-500/15 text-sky-400 border border-sky-500/30 cursor-pointer"
-                        >
-                          {copiedKey === 'tut_tg_link' ? 'Link Copiado!' : 'Copiar Link Direto Telegram'}
-                        </button>
-                      </div>
-                    </li>
-                  </ol>
-                </div>
+                  <Steps
+                    items={[
+                      'Conecte a TV no Wi-Fi deste celular.',
+                      <>
+                        Abra <strong>Configurações → Rede → Wi-Fi</strong> e entre nas opções avançadas da rede.
+                      </>,
+                      <>
+                        Em <strong>Proxy</strong>, escolha <strong>Manual</strong>.
+                      </>,
+                      <>
+                        Servidor: <CopyChip value={ip} label="IP" copyKey="g_tv_ip" api={api} /> · Porta:{' '}
+                        <CopyChip value={String(hotspotInfo.httpPort)} label="Porta" copyKey="g_tv_port" api={api} />
+                      </>,
+                      'Salve. Se a TV não tiver opção de proxy, ela não consegue usar o hotspot.',
+                    ]}
+                  />
+                </>
               )}
-            </div>
+
+              {guide === 'telegram' && (
+                <>
+                  <h4 className={`font-bold text-sm flex items-center gap-2 ${TONES.sky.text}`}>
+                    <Send className="w-4 h-4" /> Telegram
+                  </h4>
+                  <Steps
+                    items={[
+                      <>
+                        No Telegram, abra <strong>Configurações → Dados e armazenamento → Proxy</strong>.
+                      </>,
+                      <>
+                        Adicione um proxy <strong>SOCKS5</strong>.
+                      </>,
+                      <>
+                        Servidor: <CopyChip value={ip} label="IP" copyKey="g_tg_ip" api={api} /> · Porta:{' '}
+                        <CopyChip value={String(hotspotInfo.socksPort)} label="Porta" copyKey="g_tg_port" api={api} />
+                      </>,
+                      <>
+                        Ou envie o link para o outro aparelho:{' '}
+                        <CopyChip value={telegramLink} label="Link do Telegram" copyKey="g_tg_link" api={api} />
+                      </>,
+                    ]}
+                  />
+                </>
+              )}
+            </section>
           </div>
         )}
 
-        {/* ============================================================== */}
-        {/* ABA 4: CONFIGURAÇÕES AVANÇADAS & REDE                          */}
-        {/* ============================================================== */}
-        {activeTab === 'settings' && (
-          <div className="space-y-3.5 animate-fadeIn">
-            {/* Ajuste de Porta */}
-            <div
-              className="p-4 rounded-xl space-y-3"
-              style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}
-            >
-              <div className="flex items-center justify-between">
-                <div>
+        {/* ABA: AVANÇADO */}
+        {activeTab === 'advanced' && (
+          <div className="space-y-3 animate-fadeIn">
+            <section className="p-3.5 sm:p-4 rounded-xl space-y-3" style={cardStyle}>
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
                   <h3 className="font-semibold text-sm" style={{ color: 'var(--text)' }}>
-                    Porta do Serviço Hotspot
+                    Porta do hotspot
                   </h3>
-                  <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                    A porta SOCKS5 é atribuída automaticamente como Porta HTTP + 1
+                  <p className="text-[11px] leading-snug" style={{ color: 'var(--text-muted)' }}>
+                    SOCKS5 e relay UDP usam as portas seguintes automaticamente.
                   </p>
                 </div>
                 <button
+                  type="button"
                   onClick={handleResetPort}
-                  className="px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors cursor-pointer bg-[var(--surface)] hover:bg-[var(--surface-hover)]"
-                  style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}
+                  className="px-2.5 min-h-[32px] rounded-lg text-[11px] font-medium cursor-pointer flex-shrink-0 hover:bg-[var(--surface-hover)]"
+                  style={{ ...fieldStyle, color: 'var(--text-muted)' }}
                 >
-                  Restaurar 8578
+                  Restaurar {DEFAULT_PORT}
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
-                <div>
-                  <label className="text-[11px] block font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
-                    Porta HTTP Inicial
-                  </label>
-                  <input
-                    type="number"
-                    min={1024}
-                    max={65534}
-                    value={customPort}
-                    onChange={(e) => handlePortChange(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg text-sm font-mono font-bold transition-colors focus:outline-none"
-                    style={{
-                      background: 'var(--surface)',
-                      border: '1px solid var(--border)',
-                      color: 'var(--text)',
-                    }}
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[11px] block font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
-                    SOCKS5 TCP (Porta + 1)
-                  </label>
-                  <div
-                    className="w-full px-3 py-2 rounded-lg text-sm font-mono font-bold opacity-80"
-                    style={{
-                      background: 'var(--surface)',
-                      border: '1px solid var(--border)',
-                      color: 'var(--text-muted)',
-                    }}
-                  >
-                    {customPort === 8578 ? 8579 : customPort + 1}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-[11px] block font-medium mb-1 text-emerald-400">
-                    SOCKS5 UDP Relay (Porta + 2)
-                  </label>
-                  <div
-                    className="w-full px-3 py-2 rounded-lg text-sm font-mono font-bold text-emerald-300"
-                    style={{
-                      background: 'var(--surface)',
-                      border: '1px solid var(--border)',
-                    }}
-                  >
-                    {customPort === 8578 ? 8580 : customPort + 2}
-                  </div>
-                </div>
+              <div>
+                <label
+                  htmlFor="hotspot-port"
+                  className="text-[11px] block font-medium mb-1"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  Porta HTTP
+                </label>
+                <input
+                  id="hotspot-port"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  value={portInput}
+                  onChange={(e) => handlePortInput(e.target.value)}
+                  className="w-full px-3 min-h-[44px] rounded-lg text-base font-mono font-bold focus:outline-none transition-colors"
+                  style={{
+                    background: 'var(--surface)',
+                    border: `1px solid ${portError ? 'rgba(244, 63, 94, 0.6)' : 'var(--border)'}`,
+                    color: 'var(--text)',
+                  }}
+                  aria-invalid={!!portError}
+                  aria-describedby="hotspot-port-help"
+                />
+                <p
+                  id="hotspot-port-help"
+                  className={`text-[11px] mt-1 ${portError ? 'text-[var(--danger)]' : ''}`}
+                  style={portError ? undefined : { color: 'var(--text-muted)' }}
+                >
+                  {portError ?? 'Entre 1024 e 65533.'}
+                </p>
               </div>
 
-              {/* Botão de Aplicar Nova Porta se estiver Rodando */}
-              {isEnabled && customPort !== hotspotInfo.httpPort && (
-                <div className="pt-1">
-                  <button
-                    onClick={() => start(customPort)}
-                    className="w-full py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer bg-[var(--accent)] text-white shadow-md hover:brightness-110"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    <span>Reiniciar Hotspot na Porta {customPort}</span>
-                  </button>
-                </div>
-              )}
-            </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {[
+                  { label: 'SOCKS5', value: portError ? '—' : chosenDerived.socks, cls: '' },
+                  { label: 'Relay UDP', value: portError ? '—' : chosenDerived.udp, cls: TONES.emerald.text },
+                  { label: 'WhatsApp chat', value: WHATSAPP_CHAT_PORT, cls: TONES.green.text },
+                  { label: 'WhatsApp mídia', value: WHATSAPP_MEDIA_PORT, cls: TONES.green.text },
+                ].map((item) => (
+                  <div key={item.label} className="p-2.5 rounded-lg" style={fieldStyle}>
+                    <span className="text-[10px] block font-medium uppercase tracking-wider truncate" style={{ color: 'var(--text-muted)' }}>
+                      {item.label}
+                    </span>
+                    <span
+                      className={`font-mono font-bold text-sm ${item.cls}`}
+                      style={item.cls ? undefined : { color: 'var(--text)' }}
+                    >
+                      {item.value}
+                    </span>
+                  </div>
+                ))}
+              </div>
 
-            {/* Diagnóstico de IPs Locais da Interface de Rede */}
-            <div
-              className="p-4 rounded-xl space-y-3"
-              style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}
-            >
-              <div className="flex items-center justify-between">
-                <div>
+              {isEnabled && !portError && chosenPort !== hotspotInfo.httpPort && (
+                <button
+                  type="button"
+                  onClick={handleRestartOnPort}
+                  disabled={loading}
+                  className="w-full min-h-[42px] px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer touch-manipulation bg-[var(--accent)] text-white shadow-md hover:brightness-110 disabled:opacity-60"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  Reiniciar hotspot na porta {chosenPort}
+                </button>
+              )}
+            </section>
+
+            <section className="p-3.5 sm:p-4 rounded-xl space-y-3" style={cardStyle}>
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
                   <h3 className="font-semibold text-sm" style={{ color: 'var(--text)' }}>
-                    Interfaces de Rede do Host
+                    Rede deste aparelho
                   </h3>
                   <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                    IPs locais detectados nativamente no seu aparelho
+                    IPs locais detectados
                   </p>
                 </div>
                 <button
+                  type="button"
                   onClick={() => {
                     checkStatus();
                     setLocalIps(getLocalIpsData());
-                    try {
-                      vibrate(20);
-                    } catch {
-                      /* ignore */
-                    }
+                    haptic(20);
                     showNativeToast('Informações de rede atualizadas');
                   }}
-                  className="p-1.5 rounded-lg text-[var(--accent)] hover:bg-[var(--surface)] transition-colors cursor-pointer"
-                  title="Atualizar status"
+                  className="w-9 h-9 rounded-lg flex items-center justify-center text-[var(--accent)] cursor-pointer touch-manipulation hover:bg-[var(--surface-hover)] flex-shrink-0"
+                  style={fieldStyle}
+                  aria-label="Atualizar"
                 >
                   <RefreshCw className="w-4 h-4" />
                 </button>
               </div>
 
-              <div className="space-y-2 pt-1">
-                <div
-                  className="p-2.5 rounded-lg flex items-center justify-between text-xs"
-                  style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-                >
-                  <span className="font-medium" style={{ color: 'var(--text-muted)' }}>
-                    IPv4 Local:
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono font-bold" style={{ color: 'var(--text)' }}>
-                      {localIps.ipv4 || hotspotInfo.ip || 'Não detectado'}
-                    </span>
-                    {localIps.ipv4 && (
-                      <button
-                        onClick={() => handleCopy(localIps.ipv4!, 'IPv4 Local', 'diag_ipv4')}
-                        className="text-[var(--accent)] cursor-pointer"
-                      >
-                        {copiedKey === 'diag_ipv4' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                      </button>
-                    )}
+              <div className="grid grid-cols-1 gap-2">
+                {localIps.ipv4 || ip ? (
+                  <CopyField label="IPv4" value={localIps.ipv4 || ip} copyKey="diag_ipv4" api={api} />
+                ) : null}
+                {localIps.ipv6 ? (
+                  <CopyField label="IPv6" value={localIps.ipv6} copyKey="diag_ipv6" api={api} small />
+                ) : (
+                  <div className="p-2.5 rounded-lg text-xs" style={{ ...fieldStyle, color: 'var(--text-muted)' }}>
+                    IPv6 não disponível
                   </div>
-                </div>
-
-                <div
-                  className="p-2.5 rounded-lg flex items-center justify-between text-xs"
-                  style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-                >
-                  <span className="font-medium" style={{ color: 'var(--text-muted)' }}>
-                    IPv6 Local:
-                  </span>
-                  <div className="flex items-center gap-2 max-w-[70%]">
-                    <span className="font-mono truncate" style={{ color: 'var(--text-muted)' }}>
-                      {localIps.ipv6 || 'Não disponível'}
-                    </span>
-                    {localIps.ipv6 && (
-                      <button
-                        onClick={() => handleCopy(localIps.ipv6!, 'IPv6 Local', 'diag_ipv6')}
-                        className="text-[var(--accent)] cursor-pointer flex-shrink-0"
-                      >
-                        {copiedKey === 'diag_ipv6' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                      </button>
-                    )}
-                  </div>
-                </div>
+                )}
               </div>
 
-              <div className="flex items-start gap-2 pt-1 text-[11px] text-[var(--text-muted)] leading-relaxed">
-                <Info className="w-4 h-4 mt-0.5 text-[var(--accent)] flex-shrink-0" />
-                <span>
-                  O ponto de acesso Wi-Fi nativo do Android utiliza geralmente o range <strong>192.168.43.1</strong>. Caso utilize Tethering USB ou Wi-Fi Direct, o IP pode variar (ex: 192.168.49.1).
-                </span>
-              </div>
-            </div>
+              <Notice>
+                O hotspot Wi-Fi do Android costuma usar <strong>192.168.43.1</strong>. Em ancoragem USB ou Wi-Fi Direct
+                o IP pode mudar (ex.: 192.168.49.1).
+              </Notice>
+            </section>
           </div>
         )}
       </div>

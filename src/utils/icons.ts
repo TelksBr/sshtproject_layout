@@ -68,6 +68,7 @@ export {
   Loader,
   
   // Comunicação
+  MessageCircle,
   Mail,
   Phone,
   Send,
@@ -99,6 +100,7 @@ export {
   
   // Energia e velocidade
   Zap,
+  Power,
   
   // Business e negócios
   BriefcaseBusiness,

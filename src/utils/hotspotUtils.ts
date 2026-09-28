@@ -1,8 +1,18 @@
 import { getSdk } from './sdkInstance';
 import { call, callVoid } from './dtunnelBridge';
-import type { VTunnelHotSpotInfo, VTunnelHotSpotStatus } from 'vtunnel-sdk';
+import type { VTunnelHotSpotInfo as SdkHotSpotInfo, VTunnelHotSpotStatus } from 'vtunnel-sdk';
 
-export type { VTunnelHotSpotInfo, VTunnelHotSpotStatus };
+export const WHATSAPP_CHAT_PORT = 5222;
+export const WHATSAPP_MEDIA_PORT = 7777;
+
+/** Portas 0 = o app não conseguiu abrir o proxy do WhatsApp; campo ausente = app sem suporte. */
+export type VTunnelHotSpotInfo = SdkHotSpotInfo & {
+  whatsappChatPort?: number;
+  whatsappMediaPort?: number;
+  whatsappProxy?: string;
+};
+
+export type { VTunnelHotSpotStatus };
 
 export interface LocalIpsData {
   ipv4: string | null;
@@ -145,6 +155,9 @@ export function getResolvedHotspotInfo(preferredPort = 8578): VTunnelHotSpotInfo
     socksUdpProxy: rawInfo?.socksUdpProxy || `${ip}:${socksUdpPort}`,
     pacUrl: rawInfo?.pacUrl || `http://${ip}:${httpPort}/proxy.pac`,
     helpUrl: rawInfo?.helpUrl || `http://${ip}:${httpPort}/`,
+    whatsappChatPort: rawInfo?.whatsappChatPort ?? WHATSAPP_CHAT_PORT,
+    whatsappMediaPort: rawInfo?.whatsappMediaPort ?? WHATSAPP_MEDIA_PORT,
+    whatsappProxy: rawInfo?.whatsappProxy || ip,
   };
 }
 

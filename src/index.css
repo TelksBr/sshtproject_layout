@@ -17,6 +17,11 @@
     --text-muted: #b7abc9;
     --danger: #f87171;
     --ok: #34d399;
+    --tone-green: #4ade80;
+    --tone-sky: #38bdf8;
+    --tone-violet: #a78bfa;
+    --tone-amber: #fbbf24;
+    --tone-emerald: #34d399;
     --safe-top: env(safe-area-inset-top, 16px);
     --safe-bottom: env(safe-area-inset-bottom, 16px);
     color-scheme: dark;
@@ -35,6 +40,11 @@
     --text-muted: #685f80;
     --danger: #dc2626;
     --ok: #059669;
+    --tone-green: #15803d;
+    --tone-sky: #0369a1;
+    --tone-violet: #6d28d9;
+    --tone-amber: #b45309;
+    --tone-emerald: #047857;
     --safe-top: env(safe-area-inset-top, 16px);
     --safe-bottom: env(safe-area-inset-bottom, 16px);
     color-scheme: light;
