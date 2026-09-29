@@ -7,13 +7,17 @@ import {
   AlertCircle,
   Sparkles,
   Loader,
+  Network,
+  Server,
 } from '../../utils/icons';
 import { Modal } from './Modal';
 import {
-  DEFAULT_DNS_PRESETS,
+  getDnsPresets,
   getCustomDnsConfig,
   isValidIpAddress,
+  isValidIpv6Address,
   setCustomDnsConfig,
+  openNativeDnsDialog,
   type DnsPreset,
 } from '../../utils/dnsUtils';
 import { useToast } from '../../hooks/useToast';
@@ -26,17 +30,23 @@ interface DnsModalProps {
 export function DnsModal({ onClose }: DnsModalProps) {
   const { showSuccess, showError } = useToast();
 
+  const presets = useMemo(() => getDnsPresets(), []);
   const initialConfig = useMemo(() => getCustomDnsConfig(), []);
 
   const [enabled, setEnabled] = useState<boolean>(initialConfig.enabled);
   const [primary, setPrimary] = useState<string>(initialConfig.primary);
   const [secondary, setSecondary] = useState<string>(initialConfig.secondary);
+  const [primaryIpv6, setPrimaryIpv6] = useState<string>(initialConfig.primaryIpv6 || '');
+  const [secondaryIpv6, setSecondaryIpv6] = useState<string>(initialConfig.secondaryIpv6 || '');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [selectedPresetId, setSelectedPresetId] = useState<string | null>(() => {
-    const match = DEFAULT_DNS_PRESETS.find(
-      (p) => p.primary === initialConfig.primary && p.secondary === initialConfig.secondary
+    const match = presets.find(
+      (p) =>
+        p.primary === initialConfig.primary &&
+        p.secondary === initialConfig.secondary &&
+        (!initialConfig.primaryIpv6 || p.primaryIpv6 === initialConfig.primaryIpv6)
     );
     return match ? match.id : 'custom';
   });
@@ -59,12 +69,19 @@ export function DnsModal({ onClose }: DnsModalProps) {
     setSelectedPresetId(preset.id);
     setPrimary(preset.primary);
     setSecondary(preset.secondary);
+    setPrimaryIpv6(preset.primaryIpv6 || '');
+    setSecondaryIpv6(preset.secondaryIpv6 || '');
   };
 
-  const handleCustomInput = (field: 'primary' | 'secondary', value: string) => {
+  const handleCustomInput = (
+    field: 'primary' | 'secondary' | 'primaryIpv6' | 'secondaryIpv6',
+    value: string
+  ) => {
     setSelectedPresetId('custom');
     if (field === 'primary') setPrimary(value);
-    else setSecondary(value);
+    else if (field === 'secondary') setSecondary(value);
+    else if (field === 'primaryIpv6') setPrimaryIpv6(value);
+    else if (field === 'secondaryIpv6') setSecondaryIpv6(value);
   };
 
   const isPrimaryValid = useMemo(() => !primary.trim() || isValidIpAddress(primary), [primary]);
@@ -72,13 +89,29 @@ export function DnsModal({ onClose }: DnsModalProps) {
     () => !secondary.trim() || isValidIpAddress(secondary),
     [secondary]
   );
+  const isPrimaryIpv6Valid = useMemo(
+    () => !primaryIpv6.trim() || isValidIpv6Address(primaryIpv6),
+    [primaryIpv6]
+  );
+  const isSecondaryIpv6Valid = useMemo(
+    () => !secondaryIpv6.trim() || isValidIpv6Address(secondaryIpv6),
+    [secondaryIpv6]
+  );
 
   const canSave = useMemo(() => {
     if (saveStatus !== 'idle') return false;
     if (!enabled) return true;
     if (!primary.trim()) return false;
-    return isPrimaryValid && isSecondaryValid;
-  }, [enabled, primary, isPrimaryValid, isSecondaryValid, saveStatus]);
+    return isPrimaryValid && isSecondaryValid && isPrimaryIpv6Valid && isSecondaryIpv6Valid;
+  }, [
+    enabled,
+    primary,
+    isPrimaryValid,
+    isSecondaryValid,
+    isPrimaryIpv6Valid,
+    isSecondaryIpv6Valid,
+    saveStatus,
+  ]);
 
   const handleSave = () => {
     if (saveStatus !== 'idle') return;
@@ -114,23 +147,48 @@ export function DnsModal({ onClose }: DnsModalProps) {
         showNativeToast('O servidor DNS secundário informado é inválido.');
         return;
       }
+      if (primaryIpv6.trim() && !isValidIpv6Address(primaryIpv6)) {
+        try {
+          vibrate(80);
+        } catch {
+          /* ignore */
+        }
+        showError('O servidor DNS IPv6 primário informado é inválido.');
+        showNativeToast('O servidor DNS IPv6 primário informado é inválido.');
+        return;
+      }
+      if (secondaryIpv6.trim() && !isValidIpv6Address(secondaryIpv6)) {
+        try {
+          vibrate(80);
+        } catch {
+          /* ignore */
+        }
+        showError('O servidor DNS IPv6 secundário informado é inválido.');
+        showNativeToast('O servidor DNS IPv6 secundário informado é inválido.');
+        return;
+      }
     }
 
     setSaveStatus('saving');
 
     try {
-      // Salva no storage e no SDK VTunnel
+      // Salva no storage e no SDK VTunnel 2.9.0 (IPv4 + IPv6)
       setCustomDnsConfig({
         enabled,
         primary: primary.trim(),
         secondary: secondary.trim(),
+        primaryIpv6: primaryIpv6.trim(),
+        secondaryIpv6: secondaryIpv6.trim(),
       });
 
       // Feedback tátil no dispositivo
       vibrate(40);
 
+      const hasIpv6 = Boolean(primaryIpv6.trim() || secondaryIpv6.trim());
       const msg = enabled
-        ? 'DNS personalizado ativado com sucesso!'
+        ? hasIpv6
+          ? 'DNS personalizado (IPv4 + IPv6) ativado com sucesso!'
+          : 'DNS personalizado ativado com sucesso!'
         : 'DNS personalizado desativado (usando padrão).';
 
       // Feedback visual duplo: web e nativo Android
@@ -152,11 +210,16 @@ export function DnsModal({ onClose }: DnsModalProps) {
   };
 
   const currentPresetName = useMemo(() => {
-    if (!enabled) return 'Desativado (Padrão)';
-    const found = DEFAULT_DNS_PRESETS.find((p) => p.id === selectedPresetId);
-    if (found) return found.name;
-    return 'Personalizado';
-  }, [enabled, selectedPresetId]);
+    if (!enabled) return 'Desativado (usando DNS padrão da rede/VPN)';
+    const found = presets.find((p) => p.id === selectedPresetId);
+    const hasIpv6 = Boolean(primaryIpv6.trim() || secondaryIpv6.trim());
+    if (found) {
+      return hasIpv6 ? `${found.name} (IPv4 + IPv6)` : found.name;
+    }
+    return hasIpv6 ? 'Personalizado (IPv4 + IPv6)' : 'Personalizado (IPv4)';
+  }, [enabled, selectedPresetId, presets, primaryIpv6, secondaryIpv6]);
+
+  const hasIpv6Configured = Boolean(primaryIpv6.trim() || secondaryIpv6.trim());
 
   return (
     <Modal onClose={onClose} title="DNS Customizado" icon={Globe}>
@@ -196,8 +259,20 @@ export function DnsModal({ onClose }: DnsModalProps) {
                     ATIVO
                   </span>
                 )}
+                {enabled && hasIpv6Configured && (
+                  <span
+                    className="px-1.5 py-0.5 rounded-full text-[9px] font-bold"
+                    style={{
+                      background: 'rgba(168, 85, 247, 0.15)',
+                      color: '#c084fc',
+                      border: '1px solid rgba(168, 85, 247, 0.3)',
+                    }}
+                  >
+                    IPv4 + IPv6
+                  </span>
+                )}
               </div>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+              <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>
                 {enabled ? `Provedor: ${currentPresetName}` : 'Desativado (usando DNS padrão da rede/VPN)'}
               </p>
             </div>
@@ -247,7 +322,7 @@ export function DnsModal({ onClose }: DnsModalProps) {
 
         {/* Provedores Rápidos (Presets) */}
         <div>
-          <div className="flex items-center mb-2">
+          <div className="flex items-center justify-between mb-2">
             <span
               className="text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5"
               style={{ color: 'var(--text-muted)' }}
@@ -255,10 +330,13 @@ export function DnsModal({ onClose }: DnsModalProps) {
               <Sparkles className="w-3.5 h-3.5 text-amber-400" />
               Provedores Rápidos
             </span>
+            <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+              Com IPv4 e IPv6
+            </span>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {DEFAULT_DNS_PRESETS.map((preset) => {
+            {presets.map((preset) => {
               const isSelected = selectedPresetId === preset.id;
               return (
                 <button
@@ -283,6 +361,13 @@ export function DnsModal({ onClose }: DnsModalProps) {
                   <p className="text-[10px] font-mono truncate" style={{ color: 'var(--text-muted)' }}>
                     {preset.primary}
                   </p>
+                  {preset.primaryIpv6 && (
+                    <div className="mt-1 flex items-center gap-1">
+                      <span className="text-[9px] px-1 py-0.2 rounded font-mono bg-purple-500/15 text-purple-300 truncate">
+                        IPv6
+                      </span>
+                    </div>
+                  )}
                 </button>
               );
             })}
@@ -315,65 +400,151 @@ export function DnsModal({ onClose }: DnsModalProps) {
                 )}
               </div>
               <p className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>
-                Manual
+                Configuração Manual
               </p>
             </button>
           </div>
         </div>
 
-        {/* Inputs de Endereços IP */}
+        {/* Inputs de Endereços IP (IPv4 e IPv6) */}
         <div
-          className="p-4 rounded-2xl space-y-3.5 transition-all"
+          className="p-4 rounded-2xl space-y-4 transition-all"
           style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}
         >
+          {/* Seção IPv4 */}
           <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-              Servidor DNS Primário (IPv4 / IPv6) *
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                value={primary}
-                onChange={(e) => handleCustomInput('primary', e.target.value)}
-                placeholder="ex: 1.1.1.1 ou 8.8.8.8"
-                className="w-full h-11 px-3.5 rounded-xl font-mono text-xs sm:text-sm transition-colors border focus:outline-none focus:ring-1 focus:ring-blue-500"
-                style={{
-                  background: 'var(--bg)',
-                  borderColor: !isPrimaryValid ? '#ef4444' : 'var(--border)',
-                  color: 'var(--text)',
-                }}
-              />
-            </div>
-            {!isPrimaryValid && (
-              <span className="text-[11px] text-red-400 flex items-center gap-1 mt-1">
-                <AlertCircle className="w-3 h-3" /> Endereço IP inválido
+            <div className="flex items-center justify-between mb-2">
+              <span
+                className="text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5"
+                style={{ color: 'var(--text)' }}
+              >
+                <Network className="w-3.5 h-3.5 text-blue-400" />
+                Servidores DNS IPv4
               </span>
-            )}
+              <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                Primário obrigatório
+              </span>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
+                  Servidor DNS Primário (IPv4) *
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={primary}
+                    onChange={(e) => handleCustomInput('primary', e.target.value)}
+                    placeholder="ex: 1.1.1.1 ou 8.8.8.8"
+                    className="w-full h-10 px-3.5 rounded-xl font-mono text-xs sm:text-sm transition-colors border focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    style={{
+                      background: 'var(--bg)',
+                      borderColor: !isPrimaryValid ? '#ef4444' : 'var(--border)',
+                      color: 'var(--text)',
+                    }}
+                  />
+                </div>
+                {!isPrimaryValid && (
+                  <span className="text-[11px] text-red-400 flex items-center gap-1 mt-1">
+                    <AlertCircle className="w-3 h-3" /> Endereço IP inválido
+                  </span>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
+                  Servidor DNS Secundário (IPv4)
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={secondary}
+                    onChange={(e) => handleCustomInput('secondary', e.target.value)}
+                    placeholder="ex: 1.0.0.1 ou 8.8.4.4"
+                    className="w-full h-10 px-3.5 rounded-xl font-mono text-xs sm:text-sm transition-colors border focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    style={{
+                      background: 'var(--bg)',
+                      borderColor: !isSecondaryValid ? '#ef4444' : 'var(--border)',
+                      color: 'var(--text)',
+                    }}
+                  />
+                </div>
+                {!isSecondaryValid && (
+                  <span className="text-[11px] text-red-400 flex items-center gap-1 mt-1">
+                    <AlertCircle className="w-3 h-3" /> Endereço IP inválido
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
 
+          {/* Divisor */}
+          <div className="border-t" style={{ borderColor: 'var(--border)' }} />
+
+          {/* Seção IPv6 */}
           <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-              Servidor DNS Secundário (Opcional)
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                value={secondary}
-                onChange={(e) => handleCustomInput('secondary', e.target.value)}
-                placeholder="ex: 1.0.0.1 ou 8.8.4.4"
-                className="w-full h-11 px-3.5 rounded-xl font-mono text-xs sm:text-sm transition-colors border focus:outline-none focus:ring-1 focus:ring-blue-500"
-                style={{
-                  background: 'var(--bg)',
-                  borderColor: !isSecondaryValid ? '#ef4444' : 'var(--border)',
-                  color: 'var(--text)',
-                }}
-              />
-            </div>
-            {!isSecondaryValid && (
-              <span className="text-[11px] text-red-400 flex items-center gap-1 mt-1">
-                <AlertCircle className="w-3 h-3" /> Endereço IP inválido
+            <div className="flex items-center mb-2">
+              <span
+                className="text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5"
+                style={{ color: 'var(--text)' }}
+              >
+                <Server className="w-3.5 h-3.5 text-purple-400" />
+                Servidores DNS IPv6
               </span>
-            )}
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
+                  Servidor DNS Primário (IPv6)
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={primaryIpv6}
+                    onChange={(e) => handleCustomInput('primaryIpv6', e.target.value)}
+                    placeholder="ex: 2606:4700:4700::1111 ou 2001:4860:4860::8888"
+                    className="w-full h-10 px-3.5 rounded-xl font-mono text-xs sm:text-sm transition-colors border focus:outline-none focus:ring-1 focus:ring-purple-500"
+                    style={{
+                      background: 'var(--bg)',
+                      borderColor: !isPrimaryIpv6Valid ? '#ef4444' : 'var(--border)',
+                      color: 'var(--text)',
+                    }}
+                  />
+                </div>
+                {!isPrimaryIpv6Valid && (
+                  <span className="text-[11px] text-red-400 flex items-center gap-1 mt-1">
+                    <AlertCircle className="w-3 h-3" /> Endereço IPv6 inválido
+                  </span>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
+                  Servidor DNS Secundário (IPv6)
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={secondaryIpv6}
+                    onChange={(e) => handleCustomInput('secondaryIpv6', e.target.value)}
+                    placeholder="ex: 2606:4700:4700::1001 ou 2001:4860:4860::8844"
+                    className="w-full h-10 px-3.5 rounded-xl font-mono text-xs sm:text-sm transition-colors border focus:outline-none focus:ring-1 focus:ring-purple-500"
+                    style={{
+                      background: 'var(--bg)',
+                      borderColor: !isSecondaryIpv6Valid ? '#ef4444' : 'var(--border)',
+                      color: 'var(--text)',
+                    }}
+                  />
+                </div>
+                {!isSecondaryIpv6Valid && (
+                  <span className="text-[11px] text-red-400 flex items-center gap-1 mt-1">
+                    <AlertCircle className="w-3 h-3" /> Endereço IPv6 inválido
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
 
           <div
@@ -382,14 +553,36 @@ export function DnsModal({ onClose }: DnsModalProps) {
           >
             <ShieldCheck className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'var(--accent)' }} />
             <p>
-              O DNS customizado garante que suas consultas de domínio passem com segurança pelos
-              servidores configurados quando a VPN estiver conectada.
+              O DNS customizado roteia as consultas de domínio pelos servidores configurados (IPv4 e IPv6)
+              quando a VPN estiver conectada, evitando vazamentos e bloqueios na sua operadora.
             </p>
           </div>
         </div>
 
+        {/* Diálogo Nativo Android (Opção rápida) */}
+        <div className="flex justify-center pt-0.5">
+          <button
+            type="button"
+            onClick={() => {
+              try {
+                vibrate(20);
+              } catch {
+                /* ignore */
+              }
+              const opened = openNativeDnsDialog();
+              if (opened) {
+                showSuccess('Diálogo nativo do Android aberto.');
+              }
+            }}
+            className="text-[11px] underline opacity-70 hover:opacity-100 transition-opacity"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            Abrir gerenciador nativo de DNS do Android
+          </button>
+        </div>
+
         {/* Botões de Ação com Feedback de Estado */}
-        <div className="grid grid-cols-2 gap-3 pt-2">
+        <div className="grid grid-cols-2 gap-3 pt-1">
           <button
             type="button"
             onClick={onClose}
@@ -436,4 +629,5 @@ export function DnsModal({ onClose }: DnsModalProps) {
     </Modal>
   );
 }
+
 export default DnsModal;
