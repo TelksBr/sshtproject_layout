@@ -743,6 +743,50 @@ export function clearVpnLogs(): void {
   callVoid('DtClearLogs', 'execute');
 }
 
+export function isShareLogsAvailable(): boolean {
+  const sdk = getSdk();
+  if (sdk && typeof sdk.hasBridgeObject === 'function') {
+    return sdk.hasBridgeObject('VtShareLogs') || sdk.hasBridgeObject('DtShareLogs');
+  }
+  if (typeof window !== 'undefined') {
+    const w = window as unknown as Record<string, unknown>;
+    return Boolean(w.VtShareLogs || w.DtShareLogs);
+  }
+  return false;
+}
+
+export function shareVpnLogs(customText?: string): boolean {
+  const sdk = getSdk();
+  const trimmed = typeof customText === 'string' && customText.trim().length > 0 ? customText.trim() : undefined;
+
+  if (typeof sdk?.main?.shareLogs === 'function') {
+    try {
+      if (trimmed) {
+        sdk.main.shareLogs(trimmed);
+      } else {
+        sdk.main.shareLogs();
+      }
+      return true;
+    } catch {
+      /* fallback */
+    }
+  }
+
+  try {
+    if (trimmed) {
+      callVoid('VtShareLogs', 'execute', [trimmed]);
+      callVoid('DtShareLogs', 'execute', [trimmed]);
+    } else {
+      callVoid('VtShareLogs', 'execute');
+      callVoid('DtShareLogs', 'execute');
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+
 const vpnLogTimestampMap = new Map<string, string>();
 
 function getOrAssignVpnLogTimestamp(key: string): string {
@@ -1014,6 +1058,17 @@ export async function shareText(text: string, title = 'SSH T PROJECT'): Promise<
   const content = String(text || '').trim();
   if (!content) return 'failed';
 
+  // 1. Prioriza a ponte nativa do SDK para abrir a folha de compartilhamento nativa do Android (Intent.ACTION_SEND)
+  if (isShareLogsAvailable()) {
+    try {
+      shareVpnLogs(content);
+      return 'shared';
+    } catch {
+      /* fallback */
+    }
+  }
+
+  // 2. Web Share API para navegadores compatíveis
   try {
     if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
       await navigator.share({ title, text: content });
@@ -1023,6 +1078,7 @@ export async function shareText(text: string, title = 'SSH T PROJECT'): Promise<
     if (error instanceof Error && error.name === 'AbortError') return 'aborted';
   }
 
+  // 3. Fallback: copia para a área de transferência
   try {
     copyToClipboard(content);
     return 'copied';
@@ -1293,7 +1349,7 @@ export function getSdkDiagnosticSnapshot(): SdkDiagnosticSnapshot {
     'DtGetConfigsByCategory', 'DtGetSelectedConfig', 'DtGetSelectedConfigId', 'DtGetConfigCount', 'DtGetDefaultConfig',
     'DtExecuteDialogConfig', 'DtGetImportPublicKey', 'DtCopyImportPublicKey', 'DtImportConfig', 'DtHasPendingConfigImport',
     'DtGetPendingConfigImportDetails', 'DtUsername', 'DtPassword', 'DtGetLocalConfigVersion', 'DtCDNCount',
-    'DtEndpointCount', 'DtUuid', 'DtGetUser', 'DtGetLogs', 'DtClearLogs', 'DtExecuteVpnStart', 'DtExecuteVpnStop',
+    'DtEndpointCount', 'DtUuid', 'DtGetUser', 'DtGetLogs', 'DtClearLogs', 'DtShareLogs', 'VtShareLogs', 'DtExecuteVpnStart', 'DtExecuteVpnStop',
     'DtGetVpnState', 'DtIsVpnRunning', 'DtStartAppUpdate', 'DtStartCheckUser', 'DtShowLoggerDialog', 'DtGetLocalIP',
     'DtGetLocalIPv6', 'DtGetLocalIPs',
     'DtAirplaneActivate', 'DtAirplaneDeactivate', 'DtAirplaneState', 'DtAppIsCurrentAssistant', 'DtShowMenuDialog',

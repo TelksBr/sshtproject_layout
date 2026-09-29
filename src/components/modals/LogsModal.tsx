@@ -30,10 +30,12 @@ import {
   formatVpnLogEntry,
   getSdkDiagnosticSnapshot,
   getVpnLogs,
+  isShareLogsAvailable,
   openApnSettings,
   openNetworkSettings,
   sanitizeLogHtml,
   shareText,
+  shareVpnLogs,
   showNativeToast,
   stripLogHtml,
   vibrate,
@@ -162,18 +164,45 @@ export function LogsModal({ onClose, initialTab = 'vpn', enableDebug }: LogsModa
   };
 
   const handleShare = async () => {
-    if (!logsText) {
-      showToast('Nenhum registro para compartilhar', 'info');
-      return;
-    }
-    const result = await shareText(logsText, 'Registros SSH T PROJECT');
-    if (result === 'shared') return;
-    if (result === 'copied') {
-      showToast('Registros copiados para compartilhar', 'success');
-      return;
-    }
-    if (result === 'failed') {
-      showToast('Não foi possível compartilhar os registros', 'error');
+    if (activeTab === 'vpn') {
+      if (isShareLogsAvailable()) {
+        try {
+          // Usa a nova ponte nativa do SDK para abrir a folha de compartilhamento nativa do Android (Intent.ACTION_SEND)
+          shareVpnLogs();
+          return;
+        } catch (e) {
+          console.warn('Erro ao chamar shareVpnLogs nativo:', e);
+        }
+      }
+
+      if (!logsText) {
+        showToast('Nenhum registro para compartilhar', 'info');
+        return;
+      }
+      const result = await shareText(logsText, 'Registros SSH T PROJECT');
+      if (result === 'shared') return;
+      if (result === 'copied') {
+        showToast('Registros copiados para compartilhar', 'success');
+        return;
+      }
+      if (result === 'failed') {
+        showToast('Não foi possível compartilhar os registros', 'error');
+      }
+    } else {
+      const fullSnapshot = {
+        ...snapshot,
+        eventLogs: debugLogs,
+      };
+      const text = JSON.stringify(fullSnapshot, null, 2);
+      const result = await shareText(text, 'Diagnóstico SSH T PROJECT');
+      if (result === 'shared') return;
+      if (result === 'copied') {
+        showToast('Relatório copiado para compartilhar', 'success');
+        return;
+      }
+      if (result === 'failed') {
+        showToast('Erro ao compartilhar relatório', 'error');
+      }
     }
   };
 
@@ -210,18 +239,16 @@ export function LogsModal({ onClose, initialTab = 'vpn', enableDebug }: LogsModa
           >
             <Trash2 className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
           </button>
-          {activeTab === 'vpn' && (
-            <button
-              type="button"
-              onClick={() => void handleShare()}
-              className={actionButtonClass}
-              style={{ background: 'var(--bg-elevated)' }}
-              title="Compartilhar registros"
-              aria-label="Compartilhar registros"
-            >
-              <Share2 className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => void handleShare()}
+            className={actionButtonClass}
+            style={{ background: 'var(--bg-elevated)' }}
+            title={activeTab === 'vpn' ? 'Compartilhar registros VPN' : 'Compartilhar relatório de diagnóstico'}
+            aria-label="Compartilhar"
+          >
+            <Share2 className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
+          </button>
           <button
             type="button"
             onClick={handleCopy}
@@ -588,6 +615,19 @@ export function LogsModal({ onClose, initialTab = 'vpn', enableDebug }: LogsModa
                 >
                   <RefreshCw className="w-3.5 h-3.5 text-pink-400" />
                   <span>Verif. Update</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    shareVpnLogs();
+                    showToast('Share Logs disparado no SDK', 'info');
+                  }}
+                  className="p-2.5 rounded-xl font-medium transition-all flex items-center gap-1.5 touch-manipulation active:scale-95"
+                  style={{ background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--border)' }}
+                >
+                  <Share2 className="w-3.5 h-3.5 text-teal-400" />
+                  <span>Share Logs</span>
                 </button>
               </div>
             </div>

@@ -17,7 +17,7 @@
     "qrcode": "^1.5.4",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "vtunnel-sdk": "^2.7.0"
+    "vtunnel-sdk": "^2.8.0"
   },
   "devDependencies": {
     "@babel/highlight": "^7.25.9",

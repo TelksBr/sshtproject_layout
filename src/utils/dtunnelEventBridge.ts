@@ -42,6 +42,7 @@ const SDK_EVENTS = [
   'reloadRequest',
   'playUpdateState',
   'configImport',
+  'logsShared',
 ];
 
 export function recordDebugLog(source: string, name: string, payload: unknown): void {
