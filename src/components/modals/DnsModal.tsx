@@ -17,7 +17,6 @@ import {
   isValidIpAddress,
   isValidIpv6Address,
   setCustomDnsConfig,
-  openNativeDnsDialog,
   type DnsPreset,
 } from '../../utils/dnsUtils';
 import { useToast } from '../../hooks/useToast';
@@ -559,27 +558,6 @@ export function DnsModal({ onClose }: DnsModalProps) {
           </div>
         </div>
 
-        {/* Diálogo Nativo Android (Opção rápida) */}
-        <div className="flex justify-center pt-0.5">
-          <button
-            type="button"
-            onClick={() => {
-              try {
-                vibrate(20);
-              } catch {
-                /* ignore */
-              }
-              const opened = openNativeDnsDialog();
-              if (opened) {
-                showSuccess('Diálogo nativo do Android aberto.');
-              }
-            }}
-            className="text-[11px] underline opacity-70 hover:opacity-100 transition-opacity"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            Abrir gerenciador nativo de DNS do Android
-          </button>
-        </div>
 
         {/* Botões de Ação com Feedback de Estado */}
         <div className="grid grid-cols-2 gap-3 pt-1">
