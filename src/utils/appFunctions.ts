@@ -787,22 +787,6 @@ export function shareVpnLogs(customText?: string): boolean {
 }
 
 
-const vpnLogTimestampMap = new Map<string, string>();
-
-function getOrAssignVpnLogTimestamp(key: string): string {
-  let ts = vpnLogTimestampMap.get(key);
-  if (!ts) {
-    const now = new Date();
-    ts = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    vpnLogTimestampMap.set(key, ts);
-    if (vpnLogTimestampMap.size > 1000) {
-      const firstKey = vpnLogTimestampMap.keys().next().value;
-      if (firstKey) vpnLogTimestampMap.delete(firstKey);
-    }
-  }
-  return ts;
-}
-
 function parseVpnTimeField(rawTime: unknown): string | null {
   if (rawTime == null) return null;
   const str = String(rawTime).trim();
@@ -837,8 +821,10 @@ export function formatVpnLogEntry(entry: unknown): string {
     rawText = entry.trim();
   } else if (typeof entry === 'object') {
     const rec = entry as Record<string, unknown>;
-    const time = rec.time ?? rec.timestamp ?? rec.date ?? rec.hora;
-    const message = rec.message ?? rec.log ?? rec.text ?? rec.data ?? rec.msg ?? rec.content;
+    // VtGetLogs / DtGetLogs use the original event time as the object key.
+    const nativeEntry = Object.entries(rec).find(([key]) => /^\d{2}:\d{2}:\d{2}$/.test(key));
+    const time = rec.time ?? rec.timestamp ?? rec.date ?? rec.hora ?? nativeEntry?.[0];
+    const message = rec.message ?? rec.log ?? rec.text ?? rec.data ?? rec.msg ?? rec.content ?? nativeEntry?.[1];
 
     timeStr = parseVpnTimeField(time);
 
@@ -863,10 +849,9 @@ export function formatVpnLogEntry(entry: unknown): string {
     rawText = existingTimeMatch[2].trim();
   }
 
-  if (!timeStr) {
-    timeStr = getOrAssignVpnLogTimestamp(rawText);
-  }
-
+  // Missing event time cannot be reconstructed from when the UI reads the log.
+  // Never cache timestamps by message: reconnects legitimately repeat messages.
+  if (!timeStr) return rawText;
   if (!rawText) return timeStr;
 
   return `${timeStr}  ${rawText}`;

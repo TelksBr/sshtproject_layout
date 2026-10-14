@@ -9,6 +9,7 @@ import { useToast } from '../hooks/useToast';
 import { configRequiresField } from '../utils/configCredentials';
 import { ConfigIcon } from './ConfigIcon';
 import { syncIconCache } from '../utils/iconCache';
+import { on as onNativeEvent } from '../utils/dtunnelEventBridge';
 import { CountryFilterHeader } from './CountryFilterHeader';
 import {
   getAvailableCountries,
@@ -119,6 +120,7 @@ export function ServerSelector() {
     try {
       const allConfigs = getAllConfigs();
       setConfigs(allConfigs);
+      setSelectedCategory(current => current ? allConfigs.find(category => category.id === current.id) ?? null : null);
       syncIconCache(allConfigs);
       
       refreshActiveConfig(); // Atualiza a configuração ativa a partir do contexto
@@ -128,6 +130,15 @@ export function ServerSelector() {
       setLoading(false);
     }
   }, [refreshActiveConfig]);
+
+  // Refresh the current list when the asynchronous native sync finishes, keeping the modal open.
+  useEffect(() => {
+    const offContent = onNativeEvent('reloadRequest', loadConfigs);
+    const offSync = onNativeEvent('checkingAppUpdate', payload => {
+      if (payload === false || payload === 'false') loadConfigs();
+    });
+    return () => { offContent(); offSync(); };
+  }, [loadConfigs]);
 
   // Adiciona estado de loading para feedback visual ao selecionar config
   const [pendingConfigId, setPendingConfigId] = useState<number | null>(null);
@@ -182,7 +193,6 @@ export function ServerSelector() {
 
   const handleUpdate = useCallback(() => {
     checkForUpdates();
-    loadConfigs(); // Reload configs after update
   }, []);
 
   // Input de pesquisa: estado local para resposta imediata, debounce para filtragem
