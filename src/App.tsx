@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Header from './components/Header';
 import ServerSelector from './components/ServerSelector';
 import ConnectionForm from './components/ConnectionForm';
+import { FreeAdsPanel } from './components/FreeAdsPanel';
 import { Sidebar } from './components/Sidebar';
 import { AnimatedLogo } from './components/AnimatedLogo';
 import { ToastContainer } from './components/Toast';
@@ -16,16 +17,12 @@ import { ThemeProvider } from './context/ThemeContext';
 import { I18nProvider } from './i18n';
 import { AutoConnectModal } from './components/AutoConnectModal';
 import { SdkCheckUserModal } from './components/modals/SdkCheckUserModal';
-import { PlayStoreReviewHost } from './components/PlayStoreReviewHost';
 import { PlayUpdateHost } from './components/PlayUpdateHost';
 import { ConfigImportHost } from './components/ConfigImportHost';
 import { useAppLayout } from './hooks/useAppLayout';
 import { useModalRenderer } from './hooks/useModalRenderer';
 import { useGlobalPolling } from './hooks/useGlobalPolling';
-import { useBackgroundMonitor } from './hooks/useBackgroundMonitor';
-import { usePurchaseNotifications } from './hooks/usePurchaseNotifications';
 import { useViewportHeight } from './hooks/useViewportHeight';
-import PaymentApprovedNotification from './components/modals/PaymentApprovedNotification';
 import { LogsModal } from './components/modals/LogsModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
@@ -42,16 +39,6 @@ function App() {
   // 📐 VIEWPORT: Sync --vh com viewport visual (teclado Android)
   useViewportHeight();
   
-  // 🔔 NOTIFICAÇÕES: Hook para notificações de pagamento
-  const { notifications, dismissNotification } = usePurchaseNotifications();
-  
-  // 💾 MONITOR: Hook para monitorar compras pendentes em background
-  useBackgroundMonitor({
-    onPurchaseCompleted: (_purchase, _credentials) => {
-      // Opcional: Abrir modal de credenciais automaticamente
-      // setCurrentModal('credentials');
-    }
-  });
 
   // 📢 EVENTOS SDK: Hook que escuta eventos de toast nativos do SDK
   useSdkToastListener();
@@ -180,6 +167,7 @@ function App() {
 
                 <ServerSelector />
                 <ConnectionForm vpnState={vpnState} />
+                <FreeAdsPanel blocked={Boolean(currentModal || showMenu || showDebugLogs)} />
               </div>
             </div>
           </section>
@@ -189,7 +177,6 @@ function App() {
             <AutoConnectModal />
           </ErrorBoundary>
           <SdkCheckUserModal />
-          <PlayStoreReviewHost vpnState={vpnState} blockingModal={currentModal} />
           <PlayUpdateHost blockingModal={currentModal} />
           <ConfigImportHost />
           <ToastContainer />
@@ -198,21 +185,6 @@ function App() {
             <LogsModal initialTab="debug" onClose={() => setShowDebugLogs(false)} />
           )}
           
-          {/* Notificações de pagamento aprovado */}
-          <div className="fixed top-0 right-0 left-0 pointer-events-none z-[999]">
-            {notifications.map((notification) => (
-              <div key={notification.order_id} className="pointer-events-auto">
-                <PaymentApprovedNotification
-                  amount={notification.amount}
-                  planName={notification.plan_name}
-                  orderId={notification.order_id}
-                  onDismiss={dismissNotification}
-                  onAccessCredentials={() => setCurrentModal('credentials')}
-                  autoClose={8000}
-                />
-              </div>
-            ))}
-          </div>
         </main>
       </AutoConnectProvider>
     </ActiveConfigProvider>

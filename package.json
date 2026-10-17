@@ -10,7 +10,10 @@
   "scripts": {
     "dev": "vite --host",
     "build": "tsc -b && vite build",
+    "build:inline": "tsc -b && tsx build-inline.ts",
     "preview": "vite preview --host --port 80",
+    "test:ads": "tsx --test tests/ads-presentation.test.ts",
+    "test:credentials": "tsx --test tests/config-credentials.test.ts",
     "test:logs": "tsx --test tests/vpn-log-time.test.ts"
   },
   "dependencies": {
@@ -18,7 +21,7 @@
     "qrcode": "^1.5.4",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "vtunnel-sdk": "^2.9.0"
+    "vtunnel-sdk": "2.11.0"
   },
   "devDependencies": {
     "@babel/highlight": "^7.25.9",

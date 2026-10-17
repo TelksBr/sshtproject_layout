@@ -55,9 +55,9 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
   const [uuid, setUuid] = useState('');
 
   const applyConfig = useCallback((config: ConfigItem | null) => {
-    if (!config) return;
-    setSelectedConfig(mergeCredentialHints(config, getAllConfigs()));
+    setSelectedConfig(config && Number(config.id) > 0 ? mergeCredentialHints(config, getAllConfigs()) : null);
     setFormError(null);
+    if (!config || Number(config.id) <= 0) return;
 
     const modeLower = (config.mode || '').toLowerCase();
     const loadedUsername = getUsername() || '';
@@ -78,7 +78,7 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
   }, [applyConfig]);
 
   useEffect(() => {
-    if (activeConfig) applyConfig(activeConfig);
+    applyConfig(activeConfig);
   }, [activeConfig, applyConfig]);
 
   const handleConfigChanged = useCallback(() => {
@@ -140,10 +140,8 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
 
   const { username: showUsernameInput, password: showPasswordInput, uuid: showUUIDInput } = useMemo(() => {
     if (autoConnect.homeEnabled) {
-      const allConfigs = (getAllConfigs() || []).flatMap((category) =>
-        Array.isArray(category?.items) ? category.items : []
-      );
-      return getAutoConnectCredentialFields(allConfigs);
+      // Auto Conect asks for missing credentials in its own setup, never on an unselected home screen.
+      return getVisibleCredentialFields(null);
     }
     return getVisibleCredentialFields(selectedConfig);
   }, [autoConnect.homeEnabled, selectedConfig]);
@@ -237,6 +235,10 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
       case 'DISCONNECTED':
       case 'AUTH_FAILED':
       case 'NO_NETWORK': {
+        if (!selectedConfig && !autoConnect.homeEnabled) {
+          setFormError(t('serverSelector.selectConfigPrompt'));
+          return;
+        }
         const validation = validateForm();
         if (validation) {
           setFormError(validation);
@@ -244,6 +246,12 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
         }
         if (autoConnect.homeEnabled) {
           try {
+            const configs = (getAllConfigs() || []).flatMap(category => category.items || []);
+            const required = getAutoConnectCredentialFields(configs);
+            if (required.username || required.password || required.uuid) {
+              autoConnect.openModal();
+              return;
+            }
             prepareCredentials();
             autoConnect.startHomeAutoConnect();
           } catch (e) {
@@ -298,7 +306,12 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
     <>
     <section className="card p-3 md:p-6 xl:p-8 2xl:p-10">
       <div className="space-y-3 md:space-y-4">
-        {!hasVisibleCredentialFields && (
+        {!selectedConfig && !autoConnect.homeEnabled && (
+          <p className="text-xs lg:text-sm text-center" style={{ color: 'var(--text-muted)' }}>
+            {t('serverSelector.selectConfigPrompt')}
+          </p>
+        )}
+        {(selectedConfig || autoConnect.homeEnabled) && !hasVisibleCredentialFields && (
           <p className="text-xs lg:text-sm text-center" style={{ color: 'var(--text-muted)' }}>
             {t('connectionForm.credentialsAlreadySet')}
           </p>

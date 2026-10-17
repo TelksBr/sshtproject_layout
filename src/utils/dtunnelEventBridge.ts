@@ -43,6 +43,10 @@ const SDK_EVENTS = [
   'playUpdateState',
   'configImport',
   'logsShared',
+  'adsTimerUpdated',
+  'adsTimeWarning',
+  'adsTimeExpired',
+  'adsRewardedState',
 ];
 
 export function recordDebugLog(source: string, name: string, payload: unknown): void {

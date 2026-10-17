@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import {
   Settings, Download,
   Wifi, Battery, Network, Book, Globe, Bug,
-  RefreshCw, /* DollarSign, */ Share2, CalendarClock, BriefcaseBusiness, Search, Zap, Phone, Key, Bell
+  RefreshCw, /* DollarSign, */ Share2, CalendarClock, Search, Zap, Phone, Key, Bell
 } from '../../utils/icons';
 import {
   checkForUpdates,
@@ -136,9 +136,7 @@ export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
         { icon: <Key className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: t('sidebar.myCredentials'), onClick: () => onNavigate('credentials'), highlight: true },
         // Temporariamente removido do menu:
         // { icon: <DollarSign className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Comprar Login", onClick: () => onNavigate('buy'), highlight: true },
-        { icon: <BriefcaseBusiness className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: t('sidebar.generateTest'), onClick: () => onNavigate('testgenerate') },
         // { icon: <RefreshCw className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: "Renovar Login", onClick: () => onNavigate('renewal') },
-        { icon: <Search className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9" />, label: t('sidebar.recoverLogin'), onClick: () => onNavigate('recovery') },
       ]
     },
     {
@@ -222,7 +220,7 @@ export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
                 <Settings className="w-6 h-6 lg:w-7 lg:h-7 2xl:w-8 2xl:h-8 3xl:w-9 3xl:h-9 text-white" />
               </div>
               <div className="min-w-0 flex-1">
-                <span className="font-medium text-sm lg:text-base 2xl:text-lg block truncate" style={{ color: 'var(--text)' }}>SSH T PROJECT</span>
+                <span className="font-medium text-sm lg:text-base 2xl:text-lg block truncate" style={{ color: 'var(--text)' }}>SSHTProject FREE</span>
                 <span className="text-sm lg:text-base block truncate" style={{ color: 'var(--text-muted)' }}>{t('sidebar.settings')}</span>
               </div>
             </div>

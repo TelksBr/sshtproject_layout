@@ -1,0 +1,24 @@
+.free-ads-card { padding: 12px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); color: var(--text); }
+.free-ads-time-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.free-ads-time { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.free-ads-time > svg { color: var(--text-muted); flex-shrink: 0; }
+.free-ads-label { font-size: 11px; font-weight: 400; color: var(--text-muted); line-height: 1.4; margin-bottom: 2px; }
+.free-ads-timer { font-size: 21px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.free-ads-earn { display: flex; align-items: center; justify-content: center; gap: 7px; flex-shrink: 0; min-height: 44px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 10px; color: var(--accent); font-size: 11px; font-weight: 500; cursor: pointer; }
+.free-ads-earn span { text-align: left; line-height: 1.4; }
+.free-ads-earn small { display: block; font-size: 10px; font-variant-numeric: tabular-nums; }
+.free-ads-earn:disabled { opacity: .55; cursor: default; }
+.free-ads-earn:focus-visible, .free-ads-cancel:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.free-ads-cancel { display: block; margin-left: auto; min-height: 44px; font-size: 12px; color: var(--text-muted); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.free-ads-help { color: var(--text-muted); font-size: 12px; line-height: 1.6; margin: 8px 0; }
+.free-ads-action, .free-ads-secondary { width: 100%; min-height: 46px; padding: 10px 14px; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.free-ads-action { display: flex; justify-content: center; align-items: center; gap: 8px; background: var(--accent); color: white; margin: 14px 0 8px; }
+.free-ads-action:disabled { opacity: .55; cursor: default; }
+.free-ads-secondary { color: var(--text); background: var(--bg-elevated); border: 1px solid var(--border); margin-top: 6px; }
+.free-ads-action:focus-visible, .free-ads-secondary:focus-visible, .free-ads-close:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.free-ads-feedback { margin-top: 10px; font-size: 12px; line-height: 1.5; color: var(--text-muted); }
+.free-ads-overlay { position: fixed; inset: 0; z-index: 80; background: rgba(0,0,0,.65); display: flex; align-items: center; justify-content: center; padding: max(20px, var(--safe-top, 0px)) 16px max(20px, var(--safe-bottom, 0px)); }
+.free-ads-dialog { position: relative; width: 100%; max-width: 420px; max-height: 100%; overflow-y: auto; border: 1px solid var(--border); border-radius: 24px; background: var(--surface); color: var(--text); padding: 28px 24px 20px; box-shadow: 0 20px 80px rgba(0,0,0,.3); }
+.free-ads-dialog h2 { font-size: 22px; font-weight: 700; margin: 14px 0 10px; }
+.free-ads-dialog-icon { color: var(--accent); }
+.free-ads-close { position: absolute; top: 10px; right: 10px; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 12px; color: var(--text-muted); }

@@ -16,6 +16,7 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
     minify: 'esbuild',
+    target: 'es2015',
     cssMinify: 'esbuild',
     cssCodeSplit: false,
     rollupOptions: {
@@ -32,7 +33,7 @@ writeFileSync(configPath, inlineConfig);
 
 console.log("🔧 Executando build inline (sem code splitting)...");
 try {
-  execSync("bunx vite build --config vite.config.inline.ts", { stdio: "inherit" });
+  execSync("npx vite build --config vite.config.inline.ts", { stdio: "inherit" });
   unlinkSync(configPath); // Remove config temporário
 } catch (err) {
   console.error("❌ Erro ao compilar com Vite.");
@@ -73,7 +74,7 @@ const finalHtml = `<!DOCTYPE html>
   <head>
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="theme-color" content="#14111c" />
     <meta name="mobile-web-app-capable" content="yes" />
     
@@ -87,7 +88,7 @@ const finalHtml = `<!DOCTYPE html>
     <meta name="apple-touch-fullscreen" content="yes" />
     
     <link rel="icon" href="data:,">
-    <title>@SSH_T_PROJECT @Telks13 - SSH T PROJECT LAYOUT</title>
+    <title>SSHTProject Free</title>
     ${cssContent ? `<style>${cssContent}</style>` : ''}
   </head>
   <body>

@@ -4,10 +4,11 @@ import VTunnelSDK from 'vtunnel-sdk';
 import App from './App.tsx';
 import { ToastProvider } from './hooks/useToast';
 import './index.css';
+import './free-ads.css';
 import { registerSdkInstance } from './utils/sdkInstance';
 import { registerSdkForEvents } from './utils/dtunnelEventBridge';
 
-// ✅ Inicializa VTunnelSDK v2.1.0
+// SDK 2.11: bridge de anúncios e eventos de tempo/recompensa.
 const sdk = new VTunnelSDK({
   strict: false,
   autoRegisterNativeEvents: true,

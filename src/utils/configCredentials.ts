@@ -26,7 +26,7 @@ export function configRequiresField(
   config: ConfigItem | null | undefined,
   field: CredentialField
 ): boolean {
-  if (!config) return field !== 'uuid';
+  if (!config || !Number.isFinite(Number(config.id)) || Number(config.id) <= 0) return false;
 
   const flag =
     field === 'username'
@@ -34,9 +34,6 @@ export function configRequiresField(
       : field === 'password'
         ? flagValue(config.requires_password)
         : flagValue(config.requires_uuid);
-
-  if (flag === false) return false;
-  if (flag === true) return true;
 
   const auth = config.auth || {};
   if (field === 'username' && (hasBakedValue(auth.username) || hasBakedValue(config.username))) {
@@ -52,16 +49,13 @@ export function configRequiresField(
     return false;
   }
 
+  if (flag === false) return false;
+  if (flag === true) return true;
+
   return field === 'uuid' ? isV2RayMode(config.mode) : !isV2RayMode(config.mode);
 }
 
 export function mergeCredentialHints(config: ConfigItem, catalog: ConfigCategory[]): ConfigItem {
-  const hasFlags =
-    config.requires_username !== undefined ||
-    config.requires_password !== undefined ||
-    config.requires_uuid !== undefined;
-  if (hasFlags) return config;
-
   for (const category of catalog) {
     const item = category.items?.find((entry) => Number(entry.id) === Number(config.id));
     if (!item) continue;
@@ -75,10 +69,10 @@ export function mergeCredentialHints(config: ConfigItem, catalog: ConfigCategory
     }
     return {
       ...config,
-      requires_username: item.requires_username,
-      requires_password: item.requires_password,
-      requires_uuid: item.requires_uuid,
-      auth: config.auth || item.auth,
+      requires_username: config.requires_username ?? item.requires_username,
+      requires_password: config.requires_password ?? item.requires_password,
+      requires_uuid: config.requires_uuid ?? item.requires_uuid,
+      auth: { ...item.auth, ...config.auth },
     };
   }
 
