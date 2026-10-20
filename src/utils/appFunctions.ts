@@ -4,6 +4,7 @@ import { configRequiresField } from './configCredentials';
 import { getSdk } from './sdkInstance';
 import { call, callJson, callVoid } from './dtunnelBridge';
 import type { VTunnelHotSpotInfo } from 'vtunnel-sdk';
+import createDOMPurify from 'dompurify';
 
 // Utilitários para modo Hysteria
 export function buildHysteriaPassword(username: string, password: string): string {
@@ -858,6 +859,13 @@ export function formatVpnLogEntry(entry: unknown): string {
 }
 
 const LOG_HTML_ALLOWED = /^(br|b|i|em|strong|u|small)$/i;
+const LOG_HTML_TAGS = [
+  'br', 'b', 'strong', 'i', 'em', 'u', 's', 'strike', 'del', 'small', 'big',
+  'sub', 'sup', 'font', 'p', 'div', 'span', 'center', 'blockquote',
+  'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'pre', 'code', 'a',
+];
+const LOG_FONT_SIZES = ['0.75em', '0.875em', '1em', '1.125em', '1.375em', '1.75em', '2em'];
+let logHtmlPurifier: ReturnType<typeof createDOMPurify> | undefined;
 const NOTIFICATION_HTML_TAGS = new Set([
   'br',
   'b',
@@ -1010,11 +1018,38 @@ function escapeHtml(raw: string): string {
     .replace(/>/g, '&gt;');
 }
 
-/** Escapa o HTML e devolve só tags simples de log (`b`, `br`, `i`...). */
+/** Preserves the SSH banner's safe text formatting in native bridge logs. */
 export function sanitizeLogHtml(html: string): string {
   const raw = String(html || '');
   if (!raw) return '';
-  return restoreAllowedHtmlTags(escapeHtml(raw), LOG_HTML_ALLOWED);
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+    return restoreAllowedHtmlTags(escapeHtml(raw), LOG_HTML_ALLOWED);
+  }
+  logHtmlPurifier ??= createDOMPurify(window);
+  const safe = logHtmlPurifier.sanitize(raw, {
+    ALLOWED_TAGS: LOG_HTML_TAGS,
+    ALLOWED_ATTR: ['color', 'size'],
+    ALLOW_DATA_ATTR: false,
+    ALLOW_ARIA_ATTR: false,
+    FORBID_CONTENTS: ['script', 'style', 'iframe', 'object', 'embed', 'svg', 'math', 'template', 'form'],
+  });
+  const template = document.createElement('template');
+  template.innerHTML = safe;
+  for (const element of Array.from(template.content.querySelectorAll('*'))) {
+    const color = element.getAttribute('color')?.trim() || '';
+    const size = element.getAttribute('size') || '';
+    for (const attribute of Array.from(element.attributes)) element.removeAttribute(attribute.name);
+    if (element.tagName.toLowerCase() !== 'font') continue;
+    const font = element as HTMLElement;
+    if (/^(?:#[0-9a-f]{3}|#[0-9a-f]{6}|[a-z]{1,20})$/i.test(color)) {
+      font.style.color = color;
+      if (font.style.color) font.setAttribute('color', color);
+    }
+    if (/^[1-7]$/.test(size)) {
+      font.style.fontSize = LOG_FONT_SIZES[Number(size) - 1];
+    }
+  }
+  return template.innerHTML;
 }
 
 /** HTML básico de notificação do painel (texto, listas, links, imagens/GIF). */
