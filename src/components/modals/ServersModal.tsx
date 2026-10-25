@@ -10,6 +10,13 @@ interface ServerConfig {
   order?: number;
 }
 
+const SERVER_CONFIGS: ServerConfig[] = [
+  { name: 'Servidor 1', host: 'premium1.sshtproject.com', port: 9080 },
+  { name: 'Servidor 2', host: 'premium2.sshtproject.com', port: 9080 },
+  { name: 'Servidor 3', host: 'ssht.telks.sshtproject.com', port: 9080 },
+  { name: 'Servidor 4', host: 'premium4.sshtproject.com', port: 9080 },
+].map((server, order) => ({ ...server, order }));
+
 interface SystemResources {
   memory: {
     total: number;
@@ -53,91 +60,11 @@ interface ServersModalProps {
 }
 
 export function ServersModal({ onClose }: ServersModalProps) {
-  const [serverConfigs, setServerConfigs] = useState<ServerConfig[]>([]);
   const [servers, setServers] = useState<ServerStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [totals, setTotals] = useState<ServerTotals>({ v2ray: 0, vtProxy: 0, total: 0 });
   const [refreshing, setRefreshing] = useState(false);
   const [failedServers, setFailedServers] = useState<Set<string>>(new Set());
-  const [configError, setConfigError] = useState<string | null>(null);
-
-  // Configuração da URL do GitHub Gist
-  const CONFIG_API_URL = 'https://gist.githubusercontent.com/TelksBr/d640030312bb682ac1ef6891f4bdf2ba/raw/8930bd8e57f80fd5a0d02d1450e4514a0affa4ff/servers.json';
-  const CACHE_KEY = 'servers_config_cache';
-  const CACHE_TIMESTAMP_KEY = 'servers_config_timestamp';
-  
-  // Função para salvar configuração no cache
-  const saveConfigToCache = (config: ServerConfig[]) => {
-    try {
-      localStorage.setItem(CACHE_KEY, JSON.stringify(config));
-      localStorage.setItem(CACHE_TIMESTAMP_KEY, Date.now().toString());
-    } catch (error) {
-      // Falha silenciosa ao salvar cache
-    }
-  };
-
-  // Função para carregar configuração do cache
-  const loadConfigFromCache = (): ServerConfig[] | null => {
-    try {
-      const cached = localStorage.getItem(CACHE_KEY);
-      if (cached) {
-        return JSON.parse(cached);
-      }
-    } catch (error) {
-      // Falha silenciosa ao carregar cache
-    }
-    return null;
-  };
-
-  // Função para buscar configuração dos servidores
-  const fetchServerConfig = async (): Promise<ServerConfig[]> => {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
-      
-      const response = await fetch(CONFIG_API_URL, {
-        method: 'GET',
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        },
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (!response.ok) {
-        throw new Error(`Erro ao buscar configuração: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      if (!data.servers || !Array.isArray(data.servers)) {
-        throw new Error('Formato de configuração inválido');
-      }
-      
-      // Adiciona ordem hierárquica baseada na posição no JSON
-      const serversWithOrder = data.servers.map((server: ServerConfig, index: number) => ({
-        ...server,
-        order: index
-      }));
-      
-      // Salva no cache após sucesso
-      saveConfigToCache(serversWithOrder);
-      
-      return serversWithOrder;
-    } catch (error) {
-      setConfigError(error instanceof Error ? error.message : 'Erro desconhecido');
-      
-      // Tenta usar o cache em caso de erro
-      const cached = loadConfigFromCache();
-      if (cached && cached.length > 0) {
-        return cached;
-      }
-      
-      return [];
-    }
-  };
 
   // Função para atualizar totais baseada na lista de servidores
   const updateTotals = (serverList: ServerStatus[]) => {
@@ -296,7 +223,7 @@ export function ServersModal({ onClose }: ServersModalProps) {
     const currentFailed = Array.from(failedServers);
     if (currentFailed.length === 0) return;
     
-    const failedConfigs = serverConfigs.filter(config => 
+    const failedConfigs = SERVER_CONFIGS.filter(config =>
       currentFailed.includes(config.host)
     );
     
@@ -305,35 +232,9 @@ export function ServersModal({ onClose }: ServersModalProps) {
     }
   };
 
-  // Inicializa: busca configuração e dados dos servidores
+  // Carrega os dados usando a lista de servidores incluída no layout.
   useEffect(() => {
-    const initialize = async () => {
-      // Primeiro tenta carregar do cache para exibição rápida
-      const cachedConfig = loadConfigFromCache();
-      if (cachedConfig && cachedConfig.length > 0) {
-        setServerConfigs(cachedConfig);
-        // Busca dados dos servidores em cache
-        await fetchServerData(cachedConfig);
-      }
-      
-      // Em paralelo, busca atualização da configuração
-      const configs = await fetchServerConfig();
-      
-      // Se obteve nova configuração e é diferente do cache, atualiza
-      if (configs.length > 0) {
-        const configChanged = JSON.stringify(configs) !== JSON.stringify(cachedConfig);
-        
-        if (configChanged) {
-          setServerConfigs(configs);
-          await fetchServerData(configs);
-        }
-      } else if (!cachedConfig || cachedConfig.length === 0) {
-        // Sem cache e sem sucesso ao buscar
-        setLoading(false);
-      }
-    };
-    
-    initialize();
+    void fetchServerData(SERVER_CONFIGS);
   }, []);
 
   // Tenta reconectar servidores falhos a cada 10 segundos
@@ -341,10 +242,10 @@ export function ServersModal({ onClose }: ServersModalProps) {
     if (failedServers.size === 0) return;
     const retryInterval = setInterval(retryFailedServers, 10000);
     return () => clearInterval(retryInterval);
-  }, [failedServers, serverConfigs]);
+  }, [failedServers]);
 
   const handleRefresh = async () => {
-    if (refreshing || serverConfigs.length === 0) return;
+    if (refreshing) return;
     try {
       vibrate(25);
     } catch {
@@ -352,16 +253,7 @@ export function ServersModal({ onClose }: ServersModalProps) {
     }
     setRefreshing(true);
     
-    // Atualiza configuração do GitHub Gist
-    const newConfigs = await fetchServerConfig();
-    
-    if (newConfigs.length > 0) {
-      setServerConfigs(newConfigs);
-      await fetchServerData(newConfigs);
-    } else {
-      // Se falhar, usa a configuração atual
-      await fetchServerData(serverConfigs);
-    }
+    await fetchServerData(SERVER_CONFIGS);
     
     setRefreshing(false);
   };
@@ -369,18 +261,6 @@ export function ServersModal({ onClose }: ServersModalProps) {
   return (
     <Modal onClose={onClose} title="Status dos Servidores" icon={Server}>
       <div className="flex flex-col h-[80vh] max-h-[90vh] w-full p-2 md:p-6 lg:p-8 2xl:p-10">
-        {/* Erro de configuração */}
-        {configError && (
-          <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
-            <p className="text-sm text-red-200">
-              <strong>Erro ao carregar configuração:</strong> {configError}
-            </p>
-            <p className="text-xs text-red-300 mt-1">
-              Verifique a URL do GitHub Gist em CONFIG_API_URL
-            </p>
-          </div>
-        )}
-
         {/* Barra de resumo com estatísticas e botão de refresh */}
         <div
           className="flex items-center justify-between gap-2 p-2.5 sm:p-3 mb-3 sticky top-0 z-10 rounded-xl"
@@ -407,10 +287,10 @@ export function ServersModal({ onClose }: ServersModalProps) {
 
           <button
             onClick={handleRefresh}
-            disabled={refreshing || serverConfigs.length === 0}
+            disabled={refreshing}
             className={`
               w-9 h-9 sm:w-10 sm:h-10 rounded-xl transition-all duration-200 flex-shrink-0 flex items-center justify-center touch-manipulation
-              ${refreshing || serverConfigs.length === 0
+              ${refreshing
                 ? 'opacity-40 cursor-not-allowed' 
                 : 'active:scale-95 hover:opacity-85'
               }
