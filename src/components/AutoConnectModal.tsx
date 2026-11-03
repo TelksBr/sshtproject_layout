@@ -84,7 +84,7 @@ function formatTime(date: unknown) {
 }
 
 export function AutoConnectModal() {
-  const { t, country: currentI18nCountry } = useTranslation();
+  const { t, locale, country: currentI18nCountry } = useTranslation();
   const {
     open,
     closeModal,
@@ -149,11 +149,11 @@ export function AutoConnectModal() {
     totalConfigs: totalConfigsCount,
   } = useMemo(() => {
     try {
-      return getAvailableCountries(allCategories);
+      return getAvailableCountries(allCategories, locale);
     } catch {
       return { countries: [], hasOtherWithoutFlag: false, totalCategories: 0, totalConfigs: 0 };
     }
-  }, [allCategories]);
+  }, [allCategories, locale]);
 
   // Região ativa (auto-detectada com base no país do app/WebView ou salva)
   const activeCountry = useMemo(() => {

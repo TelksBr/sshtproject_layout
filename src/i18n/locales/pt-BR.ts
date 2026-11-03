@@ -1,6 +1,7 @@
 import type { TranslationSchema } from '../types';
 
 export const ptBR: TranslationSchema = {
+  languageSelector: { search: 'Pesquisar idiomas...', noResults: 'Nenhum idioma encontrado' },
   common: {
     loading: 'Carregando...',
     error: 'Erro',

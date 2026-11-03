@@ -1,6 +1,7 @@
 import type { TranslationSchema } from '../types';
 
 export const es: TranslationSchema = {
+  languageSelector: { search: 'Buscar idiomas...', noResults: 'No se encontraron idiomas' },
   common: {
     loading: 'Cargando...',
     error: 'Error',

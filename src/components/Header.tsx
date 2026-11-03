@@ -4,6 +4,7 @@ import { vibrate } from '../utils/appFunctions';
 import { useTheme } from '../context/ThemeContext';
 import { useToast } from '../hooks/useToast';
 import { useTranslation } from '../i18n';
+import { LanguageSelector } from './LanguageSelector';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -87,6 +88,8 @@ const Header = memo(function Header({ onMenuClick, localIP, localIPv6, onOpenDeb
           ) : null}
         </span>
       </button>
+
+      <LanguageSelector />
 
       <button
         type="button"

@@ -33,7 +33,7 @@ function textMatches(haystack: string | null | undefined, needle: string): boole
 }
 
 export function ServerSelector() {
-  const { t, setCountry: setI18nCountry } = useTranslation();
+  const { t, locale, setCountry: setI18nCountry } = useTranslation();
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [configs, setConfigs] = useState<ConfigCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,7 +55,7 @@ export function ServerSelector() {
     hasOtherWithoutFlag,
     totalCategories,
     totalConfigs,
-  } = useMemo(() => getAvailableCountries(configs), [configs]);
+  } = useMemo(() => getAvailableCountries(configs, locale), [configs, locale]);
 
   // Pré-filtro inteligente: detecta país pelo locale do WebView ou preferência salva
   useEffect(() => {

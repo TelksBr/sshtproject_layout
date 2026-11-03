@@ -1,6 +1,7 @@
 import type { TranslationSchema } from '../types';
 
 export const ptAO: TranslationSchema = {
+  languageSelector: { search: 'Pesquisar idiomas...', noResults: 'Nenhum idioma encontrado' },
   common: {
     loading: 'A carregar...',
     error: 'Erro',

@@ -3,6 +3,14 @@
 
 Este documento apresenta a estrutura, padrões e principais convenções do projeto DTunnel, focando em escalabilidade, clareza e manutenção, com React, TypeScript e arquitetura modular.
 
+## Países e idiomas
+
+Os filtros de servidores e do Auto Conect reconhecem automaticamente a bandeira no nome de cada categoria (por exemplo, `🇿🇦 Mobile`). Todos os 249 países e territórios ISO 3166-1 possuem nomes locais para uso offline e em WebViews sem `Intl.DisplayNames`. O filtro mostra os países que possuem configurações disponíveis, sem exigir cadastro manual no layout.
+
+O idioma da interface é escolhido pelo botão de globo no cabeçalho, com busca na lista de idiomas, e salvo no dispositivo. Alterar o país dos servidores não altera o idioma. Estão disponíveis português do Brasil, português de Angola, espanhol e inglês; os nomes dos países acompanham o idioma escolhido.
+
+Para incluir uma tradução, crie o dicionário em `src/i18n/locales/` seguindo `TranslationSchema` e registre-o em `src/i18n/registry.ts`. O tipo de idioma e as opções do seletor são derivados desse registro. Execute `npm run test:i18n` para validar os países, traduções, detecção e seletor.
+
 ---
 
 ## Estrutura de Pastas

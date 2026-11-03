@@ -1,15 +1,8 @@
-import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
 import type { LocaleType, TranslationSchema } from './types';
 import { ptBR } from './locales/pt-BR';
-import { ptAO } from './locales/pt-AO';
-import { es } from './locales/es';
-import { getWebViewLocaleCountry } from '../utils/countryUtils';
-
-const TRANSLATIONS: Record<LocaleType, TranslationSchema> = {
-  'pt-BR': ptBR,
-  'pt-AO': ptAO,
-  'es': es,
-};
+import { LANGUAGES, isSupportedLocale } from './registry';
+import { getWebViewLocaleCountry, getSavedCountryPreference } from '../utils/countryUtils';
 
 export const LOCALE_STORAGE_KEY = 'app_i18n_locale';
 
@@ -17,48 +10,35 @@ export const LOCALE_STORAGE_KEY = 'app_i18n_locale';
  * Mapeia código de país ISO Alpha-2 para o locale de tradução correspondente.
  */
 export function getLanguageForCountry(countryCode: string | null | undefined): LocaleType {
-  if (!countryCode) return 'pt-BR';
-  const code = countryCode.toUpperCase();
-  if (code === 'AR' || code === 'ES' || code === 'CL' || code === 'UY' || code === 'PY' || code === 'CO' || code === 'MX' || code === 'PE') {
-    return 'es';
-  }
-  if (code === 'AO') {
-    return 'pt-AO';
-  }
-  return 'pt-BR';
+  const code = countryCode?.toUpperCase();
+  if (code === 'AO') return 'pt-AO';
+  if (['BR', 'PT', 'MZ', 'CV', 'GW', 'ST', 'TL'].includes(code || '')) return 'pt-BR';
+  if (['AR', 'ES', 'CL', 'UY', 'PY', 'CO', 'MX', 'PE', 'BO', 'EC', 'VE', 'CR', 'CU', 'DO', 'GT', 'HN', 'NI', 'PA', 'SV', 'GQ'].includes(code || '')) return 'es';
+  return code ? 'en' : 'pt-BR';
 }
 
-/**
- * Detecta o locale inicial com base no WebView / dispositivo.
- */
 export function detectInitialLocale(): { locale: LocaleType; country: string } {
+  const deviceCountry = getWebViewLocaleCountry();
+  const country = getSavedCountryPreference() || deviceCountry || 'all';
   try {
-    // 1. Verifica se há preferência salva
-    const saved = localStorage.getItem(LOCALE_STORAGE_KEY) as LocaleType | null;
-    if (saved && TRANSLATIONS[saved]) {
-      const countryMap: Record<LocaleType, string> = { 'pt-BR': 'BR', 'pt-AO': 'AO', 'es': 'AR' };
-      return { locale: saved, country: countryMap[saved] || 'BR' };
-    }
-
-    // 2. Tenta pelo país do WebView
-    const webViewCountry = getWebViewLocaleCountry();
-    if (webViewCountry) {
-      return {
-        locale: getLanguageForCountry(webViewCountry),
-        country: webViewCountry,
-      };
-    }
-
-    // 3. Tenta pelo navigator.language (ex: "es-AR", "pt-AO")
-    if (typeof navigator !== 'undefined' && navigator.language) {
-      const lang = navigator.language.toLowerCase();
-      if (lang.startsWith('es')) return { locale: 'es', country: 'AR' };
-      if (lang.includes('ao')) return { locale: 'pt-AO', country: 'AO' };
-    }
+    const saved = localStorage.getItem(LOCALE_STORAGE_KEY);
+    if (isSupportedLocale(saved)) return { locale: saved, country };
   } catch {
-    // Fallback silencioso
+    // Device detection remains available when storage is blocked.
   }
-  return { locale: 'pt-BR', country: 'BR' };
+  const deviceLanguages = typeof navigator !== 'undefined'
+    ? [navigator.language, ...(navigator.languages || [])]
+    : [];
+  for (const language of deviceLanguages) {
+    const normalized = language?.replace(/_/g, '-');
+    if (!normalized) continue;
+    const exact = Object.keys(LANGUAGES).find(code => code.toLowerCase() === normalized.toLowerCase());
+    if (isSupportedLocale(exact)) return { locale: exact, country };
+    const base = normalized.split('-')[0].toLowerCase();
+    if (base === 'pt') return { locale: normalized.toUpperCase().endsWith('-AO') ? 'pt-AO' : 'pt-BR', country };
+    if (isSupportedLocale(base)) return { locale: base, country };
+  }
+  return { locale: getLanguageForCountry(deviceCountry), country };
 }
 
 interface I18nContextValue {
@@ -73,10 +53,12 @@ interface I18nContextValue {
 const I18nContext = createContext<I18nContextValue | null>(null);
 
 export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [localeState, setLocaleState] = useState<LocaleType>(() => detectInitialLocale().locale);
-  const [countryState, setCountryState] = useState<string>(() => detectInitialLocale().country);
+  const [initial] = useState(detectInitialLocale);
+  const [localeState, setLocaleState] = useState<LocaleType>(initial.locale);
+  const [countryState, setCountryState] = useState(initial.country);
 
   const setLocale = useCallback((newLocale: LocaleType) => {
+    if (!isSupportedLocale(newLocale)) return;
     setLocaleState(newLocale);
     try {
       localStorage.setItem(LOCALE_STORAGE_KEY, newLocale);
@@ -85,20 +67,18 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  /**
-   * Altera o país e sincroniza automaticamente o idioma correspondente.
-   */
+  // Region filters and the chosen interface language are independent.
   const setCountry = useCallback((countryCode: string) => {
     setCountryState(countryCode);
-    if (countryCode && countryCode !== 'all' && countryCode !== 'OTHER') {
-      const targetLang = getLanguageForCountry(countryCode);
-      setLocale(targetLang);
-    }
-  }, [setLocale]);
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.lang = localeState;
+  }, [localeState]);
 
   // Função de tradução com suporte a dot notation e interpolação {param}
   const t = useCallback((path: string, params?: Record<string, string | number>): string => {
-    const currentDict = TRANSLATIONS[localeState] || ptBR;
+    const currentDict = LANGUAGES[localeState].translations;
     const fallbackDict = ptBR;
 
     const parts = path.split('.');
@@ -127,7 +107,7 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLocale,
     setCountry,
     t,
-    schema: TRANSLATIONS[localeState] || ptBR,
+    schema: LANGUAGES[localeState].translations,
   }), [localeState, countryState, setLocale, setCountry, t]);
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;

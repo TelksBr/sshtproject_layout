@@ -1,4 +1,5 @@
 import type { ConfigCategory } from '../types/config';
+import { COUNTRY_NAMES } from './countryNames';
 
 export const FLAG_EMOJI_REGEX = /[\u{1F1E6}-\u{1F1FF}]{2}/u;
 
@@ -17,31 +18,6 @@ export interface AvailableCountry {
   categoryCount: number;
   configCount: number;
 }
-
-const FALLBACK_COUNTRY_NAMES: Record<string, string> = {
-  BR: 'Brasil',
-  AO: 'Angola',
-  US: 'Estados Unidos',
-  AR: 'Argentina',
-  CL: 'Chile',
-  PY: 'Paraguai',
-  UY: 'Uruguai',
-  CO: 'Colômbia',
-  PE: 'Peru',
-  MX: 'México',
-  ES: 'Espanha',
-  PT: 'Portugal',
-  CA: 'Canadá',
-  DE: 'Alemanha',
-  FR: 'França',
-  IT: 'Itália',
-  GB: 'Reino Unido',
-  UK: 'Reino Unido',
-  JP: 'Japão',
-  RU: 'Rússia',
-  NL: 'Holanda',
-  SG: 'Singapura',
-};
 
 /**
  * Converte um emoji de bandeira Unicode de 2 caracteres indicadores regionais
@@ -67,13 +43,13 @@ export function getCountryCodeFromFlag(flag: string): string | null {
 
 /**
  * Obtém o nome amigável do país localizado através da API padrão Intl.DisplayNames,
- * com fallback para mapa de países conhecidos.
+ * com nomes locais para todos os países e territórios ISO 3166-1 em WebViews antigos.
  */
 export function getCountryDisplayName(countryCode: string, preferredLocale?: string): string {
-  const code = countryCode.toUpperCase();
+  const code = countryCode.toUpperCase() === 'UK' ? 'GB' : countryCode.toUpperCase();
+  const loc = preferredLocale || (typeof navigator !== 'undefined' ? navigator.language : 'pt-BR');
   try {
     if (typeof Intl !== 'undefined' && 'DisplayNames' in Intl) {
-      const loc = preferredLocale || (typeof navigator !== 'undefined' ? navigator.language : 'pt-BR');
       const displayNames = new Intl.DisplayNames([loc, 'pt-BR', 'en'], { type: 'region' });
       const name = displayNames.of(code);
       if (name && name !== code) return name;
@@ -81,13 +57,14 @@ export function getCountryDisplayName(countryCode: string, preferredLocale?: str
   } catch {
     // Fallback silencioso
   }
-  return FALLBACK_COUNTRY_NAMES[code] || code;
+  const language = loc.split(/[-_]/)[0].toLowerCase();
+  return COUNTRY_NAMES[language]?.[code] || COUNTRY_NAMES.en[code] || code;
 }
 
 /**
  * Extrai o país a partir de uma string (ex: nome da categoria).
  */
-export function extractCountryFromText(text: string | null | undefined): ExtractedCountry | null {
+export function extractCountryFromText(text: string | null | undefined, preferredLocale?: string): ExtractedCountry | null {
   if (!text) return null;
   const match = text.match(FLAG_EMOJI_REGEX);
   if (!match) return null;
@@ -96,7 +73,7 @@ export function extractCountryFromText(text: string | null | undefined): Extract
   const code = getCountryCodeFromFlag(flag);
   if (!code) return null;
 
-  const name = getCountryDisplayName(code);
+  const name = getCountryDisplayName(code, preferredLocale);
   return { code, flag, name };
 }
 
@@ -113,15 +90,14 @@ export function getWebViewLocaleCountry(): string | null {
 
     for (const raw of rawLocales) {
       if (!raw || typeof raw !== 'string') continue;
-      const normalized = raw.replace('_', '-').trim();
+      const normalized = raw.replace(/_/g, '-').trim();
       const parts = normalized.split('-');
 
-      // Caso 1: locale completo com região, ex: "pt-BR", "es-AR", "en-US"
-      if (parts.length >= 2) {
-        const region = parts[parts.length - 1].toUpperCase();
-        if (region.length === 2 && /^[A-Z]{2}$/.test(region)) {
-          return region;
-        }
+      // Aceita scripts e ignora extensões BCP 47, ex: "en-ZA-u-hc-h12".
+      for (const part of parts.slice(1)) {
+        if (part.length === 1) break;
+        const region = part.toUpperCase();
+        if (/^[A-Z]{2}$/.test(region)) return region;
       }
 
       // Caso 2: idioma sem região
@@ -137,7 +113,7 @@ export function getWebViewLocaleCountry(): string | null {
 /**
  * Extrai a lista de todos os países disponíveis nas categorias de configuração.
  */
-export function getAvailableCountries(categories: ConfigCategory[]): {
+export function getAvailableCountries(categories: ConfigCategory[], preferredLocale?: string): {
   countries: AvailableCountry[];
   hasOtherWithoutFlag: boolean;
   totalCategories: number;
@@ -165,7 +141,7 @@ export function getAvailableCountries(categories: ConfigCategory[]): {
     const itemCount = category.items.length;
     totalConfigs += itemCount;
 
-    const extracted = extractCountryFromText(category.name);
+    const extracted = extractCountryFromText(category.name, preferredLocale);
     if (extracted) {
       const existing = map.get(extracted.code);
       if (existing) {
@@ -191,7 +167,7 @@ export function getAvailableCountries(categories: ConfigCategory[]): {
     // Brasil primeiro se presente, caso contrário pelo nome
     if (a.code === 'BR') return -1;
     if (b.code === 'BR') return 1;
-    return a.name.localeCompare(b.name, 'pt-BR');
+    return a.name.localeCompare(b.name, preferredLocale || 'pt-BR');
   });
 
   return {

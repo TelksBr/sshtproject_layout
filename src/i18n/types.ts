@@ -1,6 +1,10 @@
-export type LocaleType = 'pt-BR' | 'pt-AO' | 'es';
+export type LocaleType = keyof typeof import('./registry').LANGUAGES;
 
 export interface TranslationSchema {
+  languageSelector: {
+    search: string;
+    noResults: string;
+  };
   common: {
     loading: string;
     error: string;
