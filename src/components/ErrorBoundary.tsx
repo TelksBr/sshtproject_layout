@@ -1,3 +1,4 @@
+import { message as tr, subscribeMessages } from '../i18n/messages';
 import { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertCircle, RefreshCw } from '../utils/icons';
 
@@ -15,6 +16,15 @@ interface State {
 }
 
 export class ErrorBoundary extends Component<Props, State> {
+  private unsubscribeMessages?: () => void;
+
+  public componentDidMount() {
+    this.unsubscribeMessages = subscribeMessages(() => this.forceUpdate());
+  }
+
+  public componentWillUnmount() {
+    this.unsubscribeMessages?.();
+  }
   public state: State = {
     hasError: false,
     error: null,
@@ -46,15 +56,14 @@ export class ErrorBoundary extends Component<Props, State> {
           <div className="p-3 my-2 rounded-xl border border-rose-500/30 bg-rose-500/10 flex items-center justify-between gap-2 text-xs text-rose-400">
             <div className="flex items-center gap-2 truncate">
               <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-400" />
-              <span className="truncate">{this.props.fallbackMessage || 'Erro ao carregar componente.'}</span>
+              <span className="truncate">{this.props.fallbackMessage || tr("m59a5203ded")}</span>
             </div>
             <button
               type="button"
               onClick={this.handleReset}
               className="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-[11px] font-medium transition-all touch-manipulation"
             >
-              Tentar novamente
-            </button>
+              {tr("mb9e10688be")}</button>
           </div>
         );
       }
@@ -69,11 +78,11 @@ export class ErrorBoundary extends Component<Props, State> {
           </div>
           <div className="space-y-1">
             <h3 className="text-sm font-bold" style={{ color: 'var(--text)' }}>
-              {this.props.fallbackTitle || 'Ocorreu um erro no componente'}
+              {this.props.fallbackTitle || tr("md373581414")}
             </h3>
             <p className="text-xs max-w-sm" style={{ color: 'var(--text-muted)' }}>
               {this.props.fallbackMessage ||
-                'O layout foi mantido seguro. Você pode tentar recarregar esta seção.'}
+                tr("m22dcd93f9e")}
             </p>
           </div>
           <button
@@ -83,8 +92,7 @@ export class ErrorBoundary extends Component<Props, State> {
             style={{ background: 'var(--accent)' }}
           >
             <RefreshCw className="w-3.5 h-3.5" />
-            Recarregar
-          </button>
+            {tr("m9b6bb68d29")}</button>
         </div>
       );
     }

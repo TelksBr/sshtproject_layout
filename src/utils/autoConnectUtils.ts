@@ -1,3 +1,4 @@
+import { message as tr } from '../i18n/messages';
 import { startConnection, stopConnection, getConnectionState, getAllConfigs } from './appFunctions';
 import { extractCountryFromText } from './countryUtils';
 
@@ -167,7 +168,7 @@ export async function autoConnectTest({
     if (cancelRef.current.cancelled) return false;
     const config = filteredConfigs[i];
     if (!config) continue;
-    const configName = config.name || `Config ${i + 1}`;
+    const configName = config.name || tr("m32ace2f494", { p0: i + 1 });
 
     onPhase?.('select', configName);
     setCurrentName(configName);
@@ -202,16 +203,16 @@ export async function autoConnectTest({
           }
           setSuccess(configName);
           setSelectedCategory(null);
-          onTestResult?.(configName, true, 'Conexão bem-sucedida com internet');
+          onTestResult?.(configName, true, tr("md3bae48dab"));
           return true;
         } else {
-          onTestResult?.(configName, false, 'VPN conectou, mas sem acesso à internet');
+          onTestResult?.(configName, false, tr("m95e5a307b0"));
         }
       } else {
-        onTestResult?.(configName, false, 'Timeout aguardando estado CONNECTED');
+        onTestResult?.(configName, false, tr("mc90eb063d7"));
       }
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Erro desconhecido';
+      const errorMsg = error instanceof Error ? error.message : tr("m3d3197555d");
       onTestResult?.(configName, false, errorMsg);
     }
 

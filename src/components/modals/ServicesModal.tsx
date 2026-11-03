@@ -1,3 +1,4 @@
+import { message as tr, useMessages } from '../../i18n/messages';
 import { Modal } from './Modal';
 import { 
   Server, 
@@ -10,29 +11,29 @@ import { openExternalUrl } from '../../utils/appFunctions';
 
 const services = [
   {
-    title: 'Revenda VPN',
-    description: 'Revenda de planos de VPN com servidores Brasileiros e Valores Acessiveis.',
+    get title() { return tr("m2b937c9cbf"); },
+    get description() { return tr("md262a425d1"); },
     icon: Server,
-    features: [
-      'Servidores Brasileiros',
-      'Gerenciamento Via Painel ou Bot',
-      'Sempre Atualizado',
-      'Suporte 24/7'
-    ],
-    price: 'A partir de R$ 15/mês',
+    get features() { return [
+      tr("mf29fb4f891"),
+      tr("m77e791d8ed"),
+      tr("m0d9466def1"),
+      tr("m638ab4a5b1")
+    ]; },
+    get price() { return tr("me4b3700b1b"); },
     link: 'https://reselltproject.shop/'
   },
   {
-    title: 'Serviço de IPTV',
-    description: 'Acesso a milhares de canais de TV, filmes e séries com qualidade HD e 4K.',
+    get title() { return tr("m46bb13192f"); },
+    get description() { return tr("m4bc8efc9f2"); },
     icon: PlaySquare,
-    features: [
-      'Mais de 10.000 Canais',
-      'Todos os Filmes e Séries',
-      'Sem Travamentos',
-      'Suporte 24/7'
-    ],
-    price: 'A partir de R$ 20/mês',
+    get features() { return [
+      tr("mb1f634926a"),
+      tr("m800352da8e"),
+      tr("m29c264ccf0"),
+      tr("m638ab4a5b1")
+    ]; },
+    get price() { return tr("m1739741111"); },
     link: 'https://iptv.sshtproject.com'
   }
 ];
@@ -40,8 +41,9 @@ const services = [
 
 
 export function ServicesModal({ onClose }: { onClose: () => void }) {
+  useMessages();
   return (
-    <Modal onClose={onClose} title="Serviços" icon={BriefcaseBusiness}>
+    <Modal onClose={onClose} title={tr("m4944b0b2b6")} icon={BriefcaseBusiness}>
       <div className="max-w-md mx-auto p-3 sm:p-4">
         <div className="max-w-md mx-auto space-y-6">
           {/* Hero Section */}
@@ -52,11 +54,9 @@ export function ServicesModal({ onClose }: { onClose: () => void }) {
               </div>
             </div>
             <h3 className="text-base sm:text-lg font-bold mb-1" style={{ color: 'var(--text)' }}>
-              Nossos Serviços
-            </h3>
+              {tr("m501c8194c1")}</h3>
             <p className="text-xs sm:text-sm font-medium leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-              Soluções profissionais para todas as suas necessidades de infraestrutura digital
-            </p>
+              {tr("mab1f56caa9")}</p>
           </div>
 
           {/* Services Grid */}
@@ -90,8 +90,7 @@ export function ServicesModal({ onClose }: { onClose: () => void }) {
                   className="w-full flex items-center justify-center gap-2 text-white font-bold py-2.5 px-6 rounded-xl shadow-md transition-all duration-200 text-xs sm:text-sm active:scale-95 touch-manipulation"
                   style={{ background: 'var(--accent)' }}
                 >
-                  Saiba Mais
-                  <ArrowRight className="w-4 h-4" />
+                  {tr("mbe050c7994")}<ArrowRight className="w-4 h-4" />
                 </button>
               </div>
             ))}

@@ -1,3 +1,4 @@
+import { message as tr, useMessages } from '../../i18n/messages';
 import { useState, useMemo, useRef } from 'react';
 import {
   Globe,
@@ -27,9 +28,10 @@ interface DnsModalProps {
 }
 
 export function DnsModal({ onClose }: DnsModalProps) {
+  const messageLocale = useMessages();
   const { showSuccess, showError } = useToast();
 
-  const presets = useMemo(() => getDnsPresets(), []);
+  const presets = useMemo(() => getDnsPresets(), [messageLocale]);
   const initialConfig = useMemo(() => getCustomDnsConfig(), []);
 
   const [enabled, setEnabled] = useState<boolean>(initialConfig.enabled);
@@ -122,8 +124,8 @@ export function DnsModal({ onClose }: DnsModalProps) {
         } catch {
           /* ignore */
         }
-        showError('Informe ao menos o servidor DNS primário.');
-        showNativeToast('Informe ao menos o servidor DNS primário.');
+        showError(tr("m10150e2130"));
+        showNativeToast(tr("m10150e2130"));
         return;
       }
       if (!isValidIpAddress(primary)) {
@@ -132,8 +134,8 @@ export function DnsModal({ onClose }: DnsModalProps) {
         } catch {
           /* ignore */
         }
-        showError('O servidor DNS primário informado é inválido.');
-        showNativeToast('O servidor DNS primário informado é inválido.');
+        showError(tr("m589e8c22bb"));
+        showNativeToast(tr("m589e8c22bb"));
         return;
       }
       if (secondary.trim() && !isValidIpAddress(secondary)) {
@@ -142,8 +144,8 @@ export function DnsModal({ onClose }: DnsModalProps) {
         } catch {
           /* ignore */
         }
-        showError('O servidor DNS secundário informado é inválido.');
-        showNativeToast('O servidor DNS secundário informado é inválido.');
+        showError(tr("mab454f09a5"));
+        showNativeToast(tr("mab454f09a5"));
         return;
       }
       if (primaryIpv6.trim() && !isValidIpv6Address(primaryIpv6)) {
@@ -152,8 +154,8 @@ export function DnsModal({ onClose }: DnsModalProps) {
         } catch {
           /* ignore */
         }
-        showError('O servidor DNS IPv6 primário informado é inválido.');
-        showNativeToast('O servidor DNS IPv6 primário informado é inválido.');
+        showError(tr("m84160a1125"));
+        showNativeToast(tr("m84160a1125"));
         return;
       }
       if (secondaryIpv6.trim() && !isValidIpv6Address(secondaryIpv6)) {
@@ -162,8 +164,8 @@ export function DnsModal({ onClose }: DnsModalProps) {
         } catch {
           /* ignore */
         }
-        showError('O servidor DNS IPv6 secundário informado é inválido.');
-        showNativeToast('O servidor DNS IPv6 secundário informado é inválido.');
+        showError(tr("m87f22f6810"));
+        showNativeToast(tr("m87f22f6810"));
         return;
       }
     }
@@ -186,9 +188,9 @@ export function DnsModal({ onClose }: DnsModalProps) {
       const hasIpv6 = Boolean(primaryIpv6.trim() || secondaryIpv6.trim());
       const msg = enabled
         ? hasIpv6
-          ? 'DNS personalizado (IPv4 + IPv6) ativado com sucesso!'
-          : 'DNS personalizado ativado com sucesso!'
-        : 'DNS personalizado desativado (usando padrão).';
+          ? tr("me7c9bf813f")
+          : tr("m7ce00ed4a3")
+        : tr("mf7f9b5d2af");
 
       // Feedback visual duplo: web e nativo Android
       showSuccess(msg);
@@ -203,25 +205,25 @@ export function DnsModal({ onClose }: DnsModalProps) {
     } catch (err) {
       setSaveStatus('idle');
       console.error('Erro ao salvar DNS:', err);
-      showError('Erro ao salvar configuração de DNS.');
-      showNativeToast('Erro ao salvar configuração de DNS.');
+      showError(tr("m472073c59f"));
+      showNativeToast(tr("m472073c59f"));
     }
   };
 
   const currentPresetName = useMemo(() => {
-    if (!enabled) return 'Desativado (usando DNS padrão da rede/VPN)';
+    if (!enabled) return tr("me6daa3aa40");
     const found = presets.find((p) => p.id === selectedPresetId);
     const hasIpv6 = Boolean(primaryIpv6.trim() || secondaryIpv6.trim());
     if (found) {
       return hasIpv6 ? `${found.name} (IPv4 + IPv6)` : found.name;
     }
-    return hasIpv6 ? 'Personalizado (IPv4 + IPv6)' : 'Personalizado (IPv4)';
+    return hasIpv6 ? tr("mb2a9e8788a") : tr("m786cd04020");
   }, [enabled, selectedPresetId, presets, primaryIpv6, secondaryIpv6]);
 
   const hasIpv6Configured = Boolean(primaryIpv6.trim() || secondaryIpv6.trim());
 
   return (
-    <Modal onClose={onClose} title="DNS Customizado" icon={Globe}>
+    <Modal onClose={onClose} title={tr("mce251ebe8a")} icon={Globe}>
       <div className="flex-1 p-3.5 sm:p-5 overflow-y-auto space-y-4">
         {/* Card de Status e Chave Principal */}
         <div
@@ -244,8 +246,7 @@ export function DnsModal({ onClose }: DnsModalProps) {
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-sm sm:text-base font-bold" style={{ color: 'var(--text)' }}>
-                  DNS Personalizado
-                </h3>
+                  {tr("ma37930ec3f")}</h3>
                 {enabled && (
                   <span
                     className="px-2 py-0.5 rounded-full text-[10px] font-bold"
@@ -255,8 +256,7 @@ export function DnsModal({ onClose }: DnsModalProps) {
                       border: '1px solid rgba(16, 185, 129, 0.3)',
                     }}
                   >
-                    ATIVO
-                  </span>
+                    {tr("mba2d8673ae")}</span>
                 )}
                 {enabled && hasIpv6Configured && (
                   <span
@@ -267,12 +267,11 @@ export function DnsModal({ onClose }: DnsModalProps) {
                       border: '1px solid rgba(168, 85, 247, 0.3)',
                     }}
                   >
-                    IPv4 + IPv6
-                  </span>
+                    {tr("m007e48e2b2")}</span>
                 )}
               </div>
               <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>
-                {enabled ? `Provedor: ${currentPresetName}` : 'Desativado (usando DNS padrão da rede/VPN)'}
+                {enabled ? tr("md4168651e5", { p0: currentPresetName }) : tr("me6daa3aa40")}
               </p>
             </div>
           </div>
@@ -298,7 +297,7 @@ export function DnsModal({ onClose }: DnsModalProps) {
               boxSizing: 'border-box',
               border: enabled ? '1px solid #059669' : '1px solid rgba(255, 255, 255, 0.12)',
             }}
-            aria-label="Ativar ou desativar DNS personalizado"
+            aria-label={tr("m043971cec5")}
           >
             <div
               style={{
@@ -327,11 +326,9 @@ export function DnsModal({ onClose }: DnsModalProps) {
               style={{ color: 'var(--text-muted)' }}
             >
               <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              Provedores Rápidos
-            </span>
+              {tr("m2cf117ce01")}</span>
             <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-              Com IPv4 e IPv6
-            </span>
+              {tr("m3e5c63584f")}</span>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -342,7 +339,7 @@ export function DnsModal({ onClose }: DnsModalProps) {
                   key={preset.id}
                   type="button"
                   onClick={() => handleSelectPreset(preset)}
-                  className="p-2.5 sm:p-3 rounded-xl text-left transition-all relative border touch-manipulation active:scale-[0.98]"
+                  className="p-2.5 sm:p-3 rounded-xl text-start transition-all relative border touch-manipulation active:scale-[0.98]"
                   style={{
                     background: isSelected ? 'rgba(59, 130, 246, 0.12)' : 'var(--bg-elevated)',
                     borderColor: isSelected ? 'rgba(59, 130, 246, 0.5)' : 'var(--border)',
@@ -381,7 +378,7 @@ export function DnsModal({ onClose }: DnsModalProps) {
                 }
                 setSelectedPresetId('custom');
               }}
-              className="p-2.5 sm:p-3 rounded-xl text-left transition-all border touch-manipulation active:scale-[0.98]"
+              className="p-2.5 sm:p-3 rounded-xl text-start transition-all border touch-manipulation active:scale-[0.98]"
               style={{
                 background: selectedPresetId === 'custom' ? 'rgba(59, 130, 246, 0.12)' : 'var(--bg-elevated)',
                 borderColor: selectedPresetId === 'custom' ? 'rgba(59, 130, 246, 0.5)' : 'var(--border)',
@@ -392,15 +389,13 @@ export function DnsModal({ onClose }: DnsModalProps) {
                   className="text-xs font-bold truncate"
                   style={{ color: selectedPresetId === 'custom' ? '#60a5fa' : 'var(--text)' }}
                 >
-                  Personalizado
-                </span>
+                  {tr("m4290938ed5")}</span>
                 {selectedPresetId === 'custom' && (
                   <Check className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
                 )}
               </div>
               <p className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>
-                Configuração Manual
-              </p>
+                {tr("mb28e5c33d0")}</p>
             </button>
           </div>
         </div>
@@ -418,24 +413,21 @@ export function DnsModal({ onClose }: DnsModalProps) {
                 style={{ color: 'var(--text)' }}
               >
                 <Network className="w-3.5 h-3.5 text-blue-400" />
-                Servidores DNS IPv4
-              </span>
+                {tr("m4555842d77")}</span>
               <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                Primário obrigatório
-              </span>
+                {tr("m4c0156c01a")}</span>
             </div>
 
             <div className="space-y-3">
               <div>
                 <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
-                  Servidor DNS Primário (IPv4) *
-                </label>
+                  {tr("m1a3d030142")}</label>
                 <div className="relative">
-                  <input
+                  <input dir="auto"
                     type="text"
                     value={primary}
                     onChange={(e) => handleCustomInput('primary', e.target.value)}
-                    placeholder="ex: 1.1.1.1 ou 8.8.8.8"
+                    placeholder={tr("m6ac4f7251e")}
                     className="w-full h-10 px-3.5 rounded-xl font-mono text-xs sm:text-sm transition-colors border focus:outline-none focus:ring-1 focus:ring-blue-500"
                     style={{
                       background: 'var(--bg)',
@@ -446,21 +438,19 @@ export function DnsModal({ onClose }: DnsModalProps) {
                 </div>
                 {!isPrimaryValid && (
                   <span className="text-[11px] text-red-400 flex items-center gap-1 mt-1">
-                    <AlertCircle className="w-3 h-3" /> Endereço IP inválido
-                  </span>
+                    <AlertCircle className="w-3 h-3" /> {" " + tr("me18b5a6f7e")}</span>
                 )}
               </div>
 
               <div>
                 <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
-                  Servidor DNS Secundário (IPv4)
-                </label>
+                  {tr("m2a1782ee1a")}</label>
                 <div className="relative">
-                  <input
+                  <input dir="auto"
                     type="text"
                     value={secondary}
                     onChange={(e) => handleCustomInput('secondary', e.target.value)}
-                    placeholder="ex: 1.0.0.1 ou 8.8.4.4"
+                    placeholder={tr("m75c97902ce")}
                     className="w-full h-10 px-3.5 rounded-xl font-mono text-xs sm:text-sm transition-colors border focus:outline-none focus:ring-1 focus:ring-blue-500"
                     style={{
                       background: 'var(--bg)',
@@ -471,8 +461,7 @@ export function DnsModal({ onClose }: DnsModalProps) {
                 </div>
                 {!isSecondaryValid && (
                   <span className="text-[11px] text-red-400 flex items-center gap-1 mt-1">
-                    <AlertCircle className="w-3 h-3" /> Endereço IP inválido
-                  </span>
+                    <AlertCircle className="w-3 h-3" /> {" " + tr("me18b5a6f7e")}</span>
                 )}
               </div>
             </div>
@@ -489,21 +478,19 @@ export function DnsModal({ onClose }: DnsModalProps) {
                 style={{ color: 'var(--text)' }}
               >
                 <Server className="w-3.5 h-3.5 text-purple-400" />
-                Servidores DNS IPv6
-              </span>
+                {tr("mb1d094dcfd")}</span>
             </div>
 
             <div className="space-y-3">
               <div>
                 <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
-                  Servidor DNS Primário (IPv6)
-                </label>
+                  {tr("m74c8d942ae")}</label>
                 <div className="relative">
-                  <input
+                  <input dir="auto"
                     type="text"
                     value={primaryIpv6}
                     onChange={(e) => handleCustomInput('primaryIpv6', e.target.value)}
-                    placeholder="ex: 2606:4700:4700::1111 ou 2001:4860:4860::8888"
+                    placeholder={tr("mba375370dd")}
                     className="w-full h-10 px-3.5 rounded-xl font-mono text-xs sm:text-sm transition-colors border focus:outline-none focus:ring-1 focus:ring-purple-500"
                     style={{
                       background: 'var(--bg)',
@@ -514,21 +501,19 @@ export function DnsModal({ onClose }: DnsModalProps) {
                 </div>
                 {!isPrimaryIpv6Valid && (
                   <span className="text-[11px] text-red-400 flex items-center gap-1 mt-1">
-                    <AlertCircle className="w-3 h-3" /> Endereço IPv6 inválido
-                  </span>
+                    <AlertCircle className="w-3 h-3" /> {" " + tr("mfc7aa7b28b")}</span>
                 )}
               </div>
 
               <div>
                 <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
-                  Servidor DNS Secundário (IPv6)
-                </label>
+                  {tr("m4d755af144")}</label>
                 <div className="relative">
-                  <input
+                  <input dir="auto"
                     type="text"
                     value={secondaryIpv6}
                     onChange={(e) => handleCustomInput('secondaryIpv6', e.target.value)}
-                    placeholder="ex: 2606:4700:4700::1001 ou 2001:4860:4860::8844"
+                    placeholder={tr("mec410c0e40")}
                     className="w-full h-10 px-3.5 rounded-xl font-mono text-xs sm:text-sm transition-colors border focus:outline-none focus:ring-1 focus:ring-purple-500"
                     style={{
                       background: 'var(--bg)',
@@ -539,8 +524,7 @@ export function DnsModal({ onClose }: DnsModalProps) {
                 </div>
                 {!isSecondaryIpv6Valid && (
                   <span className="text-[11px] text-red-400 flex items-center gap-1 mt-1">
-                    <AlertCircle className="w-3 h-3" /> Endereço IPv6 inválido
-                  </span>
+                    <AlertCircle className="w-3 h-3" /> {" " + tr("mfc7aa7b28b")}</span>
                 )}
               </div>
             </div>
@@ -552,9 +536,7 @@ export function DnsModal({ onClose }: DnsModalProps) {
           >
             <ShieldCheck className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'var(--accent)' }} />
             <p>
-              O DNS customizado roteia as consultas de domínio pelos servidores configurados (IPv4 e IPv6)
-              quando a VPN estiver conectada, evitando vazamentos e bloqueios na sua operadora.
-            </p>
+              {tr("me1641797f4")}</p>
           </div>
         </div>
 
@@ -572,8 +554,7 @@ export function DnsModal({ onClose }: DnsModalProps) {
               color: 'var(--text)',
             }}
           >
-            Cancelar
-          </button>
+            {tr("mbb9dbb406d")}</button>
 
           <button
             type="button"
@@ -588,17 +569,17 @@ export function DnsModal({ onClose }: DnsModalProps) {
             {saveStatus === 'saving' ? (
               <>
                 <Loader className="w-4 h-4 animate-spin" />
-                <span>Salvando...</span>
+                <span>{tr("m03fd14dd52")}</span>
               </>
             ) : saveStatus === 'saved' ? (
               <>
                 <Check className="w-4 h-4 text-white" />
-                <span>Salvo com Sucesso!</span>
+                <span>{tr("mc5689af0b7")}</span>
               </>
             ) : (
               <>
                 <Save className="w-4 h-4" />
-                <span>Salvar</span>
+                <span>{tr("maef7cd5b20")}</span>
               </>
             )}
           </button>

@@ -1,3 +1,4 @@
+import { message as tr, useMessages } from '../i18n/messages';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { 
   getConnectionState, 
@@ -62,7 +63,7 @@ let globalInterval: NodeJS.Timeout | null = null;
 function formatBytes(bytes: number): string {
   if (bytes === 0) return '0 KB';
   const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const sizes = [tr("m4d8000301f"), 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
@@ -311,6 +312,7 @@ const stopGlobalPolling = () => {
  * Otimização: Um único interval para todo o app
  */
 export function useGlobalPolling() {
+  useMessages();
   const [state, setState] = useState<GlobalPollingState>(() => ensureGlobalStateInitialized());
   const listenerRef = useRef<(() => void) | null>(null);
   
@@ -394,6 +396,7 @@ export function useGlobalPolling() {
  * Hook específico para network stats (compatibilidade)
  */
 export function useNetworkStatsGlobal() {
+  useMessages();
   const { networkStats } = useGlobalPolling();
   return networkStats;
 }
@@ -402,6 +405,7 @@ export function useNetworkStatsGlobal() {
  * Hook específico para hotspot (compatibilidade)  
  */
 export function useHotspotGlobal() {
+  useMessages();
   const { hotspotState, hotspotInfo, vpnState, forceUpdate } = useGlobalPolling();
   const [loading, setLoading] = useState(false);
   

@@ -1,3 +1,4 @@
+import { message as tr, useMessages } from '../i18n/messages';
 import { useSdkPlayUpdate } from '../hooks/useSdkPlayUpdate';
 import { Download } from '../utils/icons';
 import { PlayUpdateModal } from './modals/PlayUpdateModal';
@@ -7,6 +8,7 @@ interface PlayUpdateHostProps {
 }
 
 export function PlayUpdateHost({ blockingModal }: PlayUpdateHostProps) {
+  useMessages();
   const { prompt, downloading, progress, restart, update, dismiss } = useSdkPlayUpdate(blockingModal);
 
   return (
@@ -20,7 +22,7 @@ export function PlayUpdateHost({ blockingModal }: PlayUpdateHostProps) {
             <Download className="w-4 h-4 shrink-0" style={{ color: 'var(--accent)' }} />
             <div className="flex-1 min-w-0">
               <div className="flex justify-between text-xs mb-1" style={{ color: 'var(--text-muted)' }}>
-                <span>Baixando atualização</span>
+                <span>{tr("md2dfc5b719")}</span>
                 {progress !== null && <span>{progress}%</span>}
               </div>
               <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--surface)' }}>

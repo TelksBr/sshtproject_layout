@@ -1,3 +1,4 @@
+import { getMessageLocale, localizeMessage, message as tr, useMessages } from '../i18n/messages';
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Modal } from './modals/Modal';
 import type { ConfigItem } from '../types/config';
@@ -53,16 +54,16 @@ import { useTranslation } from '../i18n';
 type WizardStep = 'setup' | 'confirm' | 'run' | 'result';
 
 const PHASE_LABEL: Record<AutoConnectPhase, string> = {
-  select: 'Selecionando',
-  connecting: 'Conectando',
-  wait_vpn: 'Aguardando VPN',
-  check_internet: 'Testando internet',
-  next: 'Falhou, próxima',
+  get select() { return tr("m5795c3abd0"); },
+  get connecting() { return tr("m4f40875edc"); },
+  get wait_vpn() { return tr("mbf468041ed"); },
+  get check_internet() { return tr("mf43a4ca309"); },
+  get next() { return tr("m747871f8fe"); },
 };
 
 const TYPE_LABEL: Record<AutoConnectConfig['configType'], string> = {
-  all: 'Todas (SSH + V2Ray)',
-  ssh: 'SSH / Proxy',
+  get all() { return tr("m7f572e926f"); },
+  get ssh() { return tr("mc4a603b697"); },
   v2ray: 'V2Ray',
 };
 
@@ -77,13 +78,14 @@ function formatTime(date: unknown) {
     if (!date) return '';
     const d = date instanceof Date ? date : new Date(date as any);
     if (isNaN(d.getTime())) return '';
-    return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    return d.toLocaleTimeString(getMessageLocale(), { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   } catch {
     return '';
   }
 }
 
 export function AutoConnectModal() {
+  useMessages();
   const { t, locale, country: currentI18nCountry } = useTranslation();
   const {
     open,
@@ -178,7 +180,7 @@ export function AutoConnectModal() {
 
   const activeCountryDisplayName = useMemo(() => {
     if (!activeCountryObj) {
-      return activeCountry === 'OTHER' ? (t('countryFilter.other') || 'Outros') : (t('autoConnect.allRegions') || 'Todas as Regiões');
+      return activeCountry === 'OTHER' ? (t('countryFilter.other') || tr("me6031e8fb5")) : (t('autoConnect.allRegions') || tr("m25c4498ac1"));
     }
     return `${activeCountryObj.flag || '🌐'} ${activeCountryObj.name || activeCountry}`;
   }, [activeCountryObj, activeCountry, t]);
@@ -290,15 +292,15 @@ export function AutoConnectModal() {
 
   const validateCredentials = useCallback((): boolean => {
     if (requiredCredentials.username && !username.trim()) {
-      setValidationError('Informe o Usuário para testar as configurações SSH.');
+      setValidationError(tr("m19f2e02ecf"));
       return false;
     }
     if (requiredCredentials.password && !password.trim()) {
-      setValidationError('Informe a Senha para testar as configurações SSH.');
+      setValidationError(tr("mc16befcad1"));
       return false;
     }
     if (requiredCredentials.uuid && !uuid.trim()) {
-      setValidationError('Informe o UUID V2Ray para testar as configurações V2Ray.');
+      setValidationError(tr("m5f69c370d8"));
       return false;
     }
     setValidationError(null);
@@ -328,14 +330,14 @@ export function AutoConnectModal() {
 
   const title =
     step === 'setup'
-      ? (t('autoConnect.modalTitle') || 'Filtros e Acesso')
+      ? (t('autoConnect.modalTitle') || tr("md67075c760"))
       : step === 'confirm'
-        ? (t('autoConnect.confirmTitle') || 'Confirmar Teste')
+        ? (t('autoConnect.confirmTitle') || tr("m45c5333aed"))
         : step === 'run'
-          ? `Testando ${tested}/${total}`
+          ? tr("m86f6f7cbfe", { p0: tested, p1: total })
           : success
-            ? 'Pronto'
-            : 'Resultado';
+            ? tr("m039eb59231")
+            : tr("ma71bc39fe3");
 
   const handleStart = useCallback(() => {
     if (!validateCredentials()) {
@@ -492,6 +494,7 @@ function TimeoutSlider({
   max: number;
   onChange: (value: number) => void;
 }) {
+  useMessages();
   const clamped = clampTimeout(value, min, max);
   const progress = ((clamped - min) / (max - min)) * 100;
 
@@ -576,6 +579,7 @@ function SetupStep({
   onUuidChange: (v: string) => void;
   onContinue: () => void;
 }) {
+  useMessages();
   const { t } = useTranslation();
   const [showPassword, setShowPassword] = useState(false);
   const [showUuid, setShowUuid] = useState(false);
@@ -780,7 +784,7 @@ function SetupStep({
           {requiredCredentials.username && (
             <div>
               <label className="text-[11px] mb-1 block font-medium" style={{ color: 'var(--text-muted)' }}>{t('connectionForm.usernamePlaceholder')} SSH</label>
-              <input
+              <input dir="auto"
                 type="text"
                 value={username}
                 onChange={(e) => onUsernameChange(e.target.value)}
@@ -890,13 +894,13 @@ function SetupStep({
       ) : filteredCount > 0 ? (
         <div className="p-2.5 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center gap-2 text-xs text-emerald-400 font-medium">
           <CheckCircle className="w-4 h-4 flex-shrink-0 text-emerald-400" />
-          <span>As configurações selecionadas já possuem credenciais pré-configuradas.</span>
+          <span>{tr("m291b5a4f60")}</span>
         </div>
       ) : null}
 
       {validationError && (
         <p className="text-xs text-rose-400 text-center font-medium bg-rose-500/15 p-2.5 rounded-xl border border-rose-500/30">
-          {validationError}
+          {localizeMessage(validationError || "")}
         </p>
       )}
 
@@ -907,21 +911,21 @@ function SetupStep({
           className="text-xs underline touch-manipulation min-h-[32px] font-medium"
           style={{ color: 'var(--text-muted)' }}
         >
-          {showAdvanced ? 'Ocultar tempos' : 'Ajustar tempos (avançado)'}
+          {showAdvanced ? tr("md6a7a8821f") : tr("m35aa2427a1")}
         </button>
         {showAdvanced && (
           <div className="mt-3 space-y-3">
             <TimeoutSlider
-              label="Timeout de conexão"
-              hint="Tempo para a VPN conectar"
+              label={tr("m79c14ac0dd")}
+              hint={tr("m391bed5191")}
               value={autoConnectConfig.connectionTimeout}
               min={CONNECTION_TIMEOUT_MIN}
               max={CONNECTION_TIMEOUT_MAX}
               onChange={(v) => updateConfig({ connectionTimeout: v })}
             />
             <TimeoutSlider
-              label="Timeout de internet"
-              hint="Tempo para testar a internet"
+              label={tr("ma9ae40e8aa")}
+              hint={tr("m631e95670e")}
               value={autoConnectConfig.fetchTimeout}
               min={FETCH_TIMEOUT_MIN}
               max={FETCH_TIMEOUT_MAX}
@@ -942,7 +946,7 @@ function SetupStep({
           className="w-full min-h-[48px] rounded-xl text-white font-bold text-sm disabled:opacity-40 touch-manipulation transition-all active:scale-[0.98]"
           style={{ background: 'var(--accent)' }}
         >
-          {t('common.confirm') || 'Continuar'}
+          {t('common.confirm') || tr("m63e2bbaf1c")}
         </button>
       </div>
     </div>
@@ -976,57 +980,58 @@ function ConfirmStep({
   onBack: () => void;
   onStart: () => void;
 }) {
+  useMessages();
   const { t } = useTranslation();
   return (
     <div className="flex flex-col gap-4 flex-1">
-      <p className="text-sm font-semibold" style={{ color: 'var(--text-muted)' }}>Confira antes de iniciar:</p>
+      <p className="text-sm font-semibold" style={{ color: 'var(--text-muted)' }}>{tr("mffd48c63f6")}</p>
       <ul className="space-y-2 text-sm rounded-xl p-3.5" style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}>
         <li>
           <span style={{ color: 'var(--text-muted)' }}>{t('autoConnect.regionLabel')} </span>
           <strong>{regionLabel}</strong>
         </li>
         <li>
-          <span style={{ color: 'var(--text-muted)' }}>Tipo: </span>
+          <span style={{ color: 'var(--text-muted)' }}>{tr("me369d261ec") + " "}</span>
           <strong>{typeLabel}</strong>
         </li>
         <li>
-          <span style={{ color: 'var(--text-muted)' }}>Categorias: </span>
+          <span style={{ color: 'var(--text-muted)' }}>{tr("mf015ab8d1f") + " "}</span>
           <strong>{categoriesLabel}</strong>
         </li>
         <li>
-          <span style={{ color: 'var(--text-muted)' }}>Timeout VPN: </span>
+          <span style={{ color: 'var(--text-muted)' }}>{tr("me05f58a2b4") + " "}</span>
           <strong>{connectionTimeout / 1000}s</strong>
         </li>
         <li>
-          <span style={{ color: 'var(--text-muted)' }}>Timeout internet: </span>
+          <span style={{ color: 'var(--text-muted)' }}>{tr("m211998573f") + " "}</span>
           <strong>{fetchTimeout / 1000}s</strong>
         </li>
         <li>
-          <span style={{ color: 'var(--text-muted)' }}>Total: </span>
+          <span style={{ color: 'var(--text-muted)' }}>{tr("m18e872be23") + " "}</span>
           <strong>{filteredCount} configs</strong>
         </li>
         {requiredCredentials.username && (
           <li>
-            <span style={{ color: 'var(--text-muted)' }}>Usuário SSH: </span>
-            <span className="font-mono font-bold" style={{ color: 'var(--text)' }}>{username || 'Não informado'}</span>
+            <span style={{ color: 'var(--text-muted)' }}>{tr("mc9831fe159") + " "}</span>
+            <span className="font-mono font-bold" style={{ color: 'var(--text)' }}>{username || tr("m01af1ecb80")}</span>
           </li>
         )}
         {requiredCredentials.password && (
           <li>
-            <span style={{ color: 'var(--text-muted)' }}>Senha SSH: </span>
-            <span className="font-bold" style={{ color: 'var(--text)' }}>{password ? '••••••••' : 'Não informada'}</span>
+            <span style={{ color: 'var(--text-muted)' }}>{tr("m38c00d9d58") + " "}</span>
+            <span className="font-bold" style={{ color: 'var(--text)' }}>{password ? '••••••••' : tr("mc6f4605974")}</span>
           </li>
         )}
         {requiredCredentials.uuid && (
           <li>
             <span style={{ color: 'var(--text-muted)' }}>UUID V2Ray: </span>
-            <span className="font-mono font-bold" style={{ color: 'var(--text)' }}>{uuid ? `${uuid.substring(0, 8)}...` : 'Não informado'}</span>
+            <span className="font-mono font-bold" style={{ color: 'var(--text)' }}>{uuid ? `${uuid.substring(0, 8)}...` : tr("m01af1ecb80")}</span>
           </li>
         )}
         {!requiredCredentials.username && !requiredCredentials.password && !requiredCredentials.uuid && (
           <li>
-            <span style={{ color: 'var(--text-muted)' }}>Credenciais: </span>
-            <span className="text-emerald-400 font-bold">Pré-configuradas na config</span>
+            <span style={{ color: 'var(--text-muted)' }}>{tr("m5f5863b073") + " "}</span>
+            <span className="text-emerald-400 font-bold">{tr("mb4244bc0e5")}</span>
           </li>
         )}
       </ul>
@@ -1039,16 +1044,14 @@ function ConfirmStep({
           style={{ background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--border)' }}
         >
           <ChevronLeft className="w-4 h-4" />
-          Voltar
-        </button>
+          {tr("m59dc926760")}</button>
         <button
           type="button"
           onClick={onStart}
           className="flex-1 min-h-[48px] rounded-xl text-white font-bold text-sm touch-manipulation transition-all active:scale-[0.98]"
           style={{ background: 'var(--accent)' }}
         >
-          Iniciar teste
-        </button>
+          {tr("m8387d85af5")}</button>
       </div>
     </div>
   );
@@ -1073,13 +1076,14 @@ function RunStep({
   logsEndRef: React.RefObject<HTMLDivElement | null>;
   onCancel: () => void;
 }) {
+  useMessages();
   const pct = total > 0 ? Math.min(100, (tested / total) * 100) : 0;
   return (
     <div className="flex flex-col gap-3 flex-1 min-h-0">
       <div className="rounded-xl p-3.5 space-y-2" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
         <p className="text-sm font-semibold truncate" style={{ color: 'var(--text)' }}>{currentName || 'Preparando…'}</p>
         <p className="text-xs mt-0.5 font-medium" style={{ color: 'var(--text-muted)' }}>
-          {phase ? PHASE_LABEL[phase] : 'Iniciando'} · {formatDuration(duration)}
+          {phase ? PHASE_LABEL[phase] : tr("m4ec788bb71")} · {formatDuration(duration)}
         </p>
         <div className="flex items-center gap-2 mt-2">
           <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
@@ -1110,13 +1114,13 @@ function RunStep({
         className="w-full min-h-[48px] rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm flex items-center justify-center gap-2 touch-manipulation transition-all active:scale-[0.98]"
       >
         <XCircle className="w-4 h-4" />
-        Parar
-      </button>
+        {tr("md36c5e504e")}</button>
     </div>
   );
 }
 
 function LogLine({ log }: { log: TestLog }) {
+  useMessages();
   if (!log) return null;
   const sanitizedMessage = sanitizeLogHtml(log.message || '');
   const prefix = log.configName ? `<strong style="color: var(--text)" class="font-semibold">${log.configName}: </strong>` : '';
@@ -1152,21 +1156,21 @@ function ResultStep({
   onRetry: () => void;
   onAdjust: () => void;
 }) {
+  useMessages();
   return (
     <div className="flex flex-col gap-4 flex-1">
       {success ? (
         <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/15 p-4">
           <div className="flex items-center gap-2 text-emerald-400 font-bold mb-1 text-sm">
             <CheckCircle className="w-5 h-5" />
-            Conexão ativa
-          </div>
+            {tr("mc680e32c41")}</div>
           <p className="font-mono text-xs break-all font-semibold" style={{ color: 'var(--text)' }}>{success}</p>
         </div>
       ) : (
         <div className="rounded-xl border border-rose-500/30 bg-rose-500/15 p-4">
           <div className="flex items-center gap-2 text-rose-400 font-bold mb-1 text-sm">
             <AlertCircle className="w-5 h-5" />
-            {cancelled ? 'Teste cancelado' : error || 'Nenhuma configuração funcionou'}
+            {cancelled ? tr("m247798c879") : error || tr("m19c487339a")}
           </div>
           {failedNames.length > 0 && (
             <ul className="mt-2 text-xs space-y-1 max-h-24 overflow-y-auto custom-scrollbar" style={{ color: 'var(--text-muted)' }}>
@@ -1175,7 +1179,7 @@ function ResultStep({
                   {name}
                 </li>
               ))}
-              {failedNames.length > 8 && <li>+{failedNames.length - 8} outras</li>}
+              {failedNames.length > 8 && <li>+{failedNames.length - 8} {" " + tr("m441fc9eb90")}</li>}
             </ul>
           )}
         </div>
@@ -1200,8 +1204,7 @@ function ResultStep({
             className="w-full min-h-[48px] rounded-xl text-white font-bold text-sm touch-manipulation transition-all active:scale-[0.98]"
             style={{ background: 'var(--accent)' }}
           >
-            Fechar
-          </button>
+            {tr("m0f2bd88ef0")}</button>
         ) : (
           <>
             <button
@@ -1211,16 +1214,14 @@ function ResultStep({
               style={{ background: 'var(--accent)' }}
             >
               <RefreshCw className="w-4 h-4" />
-              Testar de novo
-            </button>
+              {tr("mff30e79110")}</button>
             <button
               type="button"
               onClick={onAdjust}
               className="w-full min-h-[48px] rounded-xl font-semibold text-sm touch-manipulation transition-all active:scale-[0.98]"
               style={{ background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--border)' }}
             >
-              Ajustar filtros
-            </button>
+              {tr("m29cb734560")}</button>
           </>
         )}
       </div>

@@ -1,3 +1,4 @@
+import { message as tr } from '../i18n/messages';
 /**
  * Payment Notification Manager
  * Gerencia notificações de pagamento aprovado com popup, toast e badges
@@ -36,7 +37,7 @@ class PaymentNotificationManager {
   ): PaymentNotification {
     const notification: PaymentNotification = {
       order_id,
-      message: `✅ Pagamento de ${plan_name || `R$ ${amount}`} foi aprovado!`,
+      message: tr("m7d32b428c9", { p0: plan_name || `R$ ${amount}` }),
       amount,
       plan_name,
       timestamp: Date.now(),

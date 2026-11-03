@@ -1,3 +1,4 @@
+import { message as tr, useMessages } from '../i18n/messages';
 import { useCallback, useState } from 'react';
 import type { VTunnelConfigImportState } from 'vtunnel-sdk';
 import { useDTunnelEvent } from './useDTunnelEvent';
@@ -26,6 +27,7 @@ function parseState(payload: unknown): VTunnelConfigImportState | null {
  * on resume, so there is no getPending() on mount (it would race the native dialog).
  */
 export function useSdkConfigImport() {
+  useMessages();
   const [pending, setPending] = useState<VTunnelConfigImportState | null>(null);
   const { showSuccess, showError } = useToast();
   const { refreshActiveConfig } = useActiveConfig();
@@ -42,12 +44,12 @@ export function useSdkConfigImport() {
       const first = next.configs[0]?.name;
       showSuccess(
         next.count === 1 && first
-          ? `Configuração "${first}" importada!`
-          : `${next.count} configurações importadas!`
+          ? tr("m2ae3e12ed0", { p0: first })
+          : tr("m60b6d78652", { p0: next.count })
       );
       refreshActiveConfig();
     } else if (next.status === 'failed') {
-      showError('Não foi possível importar a configuração.');
+      showError(tr("m432fd34dbc"));
     }
   });
 

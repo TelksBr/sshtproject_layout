@@ -1,3 +1,4 @@
+import { message as tr, useMessages } from '../../i18n/messages';
 import { useState } from 'react';
 import { CalendarClock, RefreshCw, AlertTriangle } from '../../utils/icons';
 import { Modal } from './Modal';
@@ -8,6 +9,7 @@ import { purchaseStorage } from '../../utils/purchaseStorageManager';
 import { sanitizeLogHtml } from '../../utils/appFunctions';
 
 export function SdkCheckUserModal() {
+  useMessages();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +26,7 @@ export function SdkCheckUserModal() {
       const info = parseSdkCheckUserPayload(payload);
       setLoading(false);
       if (!info) {
-        setError('Não foi possível ler o resultado da verificação.');
+        setError(tr("m50c5cad54f"));
         setOpen(true);
         return;
       }
@@ -47,7 +49,7 @@ export function SdkCheckUserModal() {
       const message =
         typeof payload === 'string'
           ? payload
-          : (payload as { message?: string })?.message || 'Falha ao verificar o usuário.';
+          : (payload as { message?: string })?.message || tr("ma5a1aad105");
       setLoading(false);
       setUserInfo(null);
       setError(message);
@@ -66,12 +68,11 @@ export function SdkCheckUserModal() {
 
   if (loading) {
     return (
-      <Modal onClose={handleClose} title="Check User" icon={CalendarClock}>
+      <Modal onClose={handleClose} title={tr("m638e8bd0c4")} icon={CalendarClock}>
         <div className="flex flex-col items-center justify-center gap-3 p-8">
           <RefreshCw className="w-8 h-8 animate-spin" style={{ color: 'var(--accent)' }} />
           <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-            Verificando credenciais...
-          </p>
+            {tr("me59c897524")}</p>
         </div>
       </Modal>
     );
@@ -79,7 +80,7 @@ export function SdkCheckUserModal() {
 
   if (error) {
     return (
-      <Modal onClose={handleClose} title="Check User" icon={AlertTriangle}>
+      <Modal onClose={handleClose} title={tr("m638e8bd0c4")} icon={AlertTriangle}>
         <div className="p-4 rounded-lg glass-effect text-center">
           <p
             className="text-sm mb-4"
@@ -92,8 +93,7 @@ export function SdkCheckUserModal() {
             className="w-full min-h-[44px] rounded-lg font-medium text-white"
             style={{ background: 'var(--accent)' }}
           >
-            Fechar
-          </button>
+            {tr("m0f2bd88ef0")}</button>
         </div>
       </Modal>
     );
@@ -102,7 +102,7 @@ export function SdkCheckUserModal() {
   if (!userInfo) return null;
 
   return (
-    <Modal onClose={handleClose} title="Check User" icon={CalendarClock}>
+    <Modal onClose={handleClose} title={tr("m638e8bd0c4")} icon={CalendarClock}>
       <div className="p-1">
         <CheckUserDetails userInfo={userInfo} />
       </div>

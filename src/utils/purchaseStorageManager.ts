@@ -1,3 +1,4 @@
+import { message as tr } from '../i18n/messages';
 import { CredentialsResponse } from '../types/sales';
 import { loadData, saveData, removeData } from './nativeStorage';
 
@@ -321,10 +322,10 @@ class PurchaseStorageManager {
       const id = `cred_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       let autoLabel = label;
       if (!autoLabel) {
-        if (extracted.ssh && extracted.v2ray) autoLabel = `SSH + V2Ray - ${extracted.ssh.username}`;
-        else if (extracted.ssh) autoLabel = `SSH - ${extracted.ssh.username}`;
-        else if (extracted.v2ray) autoLabel = `V2Ray - ${extracted.v2ray.uuid.substring(0, 8)}...`;
-        else autoLabel = 'Credencial';
+        if (extracted.ssh && extracted.v2ray) autoLabel = tr("m7699fd5290", { p0: extracted.ssh.username });
+        else if (extracted.ssh) autoLabel = tr("m1c1368d50a", { p0: extracted.ssh.username });
+        else if (extracted.v2ray) autoLabel = tr("m36b968c8d9", { p0: extracted.v2ray.uuid.substring(0, 8) });
+        else autoLabel = tr("m44fcb12c48");
       }
 
       const newCred: SavedCredential = {

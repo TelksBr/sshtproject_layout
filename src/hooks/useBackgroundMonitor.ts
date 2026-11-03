@@ -1,3 +1,4 @@
+import { message as tr, useMessages } from '../i18n/messages';
 import { useEffect, useCallback, useRef } from 'react';
 import { purchaseMonitor, PurchaseMonitorCallbacks } from '../utils/backgroundPurchaseMonitor';
 import { purchaseStorage, PendingPurchase } from '../utils/purchaseStorageManager';
@@ -51,6 +52,7 @@ export interface BackgroundMonitorOptions {
  * que o monitor seja iniciado automaticamente quando a aplicação carregar
  */
 export function useBackgroundMonitor(options?: BackgroundMonitorOptions): BackgroundMonitorHook {
+  useMessages();
   const optionsRef = useRef(options);
   const isInitializedRef = useRef(false);
 
@@ -89,9 +91,9 @@ export function useBackgroundMonitor(options?: BackgroundMonitorOptions): Backgr
           );
           
           // Mostrar notificação nativa se suportado
-          if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification('🎉 Compra Aprovada!', {
-              body: `${purchase.plan_name || 'Sua compra'} foi aprovada! Credenciais prontas.`,
+          if (tr("m7d31b83313") in window && Notification.permission === 'granted') {
+            new Notification(tr("m191d3a93a7"), {
+              body: tr("mf8f6c5518a", { p0: purchase.plan_name || tr("mf439e55297") }),
               icon: '/logo.png',
               tag: purchase.order_id
             });
@@ -119,7 +121,7 @@ export function useBackgroundMonitor(options?: BackgroundMonitorOptions): Backgr
     }
 
     // Solicitar permissão para notificações
-    if ('Notification' in window && Notification.permission === 'default') {
+    if (tr("m7d31b83313") in window && Notification.permission === 'default') {
       Notification.requestPermission();
     }
 

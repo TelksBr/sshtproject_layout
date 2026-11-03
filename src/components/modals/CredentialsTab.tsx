@@ -1,3 +1,4 @@
+import { localizeMessage, message as tr, useMessages } from '../../i18n/messages';
 import React, { useMemo, useState } from 'react';
 import { Modal } from './Modal';
 import RenewalModal from './RenewalModal';
@@ -39,11 +40,11 @@ function formatCheckedAgo(iso?: string): string | null {
   const timestamp = new Date(iso).getTime();
   if (Number.isNaN(timestamp)) return null;
   const minutes = Math.floor((Date.now() - timestamp) / 60000);
-  if (minutes < 1) return 'agora';
-  if (minutes < 60) return `há ${minutes} min`;
+  if (minutes < 1) return tr("mf7070d57bb");
+  if (minutes < 60) return tr("mc3307a2d41", { p0: minutes });
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `há ${hours}h`;
-  return `há ${Math.floor(hours / 24)}d`;
+  if (hours < 24) return tr("mcf66515dac", { p0: hours });
+  return tr("m60e915d3a7", { p0: Math.floor(hours / 24) });
 }
 
 function getStatus(credential: SavedCredential) {
@@ -55,20 +56,21 @@ function getStatus(credential: SavedCredential) {
   const checked = formatCheckedAgo(credential.validation?.last_checked);
 
   if (expired) {
-    return { label: 'Expirada', detail: checked, tone: 'expired' as const };
+    return { label: tr("ma31d6a71ec"), detail: checked, tone: 'expired' as const };
   }
   if (credential.validation?.expiration_date || typeof credential.validation?.expiration_days === 'number') {
     const soon = remaining.unit === 'hours' || remaining.unit === 'minutes' || remaining.days <= 3;
     return {
-      label: remaining.expired ? 'Expirada' : `Expira em ${remaining.label}`,
+      label: remaining.expired ? tr("ma31d6a71ec") : tr("m1eaf9a914c", { p0: remaining.label }),
       detail: checked,
       tone: soon ? 'warn' as const : 'ok' as const,
     };
   }
-  return { label: 'Não verificada', detail: checked, tone: 'muted' as const };
+  return { label: tr("m064182947a"), detail: checked, tone: 'muted' as const };
 }
 
 export function CredentialsTab({ onClose }: CredentialsTabProps) {
+  useMessages();
   const {
     credentials,
     validatingAll,
@@ -109,7 +111,7 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
     const success = await validateCredentials(id);
     setValidating(null);
     showToast(
-      success ? 'Credencial atualizada pelo CheckUser' : 'Falha na validação. Verifique as credenciais.',
+      success ? tr("m60abf3328d") : tr("mfd6d9796a4"),
       success ? 'success' : 'error'
     );
   };
@@ -138,31 +140,31 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
         credential.v2ray?.uuid
       );
       if (!verification.isValid) {
-        showToast('Erro: credencial não foi setada no DTunnel.', 'error');
+        showToast(tr("m9223163342"), 'error');
         return;
       }
 
       if (!setDefault(id)) {
-        showToast('Erro ao definir credencial como padrão', 'error');
+        showToast(tr("mc37a335292"), 'error');
         return;
       }
 
       emit('newDefaultConfig', {});
-      showToast(`"${credential.label}" carregada`, 'success');
+      showToast(tr("me02c27ad93", { p0: credential.label }), 'success');
     } catch {
-      showToast('Erro ao processar credencial', 'error');
+      showToast(tr("m919fffb0e7"), 'error');
     }
   };
 
   const handleCopy = async (text: string, type: string) => {
     const success = await copyToClipboard(text);
-    showToast(success ? `${type} copiado` : 'Erro ao copiar', success ? 'success' : 'error', 2000);
+    showToast(success ? tr("m4712ba7115", { p0: type }) : tr("m231a97e35d"), success ? 'success' : 'error', 2000);
   };
 
   const handleRenewCredential = (credential: SavedCredential) => {
     const identifier = getCredentialIdentifier(credential);
     if (!identifier) {
-      showToast('Credencial sem usuário ou UUID para renovar', 'error');
+      showToast(tr("m372716408c"), 'error');
       return;
     }
     setRenewalIdentifier(identifier);
@@ -177,12 +179,11 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
   };
 
   return (
-    <Modal onClose={onClose} title="Credenciais" icon={Key}>
+    <Modal onClose={onClose} title={tr("madf9e60f4d")} icon={Key}>
       <div className="flex flex-col h-full max-h-[85vh] sm:max-h-[90vh]" style={{ background: 'var(--bg)' }}>
         <div className="flex items-center justify-between gap-2 p-4" style={{ borderBottom: '1px solid var(--border)' }}>
           <p className="text-xs sm:text-sm" style={{ color: 'var(--text-muted)' }}>
-            SSH e V2Ray salvos neste aparelho
-          </p>
+            {tr("m4f9a6d2cc8")}</p>
           <div className="flex gap-2">
             <button
               onClick={() => setShowAddModal(true)}
@@ -190,14 +191,14 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
               style={{ background: 'var(--accent)' }}
             >
               <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Adicionar</span>
+              <span className="hidden sm:inline">{tr("m967bcf34a9")}</span>
             </button>
             <button
               onClick={handleRefresh}
               disabled={validatingAll}
               className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl touch-manipulation disabled:opacity-50"
               style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-              title="Atualizar e validar"
+              title={tr("m61187ffa23")}
             >
               <RefreshCw className={`w-4 h-4 ${validatingAll ? 'animate-spin' : ''}`} style={{ color: 'var(--text)' }} />
             </button>
@@ -206,9 +207,9 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
 
         <div className="grid grid-cols-3 gap-2 p-4" style={{ borderBottom: '1px solid var(--border)' }}>
           {[
-            { id: 'all' as const, label: 'Todas', count: credentials.length },
-            { id: 'active' as const, label: 'Ativas', count: activeCount },
-            { id: 'expired' as const, label: 'Expiradas', count: expiredCount },
+            { id: 'all' as const, label: tr("maff4d19d6e"), count: credentials.length },
+            { id: 'active' as const, label: tr("mce2928caab"), count: activeCount },
+            { id: 'expired' as const, label: tr("mfe1a56c54f"), count: expiredCount },
           ].map((item) => {
             const selected = filter === item.id;
             return (
@@ -232,15 +233,15 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
         <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3">
           {error && (
             <div className="p-3 rounded-xl text-sm text-red-300" style={{ background: 'rgba(248,113,113,0.12)' }}>
-              {error}
+              {localizeMessage(error || "")}
             </div>
           )}
 
           {filteredCredentials.length === 0 && (
             <div className="text-center py-12" style={{ color: 'var(--text-muted)' }}>
               <Key className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p>Nenhuma credencial encontrada</p>
-              <p className="text-sm mt-1">Compre um plano ou adicione manualmente</p>
+              <p>{tr("m42d17fccac")}</p>
+              <p className="text-sm mt-1">{tr("me10c155f34")}</p>
             </div>
           )}
 
@@ -296,7 +297,7 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
                       </div>
                       {status.detail && (
                         <p className="text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>
-                          verificado {status.detail}
+                          {tr("m9d917bde9f") + " "}{status.detail}
                         </p>
                       )}
                     </div>
@@ -309,7 +310,7 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
                       className="min-h-[40px] rounded-xl text-xs font-semibold touch-manipulation disabled:opacity-60"
                       style={{ background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--border)' }}
                     >
-                      {credential.is_default ? 'Em uso' : 'Usar'}
+                      {credential.is_default ? tr("m256189f029") : tr("m820eaa6af7")}
                     </button>
                     <button
                       onClick={() => handleValidate(credential.id)}
@@ -318,23 +319,21 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
                       style={{ background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--border)' }}
                     >
                       {isValidating ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
-                      Validar
-                    </button>
+                      {tr("m404848c9e4")}</button>
                     {canRenew && (
                       <button
                         onClick={() => handleRenewCredential(credential)}
                         className="min-h-[40px] rounded-xl text-xs font-semibold touch-manipulation"
                         style={{ background: 'var(--accent-dim)', color: 'var(--text)' }}
                       >
-                        Renovar
-                      </button>
+                        {tr("m75e8e825d3")}</button>
                     )}
                     <button
                       onClick={() =>
                         setConfirmDelete({
                           show: true,
                           id: credential.id,
-                          label: credential.label || 'esta credencial',
+                          label: credential.label || tr("mb4d02f5e58"),
                         })
                       }
                       className="min-h-[40px] rounded-xl text-xs font-semibold flex items-center justify-center touch-manipulation"
@@ -351,8 +350,8 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
                       <h4 className="flex items-center gap-2 text-xs font-semibold mb-2" style={{ color: 'var(--text-muted)' }}>
                         <Shield className="w-3.5 h-3.5" /> SSH
                       </h4>
-                      <CopyRow label="Usuário" value={credential.ssh!.username} onCopy={() => handleCopy(credential.ssh!.username, 'Usuário SSH')} />
-                      <CopyRow label="Senha" value="••••••••" onCopy={() => handleCopy(credential.ssh!.password, 'Senha SSH')} />
+                      <CopyRow label={tr("mf53bbaa05f")} value={credential.ssh!.username} onCopy={() => handleCopy(credential.ssh!.username, tr("mf402f5be78"))} />
+                      <CopyRow label={tr("md482c10b3d")} value="••••••••" onCopy={() => handleCopy(credential.ssh!.password, tr("mb8b90cc544"))} />
                     </div>
                   )}
 
@@ -367,8 +366,8 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
 
                   {credential.validation?.expiration_date && (
                     <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                      Validade: {formatDate(credential.validation.expiration_date)}
-                      {credential.validation.limit != null ? ` · limite ${credential.validation.limit}` : ''}
+                      {tr("m3298d60458") + " "}{formatDate(credential.validation.expiration_date)}
+                      {credential.validation.limit != null ? " " + tr("m51f4cf196e", { p0: credential.validation.limit }) : ''}
                     </p>
                   )}
                 </div>
@@ -383,7 +382,7 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
           onClose={() => setShowAddModal(false)}
           onAdd={(cred) => {
             const id = addManualCredential(cred);
-            showToast(id ? 'Credencial adicionada' : 'Erro ao salvar credencial', id ? 'success' : 'error');
+            showToast(id ? tr("m2685e18206") : tr("m0a86be85df"), id ? 'success' : 'error');
             setShowAddModal(false);
           }}
         />
@@ -395,15 +394,15 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
 
       <ConfirmModal
         isOpen={confirmDelete.show}
-        title="Remover Credencial"
-        message={`Tem certeza que deseja remover "${confirmDelete.label}"? Esta ação não pode ser desfeita.`}
-        confirmText="Remover"
-        cancelText="Cancelar"
+        title={tr("ma3c47c7577")}
+        message={tr("mcd6a432ab6", { p0: confirmDelete.label })}
+        confirmText={tr("ma3037dc71a")}
+        cancelText={tr("mbb9dbb406d")}
         type="danger"
         onConfirm={() => {
           removeCredential(confirmDelete.id);
           setConfirmDelete({ show: false, id: '', label: '' });
-          showToast('Credencial removida', 'success');
+          showToast(tr("m7006a2436e"), 'success');
         }}
         onCancel={() => setConfirmDelete({ show: false, id: '', label: '' })}
       />
@@ -412,6 +411,7 @@ export function CredentialsTab({ onClose }: CredentialsTabProps) {
 }
 
 function CopyRow({ label, value, onCopy }: { label: string; value: string; onCopy: () => void }) {
+  useMessages();
   return (
     <div className="flex items-center justify-between gap-2 py-1">
       <div className="min-w-0">
@@ -435,6 +435,7 @@ interface AddCredentialModalProps {
 }
 
 function AddCredentialModal({ onClose, onAdd }: AddCredentialModalProps) {
+  useMessages();
   const { showToast } = useToast();
   const [label, setLabel] = useState('');
   const [sshUsername, setSshUsername] = useState('');
@@ -447,21 +448,21 @@ function AddCredentialModal({ onClose, onAdd }: AddCredentialModalProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!useSSH && !useV2Ray) {
-      showToast('Selecione ao menos SSH ou V2Ray', 'warning');
+      showToast(tr("m465825258d"), 'warning');
       return;
     }
     if (useSSH && (!sshUsername || !sshPassword)) {
-      showToast('Preencha usuário e senha SSH', 'warning');
+      showToast(tr("m3448f8f00d"), 'warning');
       return;
     }
     if (useV2Ray && !v2rayUuid) {
-      showToast('Preencha o UUID V2Ray', 'warning');
+      showToast(tr("m7372111a80"), 'warning');
       return;
     }
 
     setIsSubmitting(true);
     const credential: Omit<SavedCredential, 'id' | 'created_at'> = {
-      label: label || 'Credencial Manual',
+      label: label || tr("md80fd201c6"),
       is_default: false,
       is_active: true,
     };
@@ -480,14 +481,14 @@ function AddCredentialModal({ onClose, onAdd }: AddCredentialModalProps) {
       }}
     >
       <div className="rounded-2xl p-4 sm:p-6 max-w-sm w-full max-h-[90vh] overflow-y-auto" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-        <h2 className="text-lg font-semibold mb-1" style={{ color: 'var(--text)' }}>Adicionar credencial</h2>
-        <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>SSH e/ou V2Ray</p>
+        <h2 className="text-lg font-semibold mb-1" style={{ color: 'var(--text)' }}>{tr("mc81a7322de")}</h2>
+        <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>{tr("m71e6591f59")}</p>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <input
+          <input dir="auto"
             type="text"
             value={label}
             onChange={(e) => setLabel(e.target.value)}
-            placeholder="Nome"
+            placeholder={tr("m5086900635")}
             className="w-full px-3 py-2.5 rounded-xl input-field outline-none text-sm allow-select"
           />
           <ProtocolToggle
@@ -497,8 +498,8 @@ function AddCredentialModal({ onClose, onAdd }: AddCredentialModalProps) {
           />
           {useSSH && (
             <div className="space-y-2">
-              <input type="text" value={sshUsername} onChange={(e) => setSshUsername(e.target.value)} placeholder="Usuário" className="w-full px-3 py-2.5 rounded-xl input-field outline-none text-sm allow-select" />
-              <input type="password" value={sshPassword} onChange={(e) => setSshPassword(e.target.value)} placeholder="Senha" className="w-full px-3 py-2.5 rounded-xl input-field outline-none text-sm allow-select" />
+              <input dir="auto" type="text" value={sshUsername} onChange={(e) => setSshUsername(e.target.value)} placeholder={tr("mf53bbaa05f")} className="w-full px-3 py-2.5 rounded-xl input-field outline-none text-sm allow-select" />
+              <input dir="ltr" type="password" value={sshPassword} onChange={(e) => setSshPassword(e.target.value)} placeholder={tr("md482c10b3d")} className="w-full px-3 py-2.5 rounded-xl input-field outline-none text-sm allow-select" />
             </div>
           )}
           <ProtocolToggle
@@ -507,13 +508,12 @@ function AddCredentialModal({ onClose, onAdd }: AddCredentialModalProps) {
             onChange={setUseV2Ray}
           />
           {useV2Ray && (
-            <input type="text" value={v2rayUuid} onChange={(e) => setV2rayUuid(e.target.value)} placeholder="UUID" className="w-full px-3 py-2.5 rounded-xl input-field outline-none text-sm font-mono allow-select" />
+            <input dir="auto" type="text" value={v2rayUuid} onChange={(e) => setV2rayUuid(e.target.value)} placeholder="UUID" className="w-full px-3 py-2.5 rounded-xl input-field outline-none text-sm font-mono allow-select" />
           )}
           <div className="flex gap-2 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 min-h-[44px] rounded-xl btn-secondary text-sm">Cancelar</button>
+            <button type="button" onClick={onClose} className="flex-1 min-h-[44px] rounded-xl btn-secondary text-sm">{tr("mbb9dbb406d")}</button>
             <button type="submit" disabled={isSubmitting || (!useSSH && !useV2Ray)} className="flex-1 min-h-[44px] rounded-xl text-white text-sm font-semibold disabled:opacity-50" style={{ background: 'var(--accent)' }}>
-              Adicionar
-            </button>
+              {tr("m967bcf34a9")}</button>
           </div>
         </form>
       </div>
@@ -530,11 +530,12 @@ function ProtocolToggle({
   checked: boolean;
   onChange: (next: boolean) => void;
 }) {
+  useMessages();
   return (
     <button
       type="button"
       onClick={() => onChange(!checked)}
-      className="flex items-center gap-3 w-full min-h-[44px] px-3 rounded-xl text-sm text-left touch-manipulation"
+      className="flex items-center gap-3 w-full min-h-[44px] px-3 rounded-xl text-sm text-start touch-manipulation"
       style={{
         background: checked ? 'var(--accent-dim)' : 'var(--bg-elevated)',
         border: `1px solid ${checked ? 'var(--accent)' : 'var(--border)'}`,

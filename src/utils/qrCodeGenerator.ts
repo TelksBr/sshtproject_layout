@@ -1,3 +1,4 @@
+import { message as tr } from '../i18n/messages';
 // Utilitário para gerar QR Code visual a partir de código PIX
 import QRCode from 'qrcode';
 
@@ -29,7 +30,7 @@ export async function generateQRCodeDataURL(text: string, options: QRCodeOptions
     });
     return qrCodeDataURL;
   } catch (error) {
-    throw new Error(`Falha ao gerar QR Code: ${error}`);
+    throw new Error(tr("m9e297f219e", { p0: error }));
   }
 }
 
@@ -55,7 +56,7 @@ export async function generateQRCodeSVG(text: string, options: QRCodeOptions = {
     });
     return svgString;
   } catch (error) {
-    throw new Error(`Falha ao gerar SVG QR Code: ${error}`);
+    throw new Error(tr("m8a29767898", { p0: error }));
   }
 }
 
@@ -79,7 +80,7 @@ export async function generateQRCodeCanvas(text: string, canvas: HTMLCanvasEleme
       errorCorrectionLevel: 'M',
     });
   } catch (error) {
-    throw new Error(`Falha ao gerar Canvas QR Code: ${error}`);
+    throw new Error(tr("me447546e76", { p0: error }));
   }
 }
 

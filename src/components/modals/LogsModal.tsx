@@ -1,3 +1,4 @@
+import { message as tr, useMessages } from '../../i18n/messages';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
@@ -63,6 +64,7 @@ function loadLogLines(): string[] {
 }
 
 export function LogsModal({ onClose, initialTab = 'vpn', enableDebug }: LogsModalProps) {
+  useMessages();
   const { showToast } = useToast();
   const isDebugEnabled = Boolean(enableDebug || initialTab === 'debug');
   const [activeTab, setActiveTab] = useState<DebugSubTab>(isDebugEnabled ? 'diagnostic' : 'vpn');
@@ -125,28 +127,28 @@ export function LogsModal({ onClose, initialTab = 'vpn', enableDebug }: LogsModa
         clearVpnLogs();
         stickToBottomRef.current = true;
         setLines([]);
-        showToast('Registros VPN limpos', 'success');
+        showToast(tr("m89a4136841"), 'success');
       } catch {
-        showToast('Não foi possível limpar os registros', 'error');
+        showToast(tr("m53190bf171"), 'error');
       }
     } else {
       clearEventDebugLogs();
       setDebugLogs([]);
-      showToast('Logs de eventos limpos', 'success');
+      showToast(tr("ma2e1184411"), 'success');
     }
   };
 
   const handleCopy = () => {
     if (activeTab === 'vpn') {
       if (!logsText) {
-        showToast('Nenhum registro para copiar', 'info');
+        showToast(tr("m3519c3bcdb"), 'info');
         return;
       }
       try {
         copyToClipboard(logsText);
-        showToast('Registros copiados', 'success');
+        showToast(tr("mddbeb8271a"), 'success');
       } catch {
-        showToast('Não foi possível copiar os registros', 'error');
+        showToast(tr("m414d8f34d6"), 'error');
       }
     } else {
       const fullSnapshot = {
@@ -156,9 +158,9 @@ export function LogsModal({ onClose, initialTab = 'vpn', enableDebug }: LogsModa
       const text = JSON.stringify(fullSnapshot, null, 2);
       try {
         copyToClipboard(text);
-        showToast('Relatório completo de diagnósticos copiado!', 'success');
+        showToast(tr("m939107e564"), 'success');
       } catch {
-        showToast('Erro ao copiar relatório', 'error');
+        showToast(tr("m08984d8e7e"), 'error');
       }
     }
   };
@@ -176,17 +178,17 @@ export function LogsModal({ onClose, initialTab = 'vpn', enableDebug }: LogsModa
       }
 
       if (!logsText) {
-        showToast('Nenhum registro para compartilhar', 'info');
+        showToast(tr("m15b1a1533f"), 'info');
         return;
       }
-      const result = await shareText(logsText, 'Registros SSH T PROJECT');
+      const result = await shareText(logsText, tr("m2ef6d0cd0d"));
       if (result === 'shared') return;
       if (result === 'copied') {
-        showToast('Registros copiados para compartilhar', 'success');
+        showToast(tr("mf4c177242a"), 'success');
         return;
       }
       if (result === 'failed') {
-        showToast('Não foi possível compartilhar os registros', 'error');
+        showToast(tr("me6d657143d"), 'error');
       }
     } else {
       const fullSnapshot = {
@@ -194,14 +196,14 @@ export function LogsModal({ onClose, initialTab = 'vpn', enableDebug }: LogsModa
         eventLogs: debugLogs,
       };
       const text = JSON.stringify(fullSnapshot, null, 2);
-      const result = await shareText(text, 'Diagnóstico SSH T PROJECT');
+      const result = await shareText(text, tr("mac3b137567"));
       if (result === 'shared') return;
       if (result === 'copied') {
-        showToast('Relatório copiado para compartilhar', 'success');
+        showToast(tr("mb33e7f53ef"), 'success');
         return;
       }
       if (result === 'failed') {
-        showToast('Erro ao compartilhar relatório', 'error');
+        showToast(tr("mfbf03d1faf"), 'error');
       }
     }
   };
@@ -223,7 +225,7 @@ export function LogsModal({ onClose, initialTab = 'vpn', enableDebug }: LogsModa
   const modal = (
     <Modal
       onClose={onClose}
-      title={activeTab === 'vpn' ? 'Registros VPN' : 'Suíte de Debug SDK'}
+      title={activeTab === 'vpn' ? tr("m25e63ca8cb") : tr("m315665dcef")}
       icon={activeTab === 'vpn' ? Scroll : Bug}
       bodyRef={scrollerRef}
       onBodyScroll={handleBodyScroll}
@@ -234,8 +236,8 @@ export function LogsModal({ onClose, initialTab = 'vpn', enableDebug }: LogsModa
             onClick={handleClear}
             className={actionButtonClass}
             style={{ background: 'var(--bg-elevated)' }}
-            title={activeTab === 'vpn' ? 'Limpar registros VPN' : 'Limpar logs de eventos'}
-            aria-label="Limpar"
+            title={activeTab === 'vpn' ? tr("m7295a7429e") : tr("me78800a04e")}
+            aria-label={tr("m5585ca4538")}
           >
             <Trash2 className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
           </button>
@@ -244,8 +246,8 @@ export function LogsModal({ onClose, initialTab = 'vpn', enableDebug }: LogsModa
             onClick={() => void handleShare()}
             className={actionButtonClass}
             style={{ background: 'var(--bg-elevated)' }}
-            title={activeTab === 'vpn' ? 'Compartilhar registros VPN' : 'Compartilhar relatório de diagnóstico'}
-            aria-label="Compartilhar"
+            title={activeTab === 'vpn' ? tr("m54337a15fe") : tr("mab352dcea3")}
+            aria-label={tr("m46737d1651")}
           >
             <Share2 className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
           </button>
@@ -254,8 +256,8 @@ export function LogsModal({ onClose, initialTab = 'vpn', enableDebug }: LogsModa
             onClick={handleCopy}
             className={actionButtonClass}
             style={{ background: 'var(--bg-elevated)' }}
-            title={activeTab === 'vpn' ? 'Copiar registros' : 'Copiar relatório completo JSON'}
-            aria-label="Copiar"
+            title={activeTab === 'vpn' ? tr("m4cd3d5f7fe") : tr("mc06ce431e1")}
+            aria-label={tr("m39dcf1cbeb")}
           >
             <Copy className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
           </button>
@@ -268,11 +270,11 @@ export function LogsModal({ onClose, initialTab = 'vpn', enableDebug }: LogsModa
           <div className="flex items-center p-2 gap-1.5 border-b overflow-x-auto w-full shrink-0 custom-scrollbar scroll-smooth" style={{ borderColor: 'var(--border)' }}>
             {(
               [
-                { id: 'vpn', label: 'Logs VPN', icon: Scroll },
-                { id: 'diagnostic', label: 'Diagnóstico', icon: Activity },
-                { id: 'configs', label: 'Configs', icon: Key },
-                { id: 'events', label: `Eventos (${debugLogs.length})`, icon: Bug },
-                { id: 'console', label: 'Console', icon: Terminal },
+                { id: 'vpn', label: tr("m3da4ac74c5"), icon: Scroll },
+                { id: 'diagnostic', label: tr("me695eb16e8"), icon: Activity },
+                { id: 'configs', label: tr("m007ca017e4"), icon: Key },
+                { id: 'events', label: tr("m9112e3be01", { p0: debugLogs.length }), icon: Bug },
+                { id: 'console', label: tr("m29a40861ba"), icon: Terminal },
               ] as const
             ).map((tab) => {
               const Icon = tab.icon;
@@ -303,8 +305,7 @@ export function LogsModal({ onClose, initialTab = 'vpn', enableDebug }: LogsModa
             {lines.length === 0 ? (
               <div className="py-10 text-center">
                 <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                  Nenhum registro de conexão no momento.
-                </p>
+                  {tr("m20c9302477")}</p>
               </div>
             ) : (
               <div
@@ -330,7 +331,7 @@ export function LogsModal({ onClose, initialTab = 'vpn', enableDebug }: LogsModa
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                  <span className="text-xs font-bold" style={{ color: 'var(--text)' }}>Status da SDK DTunnel</span>
+                  <span className="text-xs font-bold" style={{ color: 'var(--text)' }}>{tr("mdfa1924111")}</span>
                 </div>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold">
                   v{snapshot.sdkVersion}
@@ -339,21 +340,20 @@ export function LogsModal({ onClose, initialTab = 'vpn', enableDebug }: LogsModa
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
                 <div className="p-2 rounded-lg bg-[var(--bg-elevated)] flex flex-col gap-0.5" style={{ border: '1px solid var(--border)' }}>
-                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Bridge Ready</span>
+                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{tr("m2e7f21bf03")}</span>
                   <span className="font-semibold text-emerald-400 flex items-center gap-1">
-                    <CheckCircle className="w-3 h-3" /> OK
-                  </span>
+                    <CheckCircle className="w-3 h-3" /> {" " + tr("m565339bc4d")}</span>
                 </div>
                 <div className="p-2 rounded-lg bg-[var(--bg-elevated)] flex flex-col gap-0.5" style={{ border: '1px solid var(--border)' }}>
-                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>VPN State</span>
+                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{tr("m857f6851ea")}</span>
                   <span className="font-mono font-bold truncate" style={{ color: 'var(--text)' }}>{snapshot.main.vpnState ?? 'N/A'}</span>
                 </div>
                 <div className="p-2 rounded-lg bg-[var(--bg-elevated)] flex flex-col gap-0.5" style={{ border: '1px solid var(--border)' }}>
-                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Rede Atual</span>
+                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{tr("m2a370c6729")}</span>
                   <span className="font-mono font-bold truncate" style={{ color: 'var(--text)' }}>{snapshot.main.networkName ?? 'N/A'}</span>
                 </div>
                 <div className="p-2 rounded-lg bg-[var(--bg-elevated)] flex flex-col gap-0.5" style={{ border: '1px solid var(--border)' }}>
-                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>IP Local</span>
+                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{tr("md48810cbf0")}</span>
                   <span className="font-mono font-bold truncate" style={{ color: 'var(--text)' }}>{snapshot.main.localIp ?? 'N/A'}</span>
                   {snapshot.main.localIpv6 ? (
                     <span className="font-mono text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>{snapshot.main.localIpv6}</span>
@@ -367,9 +367,9 @@ export function LogsModal({ onClose, initialTab = 'vpn', enableDebug }: LogsModa
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold flex items-center gap-1.5" style={{ color: 'var(--text)' }}>
                   <Zap className="w-3.5 h-3.5 text-[var(--accent)]" />
-                  Bridge Native Objects ({Object.values(snapshot.bridgeAvailability).filter(Boolean).length}/{Object.keys(snapshot.bridgeAvailability).length})
+                  {tr("m019e4b08ba")}{Object.values(snapshot.bridgeAvailability).filter(Boolean).length}/{Object.keys(snapshot.bridgeAvailability).length})
                 </span>
-                <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Ambiente Android</span>
+                <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{tr("mc0d933bddb")}</span>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 text-[11px] max-h-52 overflow-y-auto pr-1 custom-scrollbar">
                 {Object.entries(snapshot.bridgeAvailability).map(([name, exists]) => (
@@ -383,12 +383,10 @@ export function LogsModal({ onClose, initialTab = 'vpn', enableDebug }: LogsModa
                     </span>
                     {exists ? (
                       <span className="flex items-center gap-0.5 text-[9px] text-emerald-400 font-semibold">
-                        <CheckCircle className="w-3 h-3" /> OK
-                      </span>
+                        <CheckCircle className="w-3 h-3" /> {" " + tr("m565339bc4d")}</span>
                     ) : (
                       <span className="flex items-center gap-0.5 text-[9px] text-rose-400 font-medium">
-                        <XCircle className="w-3 h-3" /> Off
-                      </span>
+                        <XCircle className="w-3 h-3" /> {" " + tr("mca7981b46e")}</span>
                     )}
                   </div>
                 ))}
@@ -399,20 +397,20 @@ export function LogsModal({ onClose, initialTab = 'vpn', enableDebug }: LogsModa
             <div className="p-3.5 rounded-xl space-y-2 text-xs" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
               <div className="flex items-center gap-2 font-semibold mb-1" style={{ color: 'var(--text)' }}>
                 <Smartphone className="w-4 h-4 text-[var(--accent)]" />
-                <span>Métricas de Layout Nativo & Sistema</span>
+                <span>{tr("mce706d8ac0")}</span>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px]">
                 <div className="p-2 rounded-lg bg-[var(--bg-elevated)] space-y-0.5" style={{ border: '1px solid var(--border)' }}>
-                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Device ID</span>
+                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{tr("m6e0a0b9d8c")}</span>
                   <p className="font-mono truncate" style={{ color: 'var(--text)' }}>{snapshot.android.deviceId ?? 'N/A'}</p>
                 </div>
                 <div className="p-2 rounded-lg bg-[var(--bg-elevated)] space-y-0.5" style={{ border: '1px solid var(--border)' }}>
-                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Status Bars</span>
-                  <p className="font-mono" style={{ color: 'var(--text)' }}>Top: {snapshot.android.statusBarHeight}px | Nav: {snapshot.android.navBarHeight}px</p>
+                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{tr("ma786631f3b")}</span>
+                  <p className="font-mono" style={{ color: 'var(--text)' }}>{tr("md564fbdea3") + " "}{snapshot.android.statusBarHeight}{tr("m128a90416b") + " "}{snapshot.android.navBarHeight}px</p>
                 </div>
                 <div className="p-2 rounded-lg bg-[var(--bg-elevated)] space-y-0.5" style={{ border: '1px solid var(--border)' }}>
-                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Segurança & Modos</span>
-                  <p className="font-mono" style={{ color: 'var(--text)' }}>Safe: {snapshot.android.isSafeMode ? 'Sim' : 'Não'} | Dark: {snapshot.android.isDarkMode ? 'Sim' : 'Não'}</p>
+                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{tr("m3b831fd4b9")}</span>
+                  <p className="font-mono" style={{ color: 'var(--text)' }}>{tr("m9954d9697c") + " "}{snapshot.android.isSafeMode ? tr("m9313455e45") : tr("m9bc947e58b")} {" " + tr("mc023f8da56") + " "}{snapshot.android.isDarkMode ? tr("m9313455e45") : tr("m9bc947e58b")}</p>
                 </div>
               </div>
             </div>
@@ -425,47 +423,47 @@ export function LogsModal({ onClose, initialTab = 'vpn', enableDebug }: LogsModa
             <div className="p-3.5 rounded-xl space-y-3" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
               <div className="flex items-center gap-2 font-bold" style={{ color: 'var(--text)' }}>
                 <Key className="w-4 h-4 text-[var(--accent)]" />
-                <span>Estado de Configuração Exposto pelo SDK</span>
+                <span>{tr("m3d6c78d55a")}</span>
               </div>
               <div className="grid grid-cols-2 gap-2 text-[11px]">
                 <div className="p-2.5 rounded-lg bg-[var(--bg-elevated)] space-y-1" style={{ border: '1px solid var(--border)' }}>
-                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Local Config Version</span>
-                  <p className="font-mono font-bold text-emerald-400">{snapshot.config.localConfigVersion ?? 'Não retornado'}</p>
+                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{tr("m613851a655")}</span>
+                  <p className="font-mono font-bold text-emerald-400">{snapshot.config.localConfigVersion ?? tr("m4cccfe906d")}</p>
                 </div>
                 <div className="p-2.5 rounded-lg bg-[var(--bg-elevated)] space-y-1" style={{ border: '1px solid var(--border)' }}>
-                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>App Config Version</span>
-                  <p className="font-mono font-bold text-emerald-400">{snapshot.config.appConfigVersion ?? 'Não retornado'}</p>
+                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{tr("meeb65aedf9")}</span>
+                  <p className="font-mono font-bold text-emerald-400">{snapshot.config.appConfigVersion ?? tr("m4cccfe906d")}</p>
                 </div>
                 <div className="p-2.5 rounded-lg bg-[var(--bg-elevated)] space-y-1" style={{ border: '1px solid var(--border)' }}>
-                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>ID Config Selecionada</span>
+                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{tr("m155bd50759")}</span>
                   <p className="font-mono font-bold" style={{ color: 'var(--text)' }}>{snapshot.config.selectedConfigId ?? 'N/A'}</p>
                 </div>
                 <div className="p-2.5 rounded-lg bg-[var(--bg-elevated)] space-y-1" style={{ border: '1px solid var(--border)' }}>
-                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Total de Configs / CDNs</span>
+                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{tr("m84802342e1")}</span>
                   <p className="font-mono font-bold" style={{ color: 'var(--text)' }}>{snapshot.config.configCount ?? 'N/A'} / {snapshot.config.cdnCount ?? 'N/A'}</p>
                 </div>
               </div>
             </div>
 
             <div className="p-3.5 rounded-xl space-y-3" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-              <span className="font-bold block" style={{ color: 'var(--text)' }}>Verificação de Credenciais Preenchidas</span>
+              <span className="font-bold block" style={{ color: 'var(--text)' }}>{tr("m7356c8cb5a")}</span>
               <div className="grid grid-cols-3 gap-2 text-[11px]">
                 <div className="p-2 rounded-lg bg-[var(--bg-elevated)] flex items-center justify-between" style={{ border: '1px solid var(--border)' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Usuário:</span>
+                  <span style={{ color: 'var(--text-muted)' }}>{tr("m57ebfe7d2a")}</span>
                   <span className={`font-bold ${snapshot.config.hasUsername ? 'text-emerald-400' : 'text-rose-400'}`}>
-                    {snapshot.config.hasUsername ? 'OK' : 'Ausente'}
+                    {snapshot.config.hasUsername ? 'OK' : tr("mfd7f0836e8")}
                   </span>
                 </div>
                 <div className="p-2 rounded-lg bg-[var(--bg-elevated)] flex items-center justify-between" style={{ border: '1px solid var(--border)' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Senha:</span>
+                  <span style={{ color: 'var(--text-muted)' }}>{tr("m240e2ae4af")}</span>
                   <span className={`font-bold ${snapshot.config.hasPassword ? 'text-emerald-400' : 'text-rose-400'}`}>
-                    {snapshot.config.hasPassword ? 'OK' : 'Ausente'}
+                    {snapshot.config.hasPassword ? 'OK' : tr("mfd7f0836e8")}
                   </span>
                 </div>
                 <div className="p-2 rounded-lg bg-[var(--bg-elevated)] flex items-center justify-between" style={{ border: '1px solid var(--border)' }}>
                   <span style={{ color: 'var(--text-muted)' }}>UUID:</span>
                   <span className={`font-bold ${snapshot.config.hasUuid ? 'text-emerald-400' : 'text-rose-400'}`}>
-                    {snapshot.config.hasUuid ? 'OK' : 'Ausente'}
+                    {snapshot.config.hasUuid ? 'OK' : tr("mfd7f0836e8")}
                   </span>
                 </div>
               </div>
@@ -481,7 +479,7 @@ export function LogsModal({ onClose, initialTab = 'vpn', enableDebug }: LogsModa
                 type="text"
                 value={eventFilter}
                 onChange={(e) => setEventFilter(e.target.value)}
-                placeholder="Filtrar eventos por nome ou conteúdo..."
+                placeholder={tr("m16c07d669e")}
                 className="flex-1 min-h-[38px] px-3 rounded-xl text-xs outline-none allow-select"
                 style={{ background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--border)' }}
               />
@@ -492,13 +490,12 @@ export function LogsModal({ onClose, initialTab = 'vpn', enableDebug }: LogsModa
                 style={{ background: 'var(--bg-elevated)', color: 'var(--accent)', border: '1px solid var(--border)' }}
               >
                 <RefreshCw className="w-3.5 h-3.5 text-[var(--accent)]" />
-                Atualizar
-              </button>
+                {tr("mdafb59613e")}</button>
             </div>
 
             {filteredEvents.length === 0 ? (
               <div className="p-6 rounded-xl text-center" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Nenhum evento corresponde ao filtro.</p>
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{tr("m330769edb4")}</p>
               </div>
             ) : (
               <div className="space-y-2 max-h-80 overflow-y-auto pr-1 custom-scrollbar">
@@ -544,47 +541,46 @@ export function LogsModal({ onClose, initialTab = 'vpn', enableDebug }: LogsModa
             <div className="p-3.5 rounded-xl space-y-3" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
               <div className="flex items-center gap-2 font-bold text-xs" style={{ color: 'var(--text)' }}>
                 <Terminal className="w-4 h-4 text-[var(--accent)]" />
-                <span>Console de Disparo Interativo de APIs SDK</span>
+                <span>{tr("m86d0e8ec88")}</span>
               </div>
               <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                Execute ações nativas diretamente no dispositivo Android para testar métodos e fallbacks do SDK.
-              </p>
+                {tr("m628813096a")}</p>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
                 <button
                   type="button"
                   onClick={() => {
                     vibrate(80);
-                    showToast('Vibração executada', 'success');
+                    showToast(tr("m5843b32979"), 'success');
                   }}
                   className="p-2.5 rounded-xl font-medium transition-all flex items-center gap-1.5 touch-manipulation active:scale-95"
                   style={{ background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--border)' }}
                 >
                   <Play className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Vibrar (50ms)</span>
+                  <span>{tr("m5d0392d010")}</span>
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => showNativeToast('Toast Nativo DTunnel executado com sucesso!')}
+                  onClick={() => showNativeToast(tr("m2d9dd1f8ac"))}
                   className="p-2.5 rounded-xl font-medium transition-all flex items-center gap-1.5 touch-manipulation active:scale-95"
                   style={{ background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--border)' }}
                 >
                   <Play className="w-3.5 h-3.5 text-purple-400" />
-                  <span>Toast Nativo</span>
+                  <span>{tr("mb6ad8c7143")}</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => {
                     checkUserStatus();
-                    showToast('CheckUser disparado no SDK', 'info');
+                    showToast(tr("m77ab676c7a"), 'info');
                   }}
                   className="p-2.5 rounded-xl font-medium transition-all flex items-center gap-1.5 touch-manipulation active:scale-95"
                   style={{ background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--border)' }}
                 >
                   <Play className="w-3.5 h-3.5 text-amber-400" />
-                  <span>CheckUser</span>
+                  <span>{tr("mb4e52c6bb2")}</span>
                 </button>
 
                 <button
@@ -594,7 +590,7 @@ export function LogsModal({ onClose, initialTab = 'vpn', enableDebug }: LogsModa
                   style={{ background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--border)' }}
                 >
                   <Settings className="w-3.5 h-3.5 text-blue-400" />
-                  <span>Abrir APN</span>
+                  <span>{tr("m3d00eac380")}</span>
                 </button>
 
                 <button
@@ -604,7 +600,7 @@ export function LogsModal({ onClose, initialTab = 'vpn', enableDebug }: LogsModa
                   style={{ background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--border)' }}
                 >
                   <Wifi className="w-3.5 h-3.5 text-indigo-400" />
-                  <span>Config Redes</span>
+                  <span>{tr("m900bb79e63")}</span>
                 </button>
 
                 <button
@@ -614,20 +610,20 @@ export function LogsModal({ onClose, initialTab = 'vpn', enableDebug }: LogsModa
                   style={{ background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--border)' }}
                 >
                   <RefreshCw className="w-3.5 h-3.5 text-pink-400" />
-                  <span>Verif. Update</span>
+                  <span>{tr("m32d8426e0e")}</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => {
                     shareVpnLogs();
-                    showToast('Share Logs disparado no SDK', 'info');
+                    showToast(tr("mae0a3ac64a"), 'info');
                   }}
                   className="p-2.5 rounded-xl font-medium transition-all flex items-center gap-1.5 touch-manipulation active:scale-95"
                   style={{ background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--border)' }}
                 >
                   <Share2 className="w-3.5 h-3.5 text-teal-400" />
-                  <span>Share Logs</span>
+                  <span>{tr("m2a7c18abe7")}</span>
                 </button>
               </div>
             </div>

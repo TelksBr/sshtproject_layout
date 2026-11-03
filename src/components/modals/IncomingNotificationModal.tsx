@@ -1,3 +1,4 @@
+import { message as tr, useMessages } from '../../i18n/messages';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Bell } from '../../utils/icons';
@@ -7,6 +8,7 @@ import { sanitizeNotificationHtml, stripLogHtml, normalizeNotificationMediaUrl, 
 import type { AppNotification } from '../../utils/appNotifications';
 
 export function IncomingNotificationHost() {
+  useMessages();
   const { incoming, dismissIncoming } = useAppNotifications();
   if (!incoming || typeof document === 'undefined') return null;
 
@@ -23,8 +25,9 @@ function IncomingNotificationModal({
   notification: AppNotification;
   onClose: () => void;
 }) {
+  useMessages();
   const [brokenImage, setBrokenImage] = useState(false);
-  const titleText = stripLogHtml(notification.title) || 'Notificação';
+  const titleText = stripLogHtml(notification.title) || tr("m674fd72a17");
   const messageHtml = sanitizeNotificationHtml(notification.message);
   const titleHtml = sanitizeNotificationHtml(notification.title);
   const imageUrl = normalizeNotificationMediaUrl(notification.image);
@@ -66,8 +69,7 @@ function IncomingNotificationModal({
             className="w-full min-h-[44px] rounded-xl text-white text-sm font-semibold touch-manipulation"
             style={{ background: 'var(--accent)' }}
           >
-            Fechar
-          </button>
+            {tr("m0f2bd88ef0")}</button>
         </div>
       </div>
     </Modal>

@@ -1,3 +1,4 @@
+import { message as tr, useMessages } from '../../i18n/messages';
 import { Download, Sparkles } from '../../utils/icons';
 import { Modal } from './Modal';
 
@@ -9,20 +10,21 @@ interface PlayUpdateModalProps {
 
 const COPY = {
   ready: {
-    title: 'Atualização pronta',
-    heading: 'A nova versão já foi baixada',
-    message: 'Reinicie o app para concluir a atualização. Se estiver conectado, a conexão cai por alguns segundos.',
-    confirm: 'Reiniciar agora',
+    get title() { return tr("m01c9ef8685"); },
+    get heading() { return tr("m306afe4615"); },
+    get message() { return tr("m60b1b17e46"); },
+    get confirm() { return tr("mbe51e8b085"); },
   },
   available: {
-    title: 'Nova versão disponível',
-    heading: 'Tem uma atualização na Play Store',
-    message: 'O download acontece em segundo plano enquanto você continua usando o app.',
-    confirm: 'Atualizar',
+    get title() { return tr("m9c73bac4f9"); },
+    get heading() { return tr("m395a3139b0"); },
+    get message() { return tr("m0209ba2897"); },
+    get confirm() { return tr("mdafb59613e"); },
   },
 } as const;
 
 export function PlayUpdateModal({ variant, onConfirm, onDismiss }: PlayUpdateModalProps) {
+  useMessages();
   const copy = COPY[variant];
   const Icon = variant === 'ready' ? Sparkles : Download;
 
@@ -59,8 +61,7 @@ export function PlayUpdateModal({ variant, onConfirm, onDismiss }: PlayUpdateMod
               className="w-full min-h-[44px] rounded-xl font-medium touch-manipulation"
               style={{ background: 'var(--surface)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
             >
-              Depois
-            </button>
+              {tr("mb8db71c3cc")}</button>
           </div>
         </div>
       </div>

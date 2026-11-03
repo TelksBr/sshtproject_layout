@@ -1,3 +1,4 @@
+import { getMessageLocale, message as tr, useMessages } from '../../i18n/messages';
 import { useState, useEffect, useRef } from 'react';
 import { Modal } from './Modal';
 import { Search, Save, Play, Trash2 } from '../../utils/icons';
@@ -9,6 +10,7 @@ interface IpFinderProps {
 }
 
 export function IpFinder({ onClose }: IpFinderProps) {
+  useMessages();
   const [ipRange, setIpRange] = useState('');
   const [logs, setLogs] = useState<string[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -47,13 +49,13 @@ export function IpFinder({ onClose }: IpFinderProps) {
     stopSearchRef.current = false;
 
     if (ipList.length === 0) {
-      setLogs(prevLogs => [...prevLogs, 'Erro: Nenhum IP válido para buscar.']);
+      setLogs(prevLogs => [...prevLogs, tr("mf518dcb545")]);
       setIsSearching(false);
       return;
     }
 
     // Printar os valores que farão parte da busca
-    setLogs(prevLogs => [...prevLogs, `Valores para busca: ${ipList.join(', ')}`]);
+    setLogs(prevLogs => [...prevLogs, tr("m65f13e4f0e", { p0: ipList.join(', ') })]);
 
     const waitForNewIP = () => {
       return new Promise<string>((resolve) => {
@@ -78,8 +80,8 @@ export function IpFinder({ onClose }: IpFinderProps) {
       const isInRange = ipList.some(range => isIpInRange(newIP, range));
 
       const now = new Date();
-      const formattedTime = now.toLocaleTimeString();
-      const logMessage = `${formattedTime} - IP: ${newIP} - ${isInRange ? 'dentro' : 'fora'} do intervalo`;
+      const formattedTime = now.toLocaleTimeString(getMessageLocale());
+      const logMessage = tr("m27b68bbd0c", { p0: formattedTime, p1: newIP, p2: isInRange ? 'dentro' : 'fora' });
 
       setLogs(prevLogs => [...prevLogs, logMessage]);
 
@@ -125,7 +127,7 @@ export function IpFinder({ onClose }: IpFinderProps) {
     const listName = `list-${new Date().getTime()}`;
     saveData(listName, ipRange);
     setSavedLists(prevLists => [...prevLists, { name: listName, value: ipRange }]);
-    setLogs(prevLogs => [...prevLogs, `Lista salva como ${listName}`]);
+    setLogs(prevLogs => [...prevLogs, tr("meabe98ebf9", { p0: listName })]);
   };
 
   const handleSearchFromList = (list: { name: string, value: string }) => {
@@ -136,23 +138,21 @@ export function IpFinder({ onClose }: IpFinderProps) {
   const deleteIpList = (listName: string) => {
     removeData(listName);
     setSavedLists(prevLists => prevLists.filter(list => list.name !== listName));
-    setLogs(prevLogs => [...prevLogs, `Lista ${listName} apagada.`]);
+    setLogs(prevLogs => [...prevLogs, tr("m5c7a6fdc56", { p0: listName })]);
   };
 
   return (
-    <Modal onClose={handleClose} title="Buscador de IP" icon={Search}>
+    <Modal onClose={handleClose} title={tr("m6c78b89d79")} icon={Search}>
       <div className="w-full p-3 md:p-5 lg:p-6 2xl:p-8 space-y-4 lg:space-y-5">
         
         {/* Banner informativo */}
         <div className="rounded-xl lg:rounded-2xl p-3 md:p-4 lg:p-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
           <p className="text-sm md:text-base lg:text-lg leading-relaxed" style={{ color: 'var(--text)' }}>
-            Insira intervalos de endereços IP separados por vírgula para buscar automaticamente via modo avião.
-          </p>
+            {tr("mf6ffbe48e3")}</p>
           <div className="flex items-start gap-2 mt-2 lg:mt-3">
             <span className="text-amber-400 text-base lg:text-lg flex-shrink-0">⚠️</span>
             <p className="text-xs md:text-sm lg:text-base" style={{ color: 'var(--text-muted)' }}>
-              É preciso ter ativa a permissão de assistente para uso do modo avião.
-            </p>
+              {tr("mf3e0298541")}</p>
           </div>
         </div>
 
@@ -160,13 +160,13 @@ export function IpFinder({ onClose }: IpFinderProps) {
         <div className="space-y-3">
           <div className="relative">
             <Search className="absolute left-3 lg:left-4 top-1/2 -translate-y-1/2 w-4 h-4 lg:w-5 lg:h-5 pointer-events-none" style={{ color: 'var(--text-muted)' }} />
-            <input
+            <input dir="auto"
               type="text"
               value={ipRange}
               onChange={(e) => setIpRange(e.target.value)}
               className="w-full pl-10 lg:pl-12 pr-4 py-3 lg:py-4 rounded-xl lg:rounded-2xl text-sm lg:text-base 2xl:text-lg outline-none transition-all duration-200 allow-select"
               style={{ background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--border)' }}
-              placeholder="Ex: 192.168.0, 10.0.0, 100.64"
+              placeholder={tr("m75298ab838")}
             />
           </div>
           <div className="flex gap-2 lg:gap-3">
@@ -183,10 +183,9 @@ export function IpFinder({ onClose }: IpFinderProps) {
               {isSearching ? (
                 <>
                   <div className="w-4 h-4 lg:w-5 lg:h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Parar Busca
-                </>
+                  {tr("m46088be774")}</>
               ) : (
-                <><Search className="w-4 h-4 lg:w-5 lg:h-5" /> Iniciar Busca</>
+                <><Search className="w-4 h-4 lg:w-5 lg:h-5" /> {" " + tr("m21b7c6ad3c")}</>
               )}
             </button>
             <button
@@ -196,7 +195,7 @@ export function IpFinder({ onClose }: IpFinderProps) {
               style={{ background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--border)' }}
             >
               <Save className="w-4 h-4 lg:w-5 lg:h-5 text-[var(--accent)]" />
-              <span className="hidden sm:inline">Salvar</span>
+              <span className="hidden sm:inline">{tr("maef7cd5b20")}</span>
             </button>
           </div>
         </div>
@@ -205,20 +204,18 @@ export function IpFinder({ onClose }: IpFinderProps) {
         <div className="rounded-xl lg:rounded-2xl overflow-hidden" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
           <div className="flex items-center justify-between px-4 lg:px-5 py-2.5 lg:py-3 border-b bg-[var(--bg-elevated)]" style={{ borderColor: 'var(--border)' }}>
             <h3 className="text-sm lg:text-base 2xl:text-lg font-semibold flex items-center gap-2" style={{ color: 'var(--text)' }}>
-              <span>📋</span> Logs
-            </h3>
+              <span>📋</span> {" " + tr("mea2100dc89")}</h3>
             {isSearching && (
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-xs lg:text-sm text-emerald-500 font-semibold">Buscando...</span>
+                <span className="text-xs lg:text-sm text-emerald-500 font-semibold">{tr("mb496fae27c")}</span>
               </div>
             )}
           </div>
           <div className="max-h-48 lg:max-h-64 overflow-y-auto custom-scrollbar p-3 lg:p-4 space-y-1.5">
             {logs.length === 0 ? (
               <p className="text-xs lg:text-sm text-center py-6 lg:py-8" style={{ color: 'var(--text-muted)' }}>
-                Nenhum log ainda. Inicie uma busca para ver os resultados.
-              </p>
+                {tr("m4bb86441da")}</p>
             ) : (
               logs.map((log, index) => {
                 const isDentro = log.includes('dentro');
@@ -250,8 +247,7 @@ export function IpFinder({ onClose }: IpFinderProps) {
           <div className="rounded-xl lg:rounded-2xl overflow-hidden" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
             <div className="px-4 lg:px-5 py-2.5 lg:py-3 border-b bg-[var(--bg-elevated)]" style={{ borderColor: 'var(--border)' }}>
               <h3 className="text-sm lg:text-base 2xl:text-lg font-semibold flex items-center gap-2" style={{ color: 'var(--text)' }}>
-                <span>💾</span> Listas Salvas
-                <span className="ml-auto text-xs lg:text-sm font-normal" style={{ color: 'var(--text-muted)' }}>{savedLists.length}</span>
+                <span>💾</span> {" " + tr("md9a6af01a1")}<span className="ml-auto text-xs lg:text-sm font-normal" style={{ color: 'var(--text-muted)' }}>{savedLists.length}</span>
               </h3>
             </div>
             <div className="max-h-48 lg:max-h-64 overflow-y-auto custom-scrollbar p-3 lg:p-4 space-y-2 lg:space-y-3">
@@ -277,12 +273,12 @@ export function IpFinder({ onClose }: IpFinderProps) {
                         style={{ background: 'var(--accent)' }}
                       >
                         <Play className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
-                        <span className="hidden sm:inline">Buscar</span>
+                        <span className="hidden sm:inline">{tr("m5f55edf900")}</span>
                       </button>
                       <button
                         onClick={() => deleteIpList(list.name)}
                         className="flex items-center justify-center bg-rose-500/15 text-rose-400 py-2 px-2.5 lg:px-3 rounded-lg lg:rounded-xl transition-all duration-200 active:scale-[0.96]"
-                        aria-label="Excluir lista"
+                        aria-label={tr("m4f2607d15f")}
                       >
                         <Trash2 className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
                       </button>
@@ -308,25 +304,22 @@ export function IpFinder({ onClose }: IpFinderProps) {
                 <div className="w-10 h-10 rounded-full bg-amber-500/15 flex items-center justify-center flex-shrink-0">
                   <span className="text-lg">⚠️</span>
                 </div>
-                <h2 className="text-lg lg:text-xl font-bold" style={{ color: 'var(--text)' }}>Parar Busca?</h2>
+                <h2 className="text-lg lg:text-xl font-bold" style={{ color: 'var(--text)' }}>{tr("m3d8a0ec27a")}</h2>
               </div>
               <p className="text-sm lg:text-base mb-5 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-                A busca de IP está em andamento. Deseja parar e fechar?
-              </p>
+                {tr("m2951c1a2d3")}</p>
               <div className="flex gap-3">
                 <button
                   onClick={cancelClose}
                   className="flex-1 font-semibold py-3 rounded-xl transition-all duration-200 active:scale-[0.98] text-sm lg:text-base"
                   style={{ background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--border)' }}
                 >
-                  Continuar
-                </button>
+                  {tr("m63e2bbaf1c")}</button>
                 <button
                   onClick={confirmClose}
                   className="flex-1 bg-rose-600 text-white font-semibold py-3 rounded-xl hover:bg-rose-500 transition-all duration-200 active:scale-[0.98] text-sm lg:text-base"
                 >
-                  Parar e Fechar
-                </button>
+                  {tr("mf5ecbf8266")}</button>
               </div>
             </div>
           </div>

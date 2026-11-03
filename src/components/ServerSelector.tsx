@@ -1,3 +1,4 @@
+import { localizeMessage, message as tr, useMessages } from '../i18n/messages';
 import React, { useState, useEffect, memo, useCallback, useRef, useMemo } from 'react';
 import { Settings, RefreshCw, CalendarClock, Wifi, AlertCircle, ChevronLeft, Search, Plane, Zap } from '../utils/icons';
 import { getAllConfigs, checkUserStatus, getAirplaneState, toggleAirplaneMode, checkForUpdates, setActiveConfig, getUUID } from '../utils/appFunctions';
@@ -33,6 +34,7 @@ function textMatches(haystack: string | null | undefined, needle: string): boole
 }
 
 export function ServerSelector() {
+  useMessages();
   const { t, locale, setCountry: setI18nCountry } = useTranslation();
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [configs, setConfigs] = useState<ConfigCategory[]>([]);
@@ -88,7 +90,7 @@ export function ServerSelector() {
       const hasV2Ray = allConfigs.some((config) => config && configRequiresField(config, 'uuid'));
       const currentUuid = getUUID() || '';
       if (hasV2Ray && !currentUuid.trim()) {
-        showToast('Preencha seu UUID V2Ray no formulário para incluir servidores V2Ray no teste', 'info');
+        showToast(tr("madc3ff397c"), 'info');
       }
     }
   }, [homeEnabled, setHomeEnabled, configs, showToast]);
@@ -125,7 +127,7 @@ export function ServerSelector() {
       
       refreshActiveConfig(); // Atualiza a configuração ativa a partir do contexto
     } catch (e) {
-      setError('Erro ao carregar configurações');
+      setError(tr("mc2ce6307c7"));
     } finally {
       setLoading(false);
     }
@@ -288,7 +290,7 @@ export function ServerSelector() {
             type="button"
             onClick={handleToggleAutoConnect}
             aria-pressed={homeEnabled}
-            aria-label={homeEnabled ? 'Desativar Auto Conect' : 'Ativar Auto Conect'}
+            aria-label={homeEnabled ? tr("mb38fab616e") : tr("mee397f4226")}
             style={homeEnabled ? { background: 'var(--accent-dim)' } : undefined}
           >
             <Zap
@@ -386,7 +388,7 @@ export function ServerSelector() {
       </section>
 
       {error && (
-        <p className="text-red-400 text-xs text-center mt-2">{error}</p>
+        <p className="text-red-400 text-xs text-center mt-2">{localizeMessage(error || "")}</p>
       )}
 
       {showConfigModal && (
@@ -398,7 +400,7 @@ export function ServerSelector() {
             setSearchInput('');
             setSearchTerm('');
           }}
-          title={selectedCategory ? selectedCategory.name : activeConfig ? activeConfig.name : 'Configurações'}
+          title={selectedCategory ? selectedCategory.name : activeConfig ? activeConfig.name : tr("m76b0fb6ad1")}
           icon={Settings}
         >
           <div className="flex-1 p-3 relative">
@@ -425,7 +427,7 @@ export function ServerSelector() {
                   {activeConfig && !selectedCategory && (
                     <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-[#8b5cf6]/20 border border-[#8b5cf6]/40">
                       <div className="w-2 h-2 rounded-full bg-[#8b5cf6] animate-pulse" />
-                      <span className="text-[10px] text-[#8b5cf6] font-bold">ATIVA</span>
+                      <span className="text-[10px] text-[#8b5cf6] font-bold">{tr("m76ec22a531")}</span>
                     </div>
                   )}
                 </div>
@@ -460,12 +462,12 @@ export function ServerSelector() {
             )}
 
             <div className="flex items-center gap-2 mb-4">
-              <input
+              <input dir="auto"
                 type="text"
                 placeholder={
                   selectedCountry !== 'all' && selectedCountry !== 'OTHER'
                     ? t('serverSelector.searchInCountryPlaceholder', {
-                        country: availableCountries.find((c) => c.code === selectedCountry)?.name || 'país',
+                        country: availableCountries.find((c) => c.code === selectedCountry)?.name || tr("ma5e60c4fcc"),
                       })
                     : t('serverSelector.searchPlaceholder')
                 }

@@ -1,3 +1,4 @@
+import { message as tr, useMessages } from '../i18n/messages';
 import { AlertTriangle } from '../utils/icons';
 
 interface ConfirmModalProps {
@@ -15,12 +16,13 @@ export function ConfirmModal({
   isOpen,
   title,
   message,
-  confirmText = 'Confirmar',
-  cancelText = 'Cancelar',
+  confirmText = tr("m717bedea36"),
+  cancelText = tr("mbb9dbb406d"),
   onConfirm,
   onCancel,
   type = 'warning'
 }: ConfirmModalProps) {
+  useMessages();
   if (!isOpen) return null;
 
   const getColors = () => {

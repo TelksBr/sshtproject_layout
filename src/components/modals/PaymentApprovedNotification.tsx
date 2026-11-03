@@ -1,3 +1,4 @@
+import { message as tr, useMessages } from '../../i18n/messages';
 import { useState, useEffect } from 'react';
 import { CheckCircle, X } from '../../utils/icons';
 import { useNotificationPosition } from '../../hooks/useNotificationPosition';
@@ -19,6 +20,7 @@ export function PaymentApprovedNotification({
   onAccessCredentials,
   autoClose = 8000
 }: PaymentApprovedNotificationProps) {
+  useMessages();
   const [isClosing, setIsClosing] = useState(false);
   const [progress, setProgress] = useState(100);
   const { position } = useNotificationPosition();
@@ -97,22 +99,20 @@ export function PaymentApprovedNotification({
           {/* Mensagem */}
           <div className="flex-1 min-w-0">
             <h3 className="font-bold text-green-100 text-sm sm:text-base">
-              🎉 Pagamento Aprovado!
-            </h3>
+              {tr("m24ac2501ca")}</h3>
             <p className="text-green-200/90 text-xs sm:text-sm mt-1">
               {planName ? `${planName} - ` : ''}
-              <span className="font-semibold">R$ {amount.toFixed(2)}</span>
+              <span className="font-semibold">{tr("m0d69dfb691") + " "}{amount.toFixed(2)}</span>
             </p>
             <p className="text-green-200/70 text-[10px] sm:text-xs mt-1.5">
-              ✅ Credenciais armazenadas com sucesso
-            </p>
+              {tr("m468ff312f2")}</p>
           </div>
 
           {/* Botão fechar */}
           <button
             onClick={handleClose}
             className="flex-shrink-0 p-1.5 hover:bg-green-700/50 rounded-lg transition-colors group"
-            aria-label="Fechar notificação"
+            aria-label={tr("mce491a6ed6")}
           >
             <X className="w-4 h-4 sm:w-5 sm:h-5 text-green-300 group-hover:text-green-100" />
           </button>
@@ -131,8 +131,7 @@ export function PaymentApprovedNotification({
               active:scale-95
             "
           >
-            Acessar Credenciais
-          </button>
+            {tr("m3e0e42c19c")}</button>
         </div>
       </div>
     </div>

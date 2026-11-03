@@ -1,3 +1,4 @@
+import { message as tr } from '../i18n/messages';
 interface FastAPIResponse {
   client: {
     ip: string;
@@ -87,7 +88,7 @@ export async function getIpFromUrl(url: string): Promise<string | null> {
 export async function getSpeedTestServers(initial = false): Promise<TestServer[]> {
   try {
     const response = await fetch(FAST_API_URL);
-    if (!response.ok) throw new Error('Failed to fetch speed test servers');
+    if (!response.ok) throw new Error(tr("mf694de6802"));
     
     const rawText = await response.text();
     const data: FastAPIResponse = JSON.parse(rawText);

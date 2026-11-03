@@ -1,3 +1,4 @@
+import { message as tr, useMessages } from './i18n/messages';
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Header from './components/Header';
 import ServerSelector from './components/ServerSelector';
@@ -32,6 +33,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 export type ModalType = 'buy' | 'recovery' | 'tutorials' | 'support' | 'speedtest' | 'terms' | 'privacy' | 'checkuser' | 'cleandata' | 'hotspot' | 'services' | 'ipfinder' | 'faq' | 'testgenerate' | 'renewal' | 'credentials' | 'dns' | null;
 
 function App() {
+  useMessages();
   const [showMenu, setShowMenu] = useState(false);
   const [currentModal, setCurrentModal] = useState<ModalType>(null);
   const [showDebugLogs, setShowDebugLogs] = useState(false);
@@ -185,7 +187,7 @@ function App() {
           </section>
 
           {getModal(currentModal, setCurrentModal)}
-          <ErrorBoundary fallbackTitle="Auto Conect">
+          <ErrorBoundary fallbackTitle={tr("m21ddf57523")}>
             <AutoConnectModal />
           </ErrorBoundary>
           <SdkCheckUserModal />

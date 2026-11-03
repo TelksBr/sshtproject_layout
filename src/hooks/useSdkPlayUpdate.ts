@@ -1,3 +1,4 @@
+import { message as tr, useMessages } from '../i18n/messages';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { VTunnelPlayUpdateState } from 'vtunnel-sdk';
 import { useDTunnelEvent } from './useDTunnelEvent';
@@ -34,6 +35,7 @@ function readState(): VTunnelPlayUpdateState | null {
  * The app re-sends "downloaded" on every resume, so "Depois" only hides it until then.
  */
 export function useSdkPlayUpdate(blockingModal: string | null) {
+  useMessages();
   const [state, setState] = useState<VTunnelPlayUpdateState | null>(null);
   const [readyOpen, setReadyOpen] = useState(false);
   const [availableOpen, setAvailableOpen] = useState(false);
@@ -52,7 +54,7 @@ export function useSdkPlayUpdate(blockingModal: string | null) {
         setAvailableOpen(true);
       }
       if (next.status === 'failed') {
-        showError('Não foi possível concluir a atualização. Tente novamente mais tarde.');
+        showError(tr("m1ec711c588"));
       }
     },
     [showError]

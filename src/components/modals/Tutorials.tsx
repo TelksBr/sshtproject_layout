@@ -1,3 +1,4 @@
+import { message as tr, useMessages } from '../../i18n/messages';
 import { useState } from 'react';
 import { Book, ChevronLeft, Play } from '../../utils/icons';
 import { Modal } from './Modal';
@@ -6,12 +7,13 @@ import { tutorials, youtubeThumbUrl, youtubeWatchUrl } from '../../data/tutorial
 import type { Tutorial } from '../../types/Tutorial';
 
 export function Tutorials({ onClose }: { onClose: () => void }) {
+  useMessages();
   const [selected, setSelected] = useState<Tutorial | null>(null);
 
   return (
     <Modal
       onClose={onClose}
-      title={selected ? selected.title : 'Tutoriais'}
+      title={selected ? selected.title : tr("m73e6d0659b")}
       icon={selected ? undefined : Book}
       onBack={selected ? () => setSelected(null) : undefined}
     >
@@ -26,7 +28,7 @@ export function Tutorials({ onClose }: { onClose: () => void }) {
                 key={tutorial.id}
                 type="button"
                 onClick={() => setSelected(tutorial)}
-                className="w-full min-h-[44px] p-3 rounded-xl text-left flex items-center gap-3 touch-manipulation"
+                className="w-full min-h-[44px] p-3 rounded-xl text-start flex items-center gap-3 touch-manipulation"
                 style={{
                   background: 'var(--bg-elevated)',
                   border: '1px solid var(--border)',
@@ -60,6 +62,7 @@ export function Tutorials({ onClose }: { onClose: () => void }) {
 }
 
 function TutorialDetail({ tutorial }: { tutorial: Tutorial }) {
+  useMessages();
   const [thumbBroken, setThumbBroken] = useState(false);
   const hasVideo = Boolean(tutorial.youtubeId);
   const showThumb = hasVideo && !thumbBroken && tutorial.youtubeId;
@@ -80,7 +83,7 @@ function TutorialDetail({ tutorial }: { tutorial: Tutorial }) {
               onClick={() => openExternalUrl(youtubeWatchUrl(tutorial.youtubeId!))}
               className="relative w-full aspect-video rounded-xl overflow-hidden touch-manipulation"
               style={{ background: 'var(--bg-elevated)' }}
-              aria-label="Assistir no YouTube"
+              aria-label={tr("meda2771814")}
             >
               <img
                 src={youtubeThumbUrl(tutorial.youtubeId)}
@@ -108,8 +111,7 @@ function TutorialDetail({ tutorial }: { tutorial: Tutorial }) {
             style={{ background: 'var(--accent)' }}
           >
             <Play className="w-4 h-4" />
-            Assistir no YouTube
-          </button>
+            {tr("meda2771814")}</button>
         </div>
       )}
 

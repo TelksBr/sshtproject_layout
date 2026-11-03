@@ -1,3 +1,4 @@
+import { message as tr } from '../i18n/messages';
 import { getCredentials } from './salesUtils';
 import { purchaseStorage, PendingPurchase } from './purchaseStorageManager';
 import { applyPaidCredentials } from './applyPaidCredentials';
@@ -193,8 +194,8 @@ class BackgroundPurchaseMonitor {
     purchaseStorage.updatePurchaseStatus(purchase.order_id, 'completed');
 
     const label = purchase.plan_name
-      ? `${purchase.kind === 'renewal' ? 'Renovação' : 'Compra'} ${purchase.plan_name}`
-      : purchase.kind === 'renewal' ? 'Renovação Recente' : 'Compra Recente';
+      ? `${purchase.kind === 'renewal' ? tr("m5e2739fcf4") : tr("m46ca644978")} ${purchase.plan_name}`
+      : purchase.kind === 'renewal' ? tr("m1f511f7bfe") : tr("m235f969d10");
 
     applyPaidCredentials(
       credentials,

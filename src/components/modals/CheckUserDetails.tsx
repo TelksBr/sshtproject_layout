@@ -1,3 +1,4 @@
+import { message as tr, useMessages } from '../../i18n/messages';
 import { useState, type ReactNode } from 'react';
 import { Calendar, Clock, RefreshCw, User, AlertTriangle } from '../../utils/icons';
 import RenewalModal from './RenewalModal';
@@ -16,34 +17,35 @@ interface CheckUserDetailsProps {
 }
 
 function remainingCaption(unit: ReturnType<typeof getValidityRemaining>['unit']): string {
-  if (unit === 'hours' || unit === 'minutes') return 'Horas restantes';
-  return 'Dias restantes';
+  if (unit === 'hours' || unit === 'minutes') return tr("mea1e1d6250");
+  return tr("mbdf91e943d");
 }
 
 function statusCopy(info: UserInfo): { label: string; detail?: string } {
   const remaining = getValidityRemaining(info);
   if (isUserExpired(info)) {
     return {
-      label: 'Usuário expirado',
-      detail: 'Renove o login para continuar usando o app.',
+      label: tr("m4cb26b2eda"),
+      detail: tr("m5b0fa44c0c"),
     };
   }
   if (isUserNearExpiration(info)) {
     if (remaining.unit === 'minutes' || remaining.unit === 'hours') {
       return {
-        label: `Expira em ${remaining.label}`,
-        detail: 'Renove agora para não perder o acesso.',
+        label: tr("m1eaf9a914c", { p0: remaining.label }),
+        detail: tr("mcd1fbb2d1f"),
       };
     }
     return {
-      label: remaining.days === 1 ? 'Expira amanhã' : `Expira em ${remaining.days} dias`,
-      detail: 'Renove agora para não perder o acesso.',
+      label: remaining.days === 1 ? tr("ma63cfc5282") : tr("m3586c9559b", { p0: remaining.days }),
+      detail: tr("mcd1fbb2d1f"),
     };
   }
-  return { label: 'Ativo' };
+  return { label: tr("m499ee302f6") };
 }
 
 export function CheckUserDetails({ userInfo, headerAction }: CheckUserDetailsProps) {
+  useMessages();
   const [showRenewal, setShowRenewal] = useState(false);
   const expired = isUserExpired(userInfo);
   const near = isUserNearExpiration(userInfo);
@@ -105,7 +107,7 @@ export function CheckUserDetails({ userInfo, headerAction }: CheckUserDetailsPro
             >
               <div className="flex items-center gap-2 mb-2">
                 <Calendar className="w-4 h-4" style={{ color: 'var(--accent)' }} />
-                <span className="text-sm" style={{ color: 'var(--text-muted)' }}>Expira em</span>
+                <span className="text-sm" style={{ color: 'var(--text-muted)' }}>{tr("me5b7cdb2f5")}</span>
               </div>
               <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>
                 {formatBrazilDateTime(userInfo.expiration_date)}
@@ -115,20 +117,20 @@ export function CheckUserDetails({ userInfo, headerAction }: CheckUserDetailsPro
         </div>
 
         <div className="p-4 rounded-lg glass-effect">
-          <h3 className="font-medium mb-4" style={{ color: 'var(--text)' }}>Detalhes da conexão</h3>
+          <h3 className="font-medium mb-4" style={{ color: 'var(--text)' }}>{tr("mc8f6193321")}</h3>
           <div className="space-y-3">
             <div
               className="flex justify-between items-center p-3 rounded-lg"
               style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}
             >
-              <span style={{ color: 'var(--text-muted)' }}>Limite de dispositivos</span>
+              <span style={{ color: 'var(--text-muted)' }}>{tr("me065cadeea")}</span>
               <span style={{ color: 'var(--text)' }}>{userInfo.limit_connections}</span>
             </div>
             <div
               className="flex justify-between items-center p-3 rounded-lg"
               style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}
             >
-              <span style={{ color: 'var(--text-muted)' }}>Dispositivos conectados</span>
+              <span style={{ color: 'var(--text-muted)' }}>{tr("m3cb9174c8b")}</span>
               <span style={{ color: 'var(--text)' }}>{userInfo.count_connections}</span>
             </div>
           </div>
@@ -142,8 +144,7 @@ export function CheckUserDetails({ userInfo, headerAction }: CheckUserDetailsPro
             style={{ background: 'var(--accent)' }}
           >
             <RefreshCw className="w-4 h-4" />
-            Renovar Login
-          </button>
+            {tr("m3a6661e36e")}</button>
         )}
       </div>
 

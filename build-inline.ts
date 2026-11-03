@@ -13,6 +13,7 @@ export default defineConfig({
     alias: { '@': path.resolve(__dirname, './src') }
   },
   build: {
+    target: 'es2015',
     outDir: 'dist',
     emptyOutDir: true,
     minify: 'esbuild',
@@ -32,7 +33,10 @@ writeFileSync(configPath, inlineConfig);
 
 console.log("🔧 Executando build inline (sem code splitting)...");
 try {
+  execSync("bun run i18n:pack", { stdio: "inherit" });
+  execSync("bun run i18n:audit", { stdio: "inherit" });
   execSync("bunx vite build --config vite.config.inline.ts", { stdio: "inherit" });
+  execSync("bun run check:i18n-size", { stdio: "inherit" });
   unlinkSync(configPath); // Remove config temporário
 } catch (err) {
   console.error("❌ Erro ao compilar com Vite.");
@@ -66,6 +70,7 @@ if (cssFile) {
 const cssContent = cssFile ? readFileSync(join(assetsPath, cssFile), "utf8") : "";
 const jsContent = readFileSync(join(assetsPath, jsFile), "utf8")
   .replace(/<\/script/gi, "<\\/script");
+const fflateLicense = readFileSync(join(process.cwd(), "public", "licenses", "fflate.txt"), "utf8");
 
 // 4. Gerar novo HTML com tudo inline
 const finalHtml = `<!DOCTYPE html>
@@ -88,6 +93,9 @@ const finalHtml = `<!DOCTYPE html>
     
     <link rel="icon" href="data:,">
     <title>@SSH_T_PROJECT @Telks13 - SSH T PROJECT LAYOUT</title>
+    <!-- fflate 0.8.3 license
+${fflateLicense}
+    -->
     ${cssContent ? `<style>${cssContent}</style>` : ''}
   </head>
   <body>

@@ -1,3 +1,4 @@
+import { message as tr, useMessages } from '../../i18n/messages';
 import { useEffect, useState } from 'react';
 import { Modal } from './Modal';
 import { Loader, RefreshCw, Server } from '../../utils/icons';
@@ -60,6 +61,7 @@ interface ServersModalProps {
 }
 
 export function ServersModal({ onClose }: ServersModalProps) {
+  useMessages();
   const [servers, setServers] = useState<ServerStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [totals, setTotals] = useState<ServerTotals>({ v2ray: 0, vtProxy: 0, total: 0 });
@@ -111,7 +113,7 @@ export function ServersModal({ onClose }: ServersModalProps) {
       clearTimeout(timeoutId);
       
       if (!responseOnlines.ok) {
-        throw new Error(`HTTP ${responseOnlines.status}`);
+        throw new Error(tr("mc402a7993f", { p0: responseOnlines.status }));
       }
       
       const dataOnlines = await responseOnlines.json();
@@ -259,7 +261,7 @@ export function ServersModal({ onClose }: ServersModalProps) {
   };
 
   return (
-    <Modal onClose={onClose} title="Status dos Servidores" icon={Server}>
+    <Modal onClose={onClose} title={tr("m79e9d9ebe5")} icon={Server}>
       <div className="flex flex-col h-[80vh] max-h-[90vh] w-full p-2 md:p-6 lg:p-8 2xl:p-10">
         {/* Barra de resumo com estatísticas e botão de refresh */}
         <div
@@ -268,8 +270,7 @@ export function ServersModal({ onClose }: ServersModalProps) {
         >
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap min-w-0 flex-1">
             <span className="hidden md:inline font-semibold text-xs sm:text-sm" style={{ color: 'var(--text)' }}>
-              Conectados:
-            </span>
+              {tr("mdab413cacb")}</span>
             {!loading && servers.length > 0 && (
               <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-medium flex-wrap">
                 <span className="px-2 py-1 rounded-lg" style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
@@ -279,7 +280,7 @@ export function ServersModal({ onClose }: ServersModalProps) {
                   VTProxy: <strong className="font-mono font-semibold" style={{ color: 'var(--text)' }}>{totals.vtProxy}</strong>
                 </span>
                 <span className="px-2 py-1 rounded-lg text-emerald-400 font-semibold" style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
-                  Total: <strong className="font-mono">{totals.total}</strong>
+                  {tr("m18e872be23") + " "}<strong className="font-mono">{totals.total}</strong>
                 </span>
               </div>
             )}
@@ -296,8 +297,8 @@ export function ServersModal({ onClose }: ServersModalProps) {
               }
             `}
             style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-            aria-label="Atualizar lista de servidores"
-            title="Atualizar lista de servidores"
+            aria-label={tr("m08a3b5b938")}
+            title={tr("m08a3b5b938")}
           >
             <RefreshCw 
               className={`
@@ -317,7 +318,7 @@ export function ServersModal({ onClose }: ServersModalProps) {
             </div>
           ) : servers.length === 0 ? (
             <div className="flex items-center justify-center p-8" style={{ color: 'var(--text-muted)' }}>
-              <p>Nenhum servidor configurado</p>
+              <p>{tr("mfcaf16c092")}</p>
             </div>
           ) : (
             <div className="space-y-2 animate-fadeIn">
@@ -335,7 +336,7 @@ export function ServersModal({ onClose }: ServersModalProps) {
                     border: '1px solid var(--border)',
                   }}
                   tabIndex={0}
-                  aria-label={`Servidor ${server.name} com ${server.totalUsers} usuários online`}
+                  aria-label={tr("m8ea5512d93", { p0: server.name, p1: server.totalUsers })}
                 >
                   <div className="flex justify-between items-center mb-2">
                     <span className="font-semibold text-sm md:text-base lg:text-lg 2xl:text-xl truncate max-w-[60vw] md:max-w-[250px] lg:max-w-[400px]" style={{ color: 'var(--text)' }}>
@@ -346,7 +347,7 @@ export function ServersModal({ onClose }: ServersModalProps) {
                         text-xs lg:text-sm font-bold px-2 py-1 lg:px-3 lg:py-1.5 rounded-lg border
                         ${server.isOnline ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' : 'bg-rose-500/15 text-rose-400 border-rose-500/30'}
                       `}>
-                        {server.isOnline ? 'Online' : 'Offline'}
+                        {server.isOnline ? tr("m0d21bd5202") : tr("ma1794783aa")}
                       </span>
                     </div>
                   </div>
@@ -363,7 +364,7 @@ export function ServersModal({ onClose }: ServersModalProps) {
                           <span className="font-mono font-semibold" style={{ color: 'var(--text)' }}>{server.vtProxyUsers}</span>
                         </div>
                         <div className="p-2 lg:p-3 2xl:p-4 rounded-xl" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
-                          <span className="block text-[10px] sm:text-xs" style={{ color: 'var(--text-muted)' }}>Total</span>
+                          <span className="block text-[10px] sm:text-xs" style={{ color: 'var(--text-muted)' }}>{tr("mc9b3c38247")}</span>
                           <span className="font-mono font-semibold" style={{ color: 'var(--accent)' }}>{server.totalUsers}</span>
                         </div>
                       </div>
@@ -372,7 +373,7 @@ export function ServersModal({ onClose }: ServersModalProps) {
                       {server.resources && (
                         <div className="grid grid-cols-2 gap-2 lg:gap-3 2xl:gap-4 text-xs md:text-sm lg:text-base pt-2 border-t" style={{ borderColor: 'var(--border)' }}>
                           <div className="p-2 lg:p-3 2xl:p-4 rounded-xl" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
-                            <span className="block mb-1 font-medium" style={{ color: 'var(--text-muted)' }}>💾 Memória</span>
+                            <span className="block mb-1 font-medium" style={{ color: 'var(--text-muted)' }}>{tr("mb9c6cdaa60")}</span>
                             <div className="flex items-center gap-2">
                               <div className="flex-1 rounded-full h-2 lg:h-2.5 2xl:h-3 overflow-hidden bg-black/20">
                                 <div 
@@ -389,7 +390,7 @@ export function ServersModal({ onClose }: ServersModalProps) {
                             </span>
                           </div>
                           <div className="p-2 lg:p-3 2xl:p-4 rounded-xl" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
-                            <span className="block mb-1 font-medium" style={{ color: 'var(--text-muted)' }}>⚡ CPU</span>
+                            <span className="block mb-1 font-medium" style={{ color: 'var(--text-muted)' }}>{tr("m3fbf7bbbd6")}</span>
                             <div className="flex items-center gap-2">
                               <div className="flex-1 rounded-full h-2 lg:h-2.5 2xl:h-3 overflow-hidden bg-black/20">
                                 <div 
@@ -402,8 +403,7 @@ export function ServersModal({ onClose }: ServersModalProps) {
                               </span>
                             </div>
                             <span className="text-[#b7abc9]/50 text-[10px] block mt-1">
-                              Uso do processador
-                            </span>
+                              {tr("mc01ce307c5")}</span>
                           </div>
                         </div>
                       )}

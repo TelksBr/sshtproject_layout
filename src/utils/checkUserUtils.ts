@@ -1,3 +1,4 @@
+import { getMessageLocale, message as tr } from '../i18n/messages';
 export interface UserInfo {
   username: string;
   password?: string;
@@ -35,7 +36,7 @@ export async function checkUser(identifier: string): Promise<CheckUserResponse> 
     if (!response.ok) {
       return {
         success: false,
-        message: 'Falha ao buscar informações do usuário'
+        message: tr("m4f81708ef8")
       };
     }
     
@@ -47,20 +48,20 @@ export async function checkUser(identifier: string): Promise<CheckUserResponse> 
     if (info) {
       return {
         success: true,
-        message: info.message || 'Usuário validado com sucesso',
+        message: info.message || tr("m20d7a4e738"),
         data: info,
       };
     }
     
     return {
       success: false,
-      message: result.error || result.message || 'Erro ao buscar dados do usuário',
+      message: result.error || result.message || tr("m68931fb87b"),
       error: result.error
     };
   } catch (error) {
     return {
       success: false,
-      message: 'Erro ao conectar com a API',
+      message: tr("md891cb780e"),
       error: String(error)
     };
   }
@@ -83,7 +84,7 @@ export async function fetchUserInfo(username: string, deviceId?: string): Promis
     });
     
     if (!response.ok) {
-      throw new Error('Falha ao buscar informações do usuário');
+      throw new Error(tr("m4f81708ef8"));
     }
     
     const result = await response.json();
@@ -93,7 +94,7 @@ export async function fetchUserInfo(username: string, deviceId?: string): Promis
 
     if (info) return info;
 
-    throw new Error(result.error || result.message || 'Erro ao buscar dados do usuário');
+    throw new Error(result.error || result.message || tr("m68931fb87b"));
   } catch (error) {
     throw error;
   }
@@ -148,7 +149,7 @@ export function parseCheckUserDate(value?: string | null): Date | null {
 export function formatBrazilDateTime(value?: string | null): string {
   const date = parseCheckUserDate(value);
   if (!date) return String(value || '').trim() || '—';
-  return date.toLocaleString('pt-BR', {
+  return date.toLocaleString(getMessageLocale(), {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -179,7 +180,7 @@ function remainingFromMs(ms: number): ValidityRemaining {
       hours,
       minutes: Math.floor(abs / 60000),
       unit: 'expired',
-      label: days >= 1 ? `Expirado há ${days}d` : hours >= 1 ? `Expirado há ${hours}h` : 'Expirado',
+      label: days >= 1 ? tr("med402c8501", { p0: days }) : hours >= 1 ? tr("md9450ea5ea", { p0: hours }) : tr("m5f282d5ca7"),
     };
   }
 
@@ -195,7 +196,7 @@ function remainingFromMs(ms: number): ValidityRemaining {
       hours: 0,
       minutes,
       unit: 'minutes',
-      label: minutes === 1 ? '1 min' : `${minutes} min`,
+      label: minutes === 1 ? tr("m75adbad9ed") : tr("m618d152970", { p0: minutes }),
     };
   }
 
@@ -207,7 +208,7 @@ function remainingFromMs(ms: number): ValidityRemaining {
       hours,
       minutes,
       unit: 'hours',
-      label: hours === 1 ? '1 hora' : `${hours} horas`,
+      label: hours === 1 ? tr("m7e93c7711c") : tr("m61204a8dc4", { p0: hours }),
     };
   }
 
@@ -218,7 +219,7 @@ function remainingFromMs(ms: number): ValidityRemaining {
     hours,
     minutes,
     unit: 'days',
-    label: days === 1 ? '1 dia' : `${days} dias`,
+    label: days === 1 ? tr("mf2beffdd51") : tr("m868f8ee178", { p0: days }),
   };
 }
 

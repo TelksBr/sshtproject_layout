@@ -1,3 +1,4 @@
+import { message as tr, useMessages } from '../../i18n/messages';
 /**
  * Sheet/Drawer component - padrão moderno para overlays laterais.
  * Usa Portal, bloqueia interação durante animação e evita reabertura acidental.
@@ -28,6 +29,7 @@ export function Sheet({
   panelClassName = '',
   render,
 }: SheetProps) {
+  useMessages();
   const [isClosing, setIsClosing] = useState(false);
   const closeGuardRef = useRef(false);
   const isClosingRef = useRef(false); // Ref síncrono: evita desmontar painel antes da animação
@@ -65,7 +67,7 @@ export function Sheet({
     <div
       role="button"
       tabIndex={0}
-      aria-label="Fechar"
+      aria-label={tr("m0f2bd88ef0")}
       className={`fixed inset-0 z-[9998] bg-black/50 cursor-pointer touch-manipulation ${overlayClassName}`}
       style={{ pointerEvents: 'auto' }}
       onClick={(e) => {
@@ -86,7 +88,7 @@ export function Sheet({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Menu lateral"
+      aria-label={tr("m49b77beafc")}
       className={`
         fixed inset-y-0 z-[9999]
         ${side === 'left' ? 'left-0' : 'right-0'}

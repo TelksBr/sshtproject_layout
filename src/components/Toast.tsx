@@ -2,8 +2,12 @@ import { useToast } from '../hooks/useToast';
 import { useNotificationPosition } from '../hooks/useNotificationPosition';
 import { CheckCircle, XCircle, AlertTriangle, Info, X } from '../utils/icons';
 import { sanitizeLogHtml } from '../utils/appFunctions';
+import { localizeMessage, useMessages } from '../i18n/messages';
+import { useTranslation } from '../i18n';
 
 export function ToastContainer() {
+  useMessages();
+  const { t } = useTranslation();
   const { toasts, removeToast } = useToast();
   const { position } = useNotificationPosition();
 
@@ -60,10 +64,11 @@ export function ToastContainer() {
           <div className="flex-1">
             <p
               className="text-sm lg:text-base font-medium"
-              dangerouslySetInnerHTML={{ __html: sanitizeLogHtml(toast.message) }}
+              dangerouslySetInnerHTML={{ __html: sanitizeLogHtml(localizeMessage(toast.message)) }}
             />
           </div>
           <button
+            aria-label={t('common.close')}
             onClick={() => removeToast(toast.id)}
             className="absolute top-2 right-2 p-1 hover:bg-white/20 rounded transition-colors"
           >

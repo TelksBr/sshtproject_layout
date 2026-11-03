@@ -1,3 +1,4 @@
+import { getMessageLocale, message as tr, useMessages } from '../../i18n/messages';
 import { FileText, Check, ShieldCheck } from '../../utils/icons';
 import { Modal } from './Modal';
 import { useTermsAcceptance } from '../../hooks/useTermsAcceptance';
@@ -8,6 +9,7 @@ interface TermsProps {
 }
 
 export function Terms({ onClose, onAccept }: TermsProps) {
+  useMessages();
   const { accepted, acceptTerms } = useTermsAcceptance();
 
   const handleAccept = () => {
@@ -16,7 +18,7 @@ export function Terms({ onClose, onAccept }: TermsProps) {
   };
 
   return (
-    <Modal onClose={onClose} allowClose={accepted} title="Termos de Uso" icon={FileText}>
+    <Modal onClose={onClose} allowClose={accepted} title={tr("me259be7652")} icon={FileText}>
       <div className="relative flex-1 p-4">
         <header className="flex items-center gap-3 mb-4">
           <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
@@ -26,90 +28,81 @@ export function Terms({ onClose, onAccept }: TermsProps) {
         {accepted && (
           <div className="flex justify-center mb-4">
             <span className="flex items-center gap-2 text-xs font-semibold px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
-              <ShieldCheck className="w-4 h-4" /> Termos Aceitos
-            </span>
+              <ShieldCheck className="w-4 h-4" /> {" " + tr("m96156fd932")}</span>
           </div>
         )}
         <div className="p-4 rounded-xl" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
           <div className="max-w-none space-y-4">
             <p style={{ color: 'var(--text-muted)' }}>
-              Bem-vindo ao SSH T Project. Ao utilizar nossos serviços, você concorda com os seguintes Termos de Uso. Leia atentamente antes de utilizar o aplicativo.
-            </p>
+              {tr("mcfeabc51da")}</p>
 
             <section className="space-y-2">
-              <h2 className="text-base font-semibold" style={{ color: 'var(--text)' }}>1. Definição do Serviço</h2>
+              <h2 className="text-base font-semibold" style={{ color: 'var(--text)' }}>{tr("ma4b01eb72d")}</h2>
               <p style={{ color: 'var(--text-muted)' }}>
-                O SSH T Project oferece um serviço de conexão à internet através de um sistema de proxy, permitindo que os usuários acessem a rede mesmo sem crédito com a operadora. Esse processo é possível ao utilizar URLs permitidas pelas operadoras para redirecionar o tráfego.
-              </p>
-              <p style={{ color: 'var(--text-muted)' }}>Nosso serviço foca em:</p>
+                {tr("mee53bef59c")}</p>
+              <p style={{ color: 'var(--text-muted)' }}>{tr("me3670b9245")}</p>
               <ul className="list-disc list-inside space-y-1" style={{ color: 'var(--text-muted)' }}>
-                <li>Desenvolvimento de métodos de conexão por proxy</li>
-                <li>Disponibilização de servidores intermediários para conexões</li>
+                <li>{tr("m4075da5554")}</li>
+                <li>{tr("md8aed0955e")}</li>
               </ul>
             </section>
 
             <section className="space-y-2">
-              <h2 className="text-base font-semibold" style={{ color: 'var(--text)' }}>2. Uso do Serviço</h2>
-              <p style={{ color: 'var(--text-muted)' }}>O usuário deve utilizar o SSH T Project de forma responsável e de acordo com as leis locais. Estão proibidos:</p>
+              <h2 className="text-base font-semibold" style={{ color: 'var(--text)' }}>{tr("m4102ef3b92")}</h2>
+              <p style={{ color: 'var(--text-muted)' }}>{tr("m67af495440")}</p>
               <ul className="list-disc list-inside space-y-1" style={{ color: 'var(--text-muted)' }}>
-                <li>O uso do serviço para atividades ilegais</li>
-                <li>Qualquer tentativa de modificar, invadir ou explorar falhas do aplicativo</li>
-                <li>Compartilhamento indevido do acesso para terceiros</li>
+                <li>{tr("m871d1b721f")}</li>
+                <li>{tr("ma73868ae51")}</li>
+                <li>{tr("m843d00eff3")}</li>
               </ul>
             </section>
 
             <section className="space-y-2">
-              <h2 className="text-base font-semibold" style={{ color: 'var(--text)' }}>3. Responsabilidade do Usuário</h2>
+              <h2 className="text-base font-semibold" style={{ color: 'var(--text)' }}>{tr("md49c3d7541")}</h2>
               <p style={{ color: 'var(--text-muted)' }}>
-                O usuário é o único responsável pelo uso que faz do SSH T Project. Não nos responsabilizamos por qualquer uso indevido do serviço, incluindo eventuais violações de políticas das operadoras ou de legislações locais.
-              </p>
+                {tr("mbc15a76524")}</p>
             </section>
 
             <section className="space-y-2">
-              <h2 className="text-base font-semibold" style={{ color: 'var(--text)' }}>4. Limitação de Uso</h2>
+              <h2 className="text-base font-semibold" style={{ color: 'var(--text)' }}>{tr("m5bbd1e180d")}</h2>
               <p style={{ color: 'var(--text-muted)' }}>
-                Para garantir o funcionamento adequado do serviço, estabelecemos limites de conexões simultâneas por usuário. Esse controle é realizado através do Device ID, que é armazenado temporariamente em nossa base de dados e removido diariamente.
-              </p>
+                {tr("mb0b12f1d51")}</p>
             </section>
 
             <section className="space-y-2">
-              <h2 className="text-base font-semibold" style={{ color: 'var(--text)' }}>5. Disponibilidade e Garantias</h2>
+              <h2 className="text-base font-semibold" style={{ color: 'var(--text)' }}>{tr("me11cf20a29")}</h2>
               <p style={{ color: 'var(--text-muted)' }}>
-                Nosso serviço depende de fatores externos, como a estabilidade das operadoras e bloqueios de conexão. Não garantimos que o SSH T Project funcionará de maneira ininterrupta ou que sempre haverá um método de conexão disponível.
-              </p>
+                {tr("mfdc35141ad")}</p>
             </section>
 
             <section className="space-y-2">
-              <h2 className="text-base font-semibold" style={{ color: 'var(--text)' }}>6. Modificações no Serviço</h2>
+              <h2 className="text-base font-semibold" style={{ color: 'var(--text)' }}>{tr("m98717385d7")}</h2>
               <p style={{ color: 'var(--text-muted)' }}>
-                Podemos alterar ou interromper parte ou a totalidade do serviço a qualquer momento, sem aviso prévio, devido a mudanças técnicas, bloqueios das operadoras ou outros fatores.
-              </p>
+                {tr("m4a99f83c2b")}</p>
             </section>
 
             <section className="space-y-2">
-              <h2 className="text-base font-semibold" style={{ color: 'var(--text)' }}>7. Reembolso e Compra de Logins</h2>
+              <h2 className="text-base font-semibold" style={{ color: 'var(--text)' }}>{tr("m47ca704eec")}</h2>
               <p style={{ color: 'var(--text-muted)' }}>
-                Caso um usuário compre um login para acessar o serviço, ele terá direito ao reembolso somente se for comprovado que o problema está relacionado aos nossos servidores e não a bloqueios das operadoras. Para solicitar o reembolso, o usuário deve fornecer provas do problema e aguardar a análise da nossa equipe.
-              </p>
+                {tr("m43fd7fcd55")}</p>
             </section>
 
             <section className="space-y-2">
-              <h2 className="text-base font-semibold" style={{ color: 'var(--text)' }}>8. Alterações nos Termos de Uso</h2>
+              <h2 className="text-base font-semibold" style={{ color: 'var(--text)' }}>{tr("m48136f7cf4")}</h2>
               <p style={{ color: 'var(--text-muted)' }}>
-                Estes Termos de Uso podem ser modificados a qualquer momento. Os usuários serão notificados por meio do aplicativo ou de nossas plataformas oficiais.
-              </p>
+                {tr("ma8148dbf58")}</p>
             </section>
 
             <section className="space-y-2">
-              <h2 className="text-base font-semibold" style={{ color: 'var(--text)' }}>9. Contato</h2>
+              <h2 className="text-base font-semibold" style={{ color: 'var(--text)' }}>{tr("ma75a17e45c")}</h2>
               <p style={{ color: 'var(--text-muted)' }}>
-                Para dúvidas ou suporte, entre em contato pelo e-mail <a href="mailto:talkera@sshtproject.com" className="underline font-semibold" style={{ color: 'var(--accent)' }}>talkera@sshtproject.com</a>
+                {tr("m5ffb0f25fe") + " "}<a href="mailto:talkera@sshtproject.com" className="underline font-semibold" style={{ color: 'var(--accent)' }}>talkera@sshtproject.com</a>
               </p>
             </section>
 
             <footer className="mt-6 pt-4 text-center" style={{ borderTop: '1px solid var(--border)' }}>
               <p className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
-                Última atualização: {new Date().toLocaleDateString('pt-BR')} - SSH T Project
+                {tr("m3a9018dc66") + " "}{new Date().toLocaleDateString(getMessageLocale())} - SSH T Project
               </p>
             </footer>
           </div>
@@ -123,8 +116,7 @@ export function Terms({ onClose, onAccept }: TermsProps) {
               style={{ background: 'var(--accent)' }}
             >
               <Check className="w-5 h-5" />
-              Aceitar Termos
-            </button>
+              {tr("m28b66da0e4")}</button>
           )}
         </div>
       </div>

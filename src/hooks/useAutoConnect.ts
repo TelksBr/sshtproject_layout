@@ -1,3 +1,4 @@
+import { message as tr, useMessages } from '../i18n/messages';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { getAllConfigs, setActiveConfig, getVpnLogs } from '../utils/appFunctions';
 import {
@@ -36,11 +37,11 @@ export interface TestLog {
 export type AutoConnectPhaseLabel = AutoConnectPhase | null;
 
 const PHASE_MESSAGES: Record<AutoConnectPhase, string> = {
-  select: 'Selecionando configuração',
-  connecting: 'Iniciando conexão',
-  wait_vpn: 'Aguardando VPN',
-  check_internet: 'Testando internet',
-  next: 'Falhou, indo para a próxima',
+  get select() { return tr("m21e9501ae5"); },
+  get connecting() { return tr("m571a08f17d"); },
+  get wait_vpn() { return tr("mbf468041ed"); },
+  get check_internet() { return tr("mf43a4ca309"); },
+  get next() { return tr("me97a8a74a8"); },
 };
 
 function loadSavedConfig(): AutoConnectConfig {
@@ -84,6 +85,7 @@ function normalizeSdkLog(payload: unknown): string | null {
 }
 
 export function useAutoConnect() {
+  useMessages();
   const [open, setOpen] = useState(false);
   const [currentName, setCurrentName] = useState<string | null>(null);
   const [phase, setPhase] = useState<AutoConnectPhaseLabel>(null);
@@ -192,7 +194,7 @@ export function useAutoConnect() {
       pushLog({
         source: 'sdk',
         configName: currentNameRef.current || undefined,
-        message: `VPN: ${state}`,
+        message: tr("mb71f41d50b", { p0: state }),
         status:
           state === 'CONNECTED'
             ? 'success'
@@ -238,9 +240,9 @@ export function useAutoConnect() {
     setPhase(null);
     pushLog({
       source: 'test',
-      configName: currentNameRef.current || 'Teste',
+      configName: currentNameRef.current || tr("m89f308210c"),
       status: 'failed',
-      message: 'Cancelado pelo usuário',
+      message: tr("mc2189b618a"),
     });
   }, [pushLog, stopDurationTimer]);
 
@@ -279,12 +281,12 @@ export function useAutoConnect() {
     setTested(0);
 
     if (filteredConfigs.length === 0) {
-      setError('Nenhuma configuração encontrada para os filtros selecionados.');
+      setError(tr("m784458015d"));
       pushLog({
         source: 'test',
-        configName: 'Sistema',
+        configName: tr("mf150afd3c5"),
         status: 'failed',
-        message: 'Nenhuma configuração encontrada para os filtros selecionados.',
+        message: tr("m784458015d"),
       });
       setRunning(false);
       setPhase(null);
@@ -293,13 +295,13 @@ export function useAutoConnect() {
     }
 
     const regionText = runConfig.selectedCountry && runConfig.selectedCountry !== 'all'
-      ? ` [Região: ${runConfig.selectedCountry}]`
+      ? " " + tr("me0c6f68da2", { p0: runConfig.selectedCountry })
       : '';
     pushLog({
       source: 'test',
-      configName: 'Sistema',
+      configName: tr("mf150afd3c5"),
       status: 'testing',
-      message: `Iniciando teste com ${filteredConfigs.length} configuração(ões)${regionText}`,
+      message: tr("mc92603b919", { p0: filteredConfigs.length, p1: regionText }),
     });
 
     try {
@@ -336,7 +338,7 @@ export function useAutoConnect() {
             source: 'test',
             configName,
             status: ok ? 'success' : 'failed',
-            message: message || (ok ? 'Teste bem-sucedido' : 'Teste falhou'),
+            message: message || (ok ? tr("m7f25ae203c") : tr("m4dc1d9467b")),
             duration,
           });
         },
@@ -355,23 +357,23 @@ export function useAutoConnect() {
       if (!result) {
         pushLog({
           source: 'test',
-          configName: 'Sistema',
+          configName: tr("mf150afd3c5"),
           status: 'failed',
-          message: 'Nenhuma configuração funcionou',
+          message: tr("m19c487339a"),
         });
         setSuccess(null);
       } else {
         pushLog({
           source: 'test',
-          configName: 'Sistema',
+          configName: tr("mf150afd3c5"),
           status: 'success',
-          message: 'Teste concluído com sucesso',
+          message: tr("mec5ce2b237"),
         });
       }
     } catch (e) {
-      const errorMsg = e instanceof Error ? e.message : 'Erro na conexão automática';
+      const errorMsg = e instanceof Error ? e.message : tr("m20cacd6039");
       setError(errorMsg);
-      pushLog({ source: 'test', configName: 'Sistema', status: 'failed', message: errorMsg });
+      pushLog({ source: 'test', configName: tr("mf150afd3c5"), status: 'failed', message: errorMsg });
       setRunning(false);
       setPhase(null);
       stopDurationTimer();

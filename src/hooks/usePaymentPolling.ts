@@ -1,3 +1,4 @@
+import { message as tr, useMessages } from '../i18n/messages';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { getCredentials } from '../utils/salesUtils';
 
@@ -11,6 +12,7 @@ interface PaymentPollingResult {
 }
 
 const usePaymentPolling = (paymentId: string | null): PaymentPollingResult => {
+  useMessages();
   const [isPolling, setIsPolling] = useState(false);
   const [credentials, setCredentials] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
@@ -76,7 +78,7 @@ const usePaymentPolling = (paymentId: string | null): PaymentPollingResult => {
       // Verificar se atingiu o limite de tentativas
       if (attemptsRef.current >= maxAttempts) {
         setIsPolling(false);
-        setError('Tempo limite para verificação do pagamento foi atingido');
+        setError(tr("m734cf872d1"));
         
         if (intervalRef.current) {
           clearInterval(intervalRef.current);

@@ -1,3 +1,4 @@
+import { message as tr } from '../i18n/messages';
 import { getSdk } from './sdkInstance';
 import { getStorageItem, setStorageItem } from './storageUtils';
 
@@ -29,7 +30,7 @@ export const DEFAULT_DNS_PRESETS: DnsPreset[] = [
     secondary: '1.0.0.1',
     primaryIpv6: '2606:4700:4700::1111',
     secondaryIpv6: '2606:4700:4700::1001',
-    description: 'Máxima velocidade e foco em privacidade',
+    get description() { return tr("m651bd34864"); },
   },
   {
     id: 'google',
@@ -38,7 +39,7 @@ export const DEFAULT_DNS_PRESETS: DnsPreset[] = [
     secondary: '8.8.4.4',
     primaryIpv6: '2001:4860:4860::8888',
     secondaryIpv6: '2001:4860:4860::8844',
-    description: 'Alta disponibilidade e estabilidade global',
+    get description() { return tr("mfa4fc60c22"); },
   },
   {
     id: 'adguard',
@@ -47,7 +48,7 @@ export const DEFAULT_DNS_PRESETS: DnsPreset[] = [
     secondary: '94.140.15.15',
     primaryIpv6: '2a10:50c0::ad1:ff',
     secondaryIpv6: '2a10:50c0::ad2:ff',
-    description: 'Bloqueio de anúncios e rastreadores',
+    get description() { return tr("m8a860316de"); },
   },
   {
     id: 'quad9',
@@ -56,7 +57,7 @@ export const DEFAULT_DNS_PRESETS: DnsPreset[] = [
     secondary: '149.112.112.112',
     primaryIpv6: '2620:fe::fe',
     secondaryIpv6: '2620:fe::9',
-    description: 'Proteção avançada contra malwares e phishing',
+    get description() { return tr("m4c93ca907a"); },
   },
   {
     id: 'opendns',
@@ -65,7 +66,7 @@ export const DEFAULT_DNS_PRESETS: DnsPreset[] = [
     secondary: '208.67.220.220',
     primaryIpv6: '2620:119:35::35',
     secondaryIpv6: '2620:119:53::53',
-    description: 'Filtro de segurança e proteção de navegação',
+    get description() { return tr("m7e704a7efb"); },
   },
 ];
 
@@ -107,7 +108,7 @@ export function getDnsPresets(): DnsPreset[] {
             secondary: np.secondary || foundDefault?.secondary || '',
             primaryIpv6: np.primaryIpv6 || foundDefault?.primaryIpv6 || '',
             secondaryIpv6: np.secondaryIpv6 || foundDefault?.secondaryIpv6 || '',
-            description: foundDefault?.description || 'Servidor DNS pré-configurado',
+            description: foundDefault?.description || tr("m355e94f019"),
           };
         });
       }

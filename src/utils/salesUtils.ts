@@ -1,3 +1,4 @@
+import { getMessageLocale, message as tr } from '../i18n/messages';
 // Renovar usuário (compra de renovação)
 export interface RenewalPurchaseResponse {
   success: boolean;
@@ -8,11 +9,11 @@ export interface RenewalPurchaseResponse {
 export async function purchaseRenewal(identifier: string, plan_id: string, customer_name?: string): Promise<RenewalPurchaseResponse> {
   // Validação de parâmetros obrigatórios
   if (!identifier || identifier.trim() === '') {
-    throw new Error('Identificador (username ou UUID) é obrigatório para renovação');
+    throw new Error(tr("mf19c5e9ec7"));
   }
   
   if (!plan_id || plan_id.trim() === '') {
-    throw new Error('Plan ID é obrigatório para renovação');
+    throw new Error(tr("m285d1e975c"));
   }
   
   const payload: Record<string, string> = {
@@ -129,7 +130,7 @@ async function apiRequest<T>(endpoint: string, options?: RequestInit): Promise<A
     
     // Tratar erros HTTP
     if (!response.ok) {
-      throw new Error(data.error || data.message || `HTTP ${response.status}: ${response.statusText}`);
+      throw new Error(data.error || data.message || tr("m32f5a65109", { p0: response.status, p1: response.statusText }));
     }
     
     // Validar resposta da API v1
@@ -157,12 +158,12 @@ export async function createOrder(purchase: PurchaseRequest): Promise<OrderRespo
   });
   
   if (!response.success || !response.data) {
-    throw new Error(response.error || 'Falha ao criar ordem');
+    throw new Error(response.error || tr("m77086993c5"));
   }
   
   // Validar campos críticos
   if (!response.data.order_id || !response.data.payment_id) {
-    throw new Error('Dados de pagamento incompletos recebidos da API');
+    throw new Error(tr("m3ba1cc75f0"));
   }
   
   return response.data;
@@ -179,7 +180,7 @@ export async function getInvoiceStatus(invoiceId: string, forceCheck = false): P
   const response = await apiRequest<InvoiceStatus>(url);
   
   if (!response.data) {
-    throw new Error('Status não encontrado');
+    throw new Error(tr("m16255d77c1"));
   }
   
   return response.data;
@@ -198,7 +199,7 @@ export async function getCredentials(paymentId: string | number): Promise<Creden
   try {
     const response = await apiRequest<CredentialsResponse>(url);
     if (!response.data) {
-      throw new Error('Credenciais não encontradas');
+      throw new Error(tr("m1bb292f4de"));
     }
     return response.data;
   } catch (error) {
@@ -214,7 +215,7 @@ export function isValidEmail(email: string): boolean {
 
 // Formatar preço
 export function formatPrice(price: number): string {
-  return new Intl.NumberFormat('pt-BR', {
+  return new Intl.NumberFormat(getMessageLocale(), {
     style: 'currency',
     currency: 'BRL',
   }).format(price);
@@ -223,7 +224,7 @@ export function formatPrice(price: number): string {
 // Formatar data
 export function formatDate(dateString: string): string {
   const date = new Date(dateString);
-  return new Intl.DateTimeFormat('pt-BR', {
+  return new Intl.DateTimeFormat(getMessageLocale(), {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -266,12 +267,12 @@ export async function requestCredentialRecovery(email: string): Promise<{ succes
   });
 
   if (!response.success) {
-    throw new Error(response.error || response.message || 'Erro ao solicitar recuperação de credenciais');
+    throw new Error(response.error || response.message || tr("m0cffac7e7b"));
   }
 
   return {
     success: true,
-    message: response.data?.message || response.message || 'Solicitação enviada com sucesso! Verifique seu email.'
+    message: response.data?.message || response.message || tr("mef12e00bfb")
   };
 }
 
@@ -280,7 +281,7 @@ export async function recoverCredentialsByToken(token: string): Promise<Credenti
   const response = await apiRequest<CredentialsResponse>(`/api/v1/sales/credentials/recovery/${token}`);
 
   if (!response.success || !response.data) {
-    throw new Error(response.error || response.message || 'Token inválido ou expirado');
+    throw new Error(response.error || response.message || tr("m3371ccfabd"));
   }
 
   return response.data;
@@ -311,7 +312,7 @@ export async function checkTestCooldown(email: string): Promise<{ can_generate: 
   const response = await apiRequest<any>(`/api/v1/tests/cooldowns/${encodeURIComponent(email)}`);
   
   if (!response.data) {
-    throw new Error('Erro ao verificar cooldown');
+    throw new Error(tr("m7698238cb1"));
   }
   
   return response.data;

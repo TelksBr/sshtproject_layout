@@ -1,3 +1,4 @@
+import { message as tr, useMessages } from '../../i18n/messages';
 import { useState } from 'react';
 import { Bell, Trash2, X } from '../../utils/icons';
 import { Modal } from './Modal';
@@ -10,12 +11,13 @@ interface NotificationsModalProps {
 }
 
 export function NotificationsModal({ onClose }: NotificationsModalProps) {
+  useMessages();
   const { items, remove, clearAll, openNotification } = useAppNotifications();
 
   return (
     <Modal
       onClose={onClose}
-      title="Notificações"
+      title={tr("m6b8e9ecbc2")}
       icon={Bell}
       headerActions={
         items.length > 0 ? (
@@ -24,7 +26,7 @@ export function NotificationsModal({ onClose }: NotificationsModalProps) {
             onClick={clearAll}
             className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl touch-manipulation"
             style={{ background: 'var(--bg-elevated)' }}
-            aria-label="Limpar notificações"
+            aria-label={tr("mf9ea87023a")}
           >
             <Trash2 className="w-5 h-5" style={{ color: 'var(--text-muted)' }} />
           </button>
@@ -36,8 +38,7 @@ export function NotificationsModal({ onClose }: NotificationsModalProps) {
           <div className="py-10 text-center">
             <Bell className="w-8 h-8 mx-auto mb-3" style={{ color: 'var(--text-muted)' }} />
             <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-              Nenhuma notificação recebida.
-            </p>
+              {tr("m6a6cece538")}</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -77,6 +78,7 @@ function NotificationCard({
   onOpen: () => void;
   onRemove: () => void;
 }) {
+  useMessages();
   const [brokenImage, setBrokenImage] = useState(false);
   const imageUrl = normalizeNotificationMediaUrl(image);
   const showImage = Boolean(imageUrl) && !brokenImage;
@@ -95,8 +97,8 @@ function NotificationCard({
           if (handleNotificationHtmlClick(event)) return;
           onOpen();
         }}
-        className="w-full text-left touch-manipulation"
-        aria-label="Abrir notificação"
+        className="w-full text-start touch-manipulation"
+        aria-label={tr("m19ece3e2f1")}
       >
         <div className="flex gap-3 pr-8">
           {showImage && (
@@ -132,7 +134,7 @@ function NotificationCard({
           onRemove();
         }}
         className="absolute top-2 right-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg touch-manipulation"
-        aria-label="Remover notificação"
+        aria-label={tr("m4d9abc1cbe")}
       >
         <X className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
       </button>

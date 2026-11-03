@@ -1,3 +1,4 @@
+import { message as tr, useMessages } from '../i18n/messages';
 import { useToast } from './useToast';
 import { useDTunnelEvent } from './useDTunnelEvent';
 
@@ -9,17 +10,18 @@ import { useDTunnelEvent } from './useDTunnelEvent';
  * notificações do SDK nativo.
  */
 export function useSdkToastListener() {
+  useMessages();
   const { showToast } = useToast();
 
   // Escuta eventos de sucesso do SDK
   useDTunnelEvent('showSuccessToast', (payload: any) => {
-    const message = typeof payload === 'string' ? payload : payload?.message || 'Operação realizada com sucesso!';
+    const message = typeof payload === 'string' ? payload : payload?.message || tr("mb6d61ca807");
     showToast(message, 'success');
   });
 
   // Escuta eventos de erro do SDK
   useDTunnelEvent('showErrorToast', (payload: any) => {
-    const message = typeof payload === 'string' ? payload : payload?.message || 'Erro desconhecido!';
+    const message = typeof payload === 'string' ? payload : payload?.message || tr("m4a06a0b2ff");
     showToast(message, 'error');
   });
 
@@ -27,7 +29,7 @@ export function useSdkToastListener() {
     const message =
       typeof payload === 'string'
         ? payload
-        : payload?.content || payload?.message || payload?.title || 'Erro no aplicativo';
+        : payload?.content || payload?.message || payload?.title || tr("m302801bb3c");
     showToast(message, 'error');
   });
 }

@@ -1,3 +1,4 @@
+import { localizeMessage, message as tr, useMessages } from '../i18n/messages';
 import { useState, useEffect, memo, useCallback, useMemo } from 'react';
 import { Eye, EyeOff, Scroll, HelpCircle, Zap } from '../utils/icons';
 import {
@@ -28,6 +29,7 @@ interface ConnectionFormProps {
 }
 
 export function ConnectionForm({ vpnState }: ConnectionFormProps) {
+  useMessages();
   const { t } = useTranslation();
   const autoConnect = useAutoConnectContext();
   const { activeConfig } = useActiveConfig();
@@ -164,9 +166,9 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
   }, []);
 
   const validateForm = () => {
-    if (showUsernameInput && !username.trim()) return 'Usuário obrigatório';
-    if (showPasswordInput && !password.trim()) return 'Senha obrigatória';
-    if (showUUIDInput && !uuid.trim()) return 'UUID obrigatório para V2Ray';
+    if (showUsernameInput && !username.trim()) return tr("m92a665cf02");
+    if (showPasswordInput && !password.trim()) return tr("mef65dfe474");
+    if (showUUIDInput && !uuid.trim()) return tr("mbd99c9d0aa");
     return null;
   };
 
@@ -203,7 +205,7 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
         }, 1000);
       }
     } catch (e) {
-      setFormError(e instanceof Error ? e.message : 'Falha ao conectar');
+      setFormError(e instanceof Error ? e.message : tr("m49e6f1def7"));
       setIsTryingToConnect(false);
     }
   };
@@ -214,7 +216,7 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
       setIsTryingToConnect(false);
       stopConnection();
     } catch (e) {
-      setFormError(e instanceof Error ? e.message : 'Falha ao desconectar');
+      setFormError(e instanceof Error ? e.message : tr("mda2422a88a"));
       setIsTryingToConnect(false);
     }
   };
@@ -247,7 +249,7 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
             prepareCredentials();
             autoConnect.startHomeAutoConnect();
           } catch (e) {
-            setFormError(e instanceof Error ? e.message : 'Falha ao iniciar Auto Conect');
+            setFormError(e instanceof Error ? e.message : tr("m64a2d81552"));
           }
           return;
         }
@@ -305,7 +307,7 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
         )}
         {showUsernameInput && (
           <div className="relative">
-            <input
+            <input dir="auto"
               className="w-full min-h-[44px] xl:h-12 2xl:h-14 px-3 xl:px-4 rounded-xl input-field outline-none text-sm xl:text-base 2xl:text-lg allow-select"
               type="text"
               autoCapitalize="none"
@@ -392,7 +394,7 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
           className={`w-full min-h-[44px] xl:h-12 2xl:h-14 text-sm lg:text-base xl:text-lg 2xl:text-xl font-semibold rounded-xl text-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center touch-manipulation ${getButtonStyle()}`}
           onClick={handleConnection}
           disabled={vpnState === 'STOPPING'}
-          title={`Estado atual: ${vpnState}`}
+          title={tr("m51a9618911", { p0: vpnState })}
         >
           {getButtonText()}
         </button>
@@ -427,7 +429,7 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
 
         {/* Exibição de erro */}
         {formError && (
-          <p className="text-red-400 text-xs text-center">{formError}</p>
+          <p className="text-red-400 text-xs text-center">{localizeMessage(formError || "")}</p>
         )}
 
         {/* Botões lado a lado: Registros e Auto Conect */}

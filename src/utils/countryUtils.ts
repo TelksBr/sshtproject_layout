@@ -1,6 +1,7 @@
 import type { ConfigCategory } from '../types/config';
-import { COUNTRY_NAMES } from './countryNames';
 import { parseLocaleTag } from '../i18n/localeTag';
+import { resolveLocaleTag } from '../i18n/localeMatching';
+import { getCatalogMessage } from '../i18n/messages';
 
 const displayNameCache = new Map<string, Intl.DisplayNames>();
 
@@ -64,8 +65,8 @@ export function getCountryDisplayName(countryCode: string, preferredLocale?: str
   } catch {
     // Fallback silencioso
   }
-  const language = loc.split(/[-_]/)[0].toLowerCase();
-  return COUNTRY_NAMES[language]?.[code] || COUNTRY_NAMES.en[code] || code;
+  const locale = resolveLocaleTag(loc) || 'en';
+  return getCatalogMessage(locale, `country.${code}`) || code;
 }
 
 /**

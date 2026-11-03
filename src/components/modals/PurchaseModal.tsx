@@ -1,3 +1,4 @@
+import { localizeMessage, message as tr, useMessages } from '../../i18n/messages';
 import { useState, useEffect, useRef, useCallback, Fragment } from 'react';
 import { Modal } from './Modal';
 import { Plan, PaymentStep, PurchaseRequest, OrderResponse, CredentialsResponse } from '../../types/sales';
@@ -17,6 +18,7 @@ interface PurchaseModalProps {
 }
 
 export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps) {
+  useMessages();
   // Estados principais
   const [currentStep, setCurrentStep] = useState<PaymentStep>('plans');
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -57,8 +59,8 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
     setCredentials(hookCredentials);
 
     const label = selectedPlan?.name
-      ? `Compra ${selectedPlan.name}`
-      : 'Compra Recente';
+      ? tr("me8932cf3d7", { p0: selectedPlan.name })
+      : tr("m235f969d10");
 
     applyPaidCredentials(hookCredentials, 'sales', label).catch(() => undefined);
 
@@ -76,13 +78,13 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
     copyToClipboard(text).then((success) => {
       if (success) {
         setCopiedPix(true);
-        setError(`✅ ${type} copiado com sucesso!`);
+        setError(tr("maffa10317c", { p0: type }));
         setTimeout(() => {
           setCopiedPix(false);
           setError('');
         }, 2500);
       } else {
-        setError(`❌ Erro ao copiar ${type}. Tente selecionar e copiar manualmente.`);
+        setError(tr("m3288f1e84e", { p0: type }));
         setTimeout(() => setError(''), 3000);
       }
     });
@@ -113,7 +115,7 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
         setQrCodeReady(true);
       } catch (err) {
         console.error('[QRCode] toCanvas falhou:', err);
-        setQrCodeError(`Erro ao gerar QR Code: ${err}`);
+        setQrCodeError(tr("m37226386e4", { p0: err }));
       }
     })();
   }, [purchaseData]);
@@ -125,7 +127,7 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
       const plansData = await getPlans();
       setPlans(plansData);
     } catch (err) {
-      setError('Erro ao carregar planos. Tente novamente.');
+      setError(tr("m0fc6981c50"));
     } finally {
       setIsLoading(false);
     }
@@ -139,14 +141,14 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
   function handleEmailSubmit() {
     // Validar nome
     if (!customerName.trim()) {
-      setEmailError('Nome é obrigatório');
+      setEmailError(tr("m807441b24d"));
       return;
     }
     
     // Validação de email robusta
     const emailValidation = validateEmail(email);
     if (!emailValidation.isValid) {
-      setEmailError(emailValidation.error || 'Email inválido');
+      setEmailError(emailValidation.error || tr("m833766bf69"));
       return;
     }
 
@@ -164,7 +166,7 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
       const purchaseRequest: PurchaseRequest = {
         plan_id: selectedPlan.id,
         customer_email: email.trim(),
-        customer_name: customerName.trim() || 'Cliente'
+        customer_name: customerName.trim() || tr("mf851d9a83a")
       };
 
       const response = await createPurchase(purchaseRequest);
@@ -194,7 +196,7 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
       // O polling será iniciado automaticamente pelo hook
     } catch (err) {
       const error = err as Error;
-      setError(`Erro ao criar compra: ${error.message}`);
+      setError(tr("m96a45dc5c8", { p0: error.message }));
     } finally {
       setIsLoading(false);
     }
@@ -232,11 +234,9 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
             {/* Cabeçalho */}
             <div className="text-center">
               <h3 className="text-base sm:text-lg lg:text-xl font-semibold mb-0.5 sm:mb-1" style={{ color: 'var(--text)' }}>
-                Escolha seu Plano
-              </h3>
+                {tr("m3bf6dddf01")}</h3>
               <p className="text-xs sm:text-sm" style={{ color: 'var(--text-muted)' }}>
-                Selecione a opção que melhor se adequa a você
-              </p>
+                {tr("ma1897b5aa4")}</p>
             </div>
 
             {/* Lista de planos */}
@@ -253,7 +253,7 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
                     onClick={() => handlePlanSelect(plan)}
                     className="
                       group relative
-                      w-full text-left
+                      w-full text-start
                       p-3 sm:p-4
                       rounded-lg sm:rounded-xl
                       active:scale-95 hover:scale-105
@@ -310,8 +310,7 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
                               color: 'var(--accent)',
                             }}
                           >
-                            SSH/V2RAY
-                          </span>
+                            {tr("mff26f9721b")}</span>
                         )}
                       </div>
 
@@ -319,8 +318,7 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
                       <div className="flex items-baseline justify-between border-t border-[var(--border)] pt-2 mt-auto">
                         <div className="flex flex-col">
                           <span className="text-[10px] sm:text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
-                            Por {(plan.duration_days || plan.validate || 30)}d
-                          </span>
+                            {tr("m868f8ee178", { p0: plan.duration_days || plan.validate || 30 })}</span>
                           <span className="text-lg sm:text-xl lg:text-2xl font-bold text-emerald-500">
                             {formatPrice(plan.price)}
                           </span>
@@ -343,19 +341,16 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
             {/* Cabeçalho */}
             <div className="text-center">
               <h3 className="text-base sm:text-lg lg:text-xl font-semibold mb-0.5 sm:mb-1" style={{ color: 'var(--text)' }}>
-                Seus Dados
-              </h3>
+                {tr("m15d238acbc")}</h3>
               <p className="text-xs sm:text-sm" style={{ color: 'var(--text-muted)' }}>
-                Preencha para receber as credenciais
-              </p>
+                {tr("mb11b6d0a7a")}</p>
             </div>
 
             {/* Nome */}
             <div>
               <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: 'var(--text-muted)' }}>
-                Nome completo
-              </label>
-              <input
+                {tr("m52015b04c0")}</label>
+              <input dir="auto"
                 type="text"
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
@@ -370,7 +365,7 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
                   color: 'var(--text)',
                   border: '1px solid var(--border)',
                 }}
-                placeholder="João Silva"
+                placeholder={tr("m052b781724")}
               />
             </div>
 
@@ -379,7 +374,7 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
               <label className="block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2" style={{ color: 'var(--text-muted)' }}>
                 Email
               </label>
-              <input
+              <input dir="ltr"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -398,7 +393,7 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
                 placeholder="seu@email.com"
               />
               {emailError && (
-                <p className="text-rose-400 text-xs sm:text-sm mt-1.5 font-medium">{emailError}</p>
+                <p className="text-rose-400 text-xs sm:text-sm mt-1.5 font-medium">{localizeMessage(emailError || "")}</p>
               )}
             </div>
 
@@ -418,8 +413,7 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
                   border: '1px solid var(--border)',
                 }}
               >
-                Voltar
-              </button>
+                {tr("m59dc926760")}</button>
               <button
                 onClick={handleEmailSubmit}
                 className="
@@ -430,8 +424,7 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
                 "
                 style={{ background: 'var(--accent)' }}
               >
-                Continuar
-              </button>
+                {tr("m63e2bbaf1c")}</button>
             </div>
           </div>
         );
@@ -442,11 +435,9 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
             {/* Cabeçalho */}
             <div className="text-center">
               <h3 className="text-base sm:text-lg lg:text-xl font-semibold mb-0.5 sm:mb-1" style={{ color: 'var(--text)' }}>
-                Confirmar Compra
-              </h3>
+                {tr("m906deb3d4c")}</h3>
               <p className="text-xs sm:text-sm" style={{ color: 'var(--text-muted)' }}>
-                Revise os dados antes de finalizar
-              </p>
+                {tr("m4184acbf18")}</p>
             </div>
 
             {/* Resumo do plano */}
@@ -455,17 +446,17 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
                 <h4 className="font-semibold text-sm sm:text-base" style={{ color: 'var(--text)' }}>{selectedPlan.name}</h4>
                 <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
                   <div className="flex justify-between">
-                    <span style={{ color: 'var(--text-muted)' }}>Preço:</span>
+                    <span style={{ color: 'var(--text-muted)' }}>{tr("m2a6114b007")}</span>
                     <span className="text-emerald-500 font-semibold">{formatPrice(selectedPlan.price)}</span>
                   </div>
                   <div className="border-t pt-1.5 sm:pt-2 mt-1.5 sm:mt-2" style={{ borderColor: 'var(--border)' }}>
                     <div className="grid grid-cols-2 gap-2 text-[10px] sm:text-xs">
                       <div>
-                        <span style={{ color: 'var(--text-muted)' }}>Duração:</span>
-                        <div className="font-medium" style={{ color: 'var(--text)' }}>{selectedPlan.duration_days || selectedPlan.validate || 30}d</div>
+                        <span style={{ color: 'var(--text-muted)' }}>{tr("m017f4cbe7c")}</span>
+                        <div className="font-medium" style={{ color: 'var(--text)' }}>{selectedPlan.duration_days || selectedPlan.validate || 30}{"d"}</div>
                       </div>
                       <div>
-                        <span style={{ color: 'var(--text-muted)' }}>Protocolo:</span>
+                        <span style={{ color: 'var(--text-muted)' }}>{tr("m5d4ff56714")}</span>
                         <div className="font-medium" style={{ color: 'var(--text)' }}>
                           {selectedPlan.protocols && selectedPlan.protocols.length > 0 
                             ? selectedPlan.protocols[0].toUpperCase()
@@ -477,7 +468,7 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
                   
                   <div className="border-t pt-1.5 sm:pt-2 mt-1.5 sm:mt-2 space-y-1.5" style={{ borderColor: 'var(--border)' }}>
                     <div className="flex justify-between">
-                      <span className="text-[10px] sm:text-xs" style={{ color: 'var(--text-muted)' }}>Nome:</span>
+                      <span className="text-[10px] sm:text-xs" style={{ color: 'var(--text-muted)' }}>{tr("m0939548aea")}</span>
                       <span className="text-xs sm:text-sm font-medium truncate" style={{ color: 'var(--text)' }}>{customerName}</span>
                     </div>
                     <div className="flex justify-between">
@@ -501,8 +492,7 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
                   rounded-lg transition-all active:scale-95
                 "
               >
-                Voltar
-              </button>
+                {tr("m59dc926760")}</button>
               <button
                 onClick={handlePurchaseConfirm}
                 disabled={isLoading}
@@ -517,10 +507,10 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
                 {isLoading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                    <span className="hidden sm:inline">Processando...</span>
+                    <span className="hidden sm:inline">{tr("m8f9f590a29")}</span>
                   </>
                 ) : (
-                  'Finalizar Compra'
+                  tr("md59f96aac8")
                 )}
               </button>
             </div>
@@ -536,11 +526,10 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
                 <div className="rounded-2xl p-4 sm:p-5 text-center shadow-sm space-y-3" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
                   <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                    PAGAMENTO PIX INSTANTÂNEO
-                  </div>
+                    {tr("mcc8ca6b792")}</div>
                   
                   <div>
-                    <span className="text-xs uppercase tracking-wider block font-semibold" style={{ color: 'var(--text-muted)' }}>Valor Total</span>
+                    <span className="text-xs uppercase tracking-wider block font-semibold" style={{ color: 'var(--text-muted)' }}>{tr("mbfbbc040aa")}</span>
                     <div className="text-3xl sm:text-4xl font-extrabold font-mono" style={{ color: 'var(--text)' }}>
                       {formatPrice(purchaseData.amount)}
                     </div>
@@ -549,13 +538,13 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
                   <div className="flex flex-wrap items-center justify-center gap-2 pt-2 border-t text-xs font-medium" style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
                     <span>ID: <strong style={{ color: 'var(--text)' }}>{purchaseData.payment_id}</strong></span>
                     <span>•</span>
-                    <span>Expira em: <strong className="text-amber-500">{purchaseData.expires_in || 15}m</strong></span>
+                    <span>{tr("m90f32e78ce") + " "}<strong className="text-amber-500">{purchaseData.expires_in || 15}m</strong></span>
                   </div>
 
                   {(purchaseData as any)?.username && (
                     <div className="pt-1">
                       <span className="px-2.5 py-1 rounded-lg text-xs font-semibold" style={{ background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--border)' }}>
-                        👤 Usuário: {(purchaseData as any).username}
+                        {tr("mf46be47c45") + " "}{(purchaseData as any).username}
                       </span>
                     </div>
                   )}
@@ -564,7 +553,7 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
                 {/* QR Code Container */}
                 {(purchaseData.qr_code || purchaseData.ticket_url) && (
                   <div className="rounded-2xl p-4 sm:p-5 text-center shadow-sm" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-                    <p className="font-semibold text-sm mb-3" style={{ color: 'var(--text)' }}>📱 QR Code para Leitura</p>
+                    <p className="font-semibold text-sm mb-3" style={{ color: 'var(--text)' }}>{tr("m75f21782fb")}</p>
                     <div className="bg-white p-4 rounded-2xl inline-block shadow-md border border-gray-200">
                       <canvas 
                         ref={drawQRCode}
@@ -579,7 +568,7 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
 
                     {qrCodeError && (
                       <div className="text-xs text-rose-400 bg-rose-500/10 p-2 rounded-xl border border-rose-500/20 mt-2">
-                        {qrCodeError}
+                        {localizeMessage(qrCodeError || "")}
                       </div>
                     )}
                   </div>
@@ -589,8 +578,8 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
                 {purchaseData.qr_code && (
                   <div className="rounded-2xl p-4 sm:p-5 shadow-sm space-y-3" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold text-sm" style={{ color: 'var(--text)' }}>💳 PIX Copia e Cola</span>
-                      <span className="text-[11px] font-medium" style={{ color: 'var(--text-muted)' }}>Toque para copiar</span>
+                      <span className="font-semibold text-sm" style={{ color: 'var(--text)' }}>{tr("m0456892ad6")}</span>
+                      <span className="text-[11px] font-medium" style={{ color: 'var(--text-muted)' }}>{tr("mab08f90f3b")}</span>
                     </div>
 
                     <div className="p-3 rounded-xl font-mono text-xs break-all max-h-20 overflow-y-auto custom-scrollbar select-all leading-relaxed" style={{ background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--border)' }}>
@@ -602,17 +591,17 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
                       onClick={() => {
                         const pixCode = purchaseData.qr_code || '';
                         if (!pixCode) {
-                          setError('Código PIX não disponível. Tente atualizar a página.');
+                          setError(tr("m30a52ed9df"));
                           return;
                         }
-                        handleCopyToClipboard(pixCode, 'Código PIX');
+                        handleCopyToClipboard(pixCode, tr("me241c09a1b"));
                       }}
                       className={`w-full min-h-[48px] px-4 rounded-xl text-white font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md active:scale-[0.98] touch-manipulation ${
                         copiedPix ? 'bg-emerald-600' : ''
                       }`}
                       style={{ background: copiedPix ? '#059669' : 'var(--accent)' }}
                     >
-                      {copiedPix ? '✅ Código PIX Copiado!' : '📋 Copiar Código PIX'}
+                      {copiedPix ? tr("m9f660d9c15") : tr("m600e6ca261")}
                     </button>
                   </div>
                 )}
@@ -625,8 +614,7 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
                     className="w-full min-h-[44px] px-4 rounded-xl font-semibold text-xs flex items-center justify-center gap-2 transition-all border active:scale-[0.98] touch-manipulation"
                     style={{ background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--border)' }}
                   >
-                    🌐 Pagar no site do Mercado Pago
-                  </button>
+                    {tr("mea731e0ace")}</button>
                 )}
 
                 {/* Status de Verificação em Tempo Real */}
@@ -634,17 +622,16 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
                   <div className="flex items-center justify-center gap-2 text-xs font-semibold">
                     {isPolling && <div className="w-3 h-3 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />}
                     <span style={{ color: credentials ? '#10b981' : 'var(--text)' }}>
-                      {!credentials ? '🔄 Aguardando confirmação do pagamento...' : '✅ Pagamento Aprovado!'}
+                      {!credentials ? tr("mb5d1f96099") : tr("mc75804ca45")}
                     </span>
                   </div>
                   <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                    Verificação automática ativa • As credenciais serão liberadas instantaneamente
-                  </p>
+                    {tr("md204781eea")}</p>
                 </div>
 
                 {pollingError && (
                   <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-400 text-xs font-medium text-center">
-                    ❌ {pollingError}
+                    ❌ {localizeMessage(pollingError || "")}
                   </div>
                 )}
               </>
@@ -653,10 +640,9 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
             {/* Credenciais recebidas */}
             {credentials && (
               <div className="p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-center">
-                <div className="text-emerald-500 font-bold text-xs sm:text-sm mb-1">✅ Pagamento Confirmado!</div>
+                <div className="text-emerald-500 font-bold text-xs sm:text-sm mb-1">{tr("m39d6aad7be")}</div>
                 <div className="text-[10px] sm:text-xs text-emerald-600 font-medium">
-                  Suas credenciais foram ativadas com sucesso.
-                </div>
+                  {tr("ma63c32aebf")}</div>
               </div>
             )}
 
@@ -668,8 +654,7 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
                 className="flex-1 min-h-[44px] rounded-xl text-xs font-semibold transition-all touch-manipulation active:scale-[0.98]"
                 style={{ background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--border)' }}
               >
-                ← Voltar aos Planos
-              </button>
+                {tr("m97910aae6f")}</button>
               <button
                 type="button"
                 onClick={() => {
@@ -687,7 +672,7 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
                 "
               >
                 <span>🔄</span>
-                <span className="hidden sm:inline">{isPolling ? 'Verificando...' : 'Verificar'}</span>
+                <span className="hidden sm:inline">{isPolling ? 'Verificando...' : tr("m662ae7da95")}</span>
                 <span className="sm:hidden">{isPolling ? '...' : 'OK'}</span>
               </button>
             </div>
@@ -705,11 +690,9 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
                 </svg>
               </div>
               <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-white mb-0.5 sm:mb-1">
-                Pagamento Aprovado!
-              </h3>
+                {tr("m8d460b6a94")}</h3>
               <p className="text-xs sm:text-sm text-gray-400">
-                Suas credenciais estão prontas
-              </p>
+                {tr("meada6603c8")}</p>
             </div>
 
             {credentials && (
@@ -719,21 +702,21 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
                   <div className="bg-green-900/20 border-2 border-green-600/30 p-2.5 sm:p-3 rounded-lg">
                     <h4 className="font-semibold text-white text-xs sm:text-sm mb-1.5 flex items-center gap-1">
                       <span>📦</span>
-                      <span>Plano</span>
-                      <span className="px-1.5 py-0.5 bg-green-600/50 text-[10px] rounded">ATIVO</span>
+                      <span>{tr("m6c55806376")}</span>
+                      <span className="px-1.5 py-0.5 bg-green-600/50 text-[10px] rounded">{tr("mba2d8673ae")}</span>
                     </h4>
                     <div className="space-y-1 text-[10px] sm:text-xs">
                       <div className="flex justify-between">
-                        <span className="text-gray-400">Plano:</span>
+                        <span className="text-gray-400">{tr("me8b6415417")}</span>
                         <span className="text-white font-medium">{credentials.plan.name}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-400">Preço:</span>
+                        <span className="text-gray-400">{tr("m2a6114b007")}</span>
                         <span className="text-green-400 font-semibold">{formatPrice(credentials.plan.price)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-400">Validade:</span>
-                        <span className="text-white">{credentials.plan.validate_days}d</span>
+                        <span className="text-gray-400">{tr("m3298d60458")}</span>
+                        <span className="text-white">{credentials.plan.validate_days}{"d"}</span>
                       </div>
                     </div>
                   </div>
@@ -745,41 +728,41 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
                     <h4 className="font-semibold text-white text-xs sm:text-sm mb-1.5 flex items-center gap-1">
                       <span>🔐</span>
                       <span>SSH</span>
-                      <span className="px-1.5 py-0.5 bg-blue-600/50 text-[10px] rounded">ATIVO</span>
+                      <span className="px-1.5 py-0.5 bg-blue-600/50 text-[10px] rounded">{tr("mba2d8673ae")}</span>
                     </h4>
                     <div className="space-y-1 text-[10px] sm:text-xs">
                       <div className="flex justify-between items-start gap-1">
-                        <span className="text-gray-400 flex-shrink-0">User:</span>
+                        <span className="text-gray-400 flex-shrink-0">{tr("m93d6b3e9b8")}</span>
                         <div className="flex items-center gap-1 flex-shrink-0">
                           <span className="font-mono text-white text-[9px] sm:text-xs truncate">{credentials.ssh_credentials?.username || 'N/A'}</span>
                           <button
-                            onClick={() => handleCopyToClipboard(credentials.ssh_credentials?.username || '', 'Usuário SSH')}
+                            onClick={() => handleCopyToClipboard(credentials.ssh_credentials?.username || '', tr("mf402f5be78"))}
                             className="text-blue-300 hover:text-blue-200 flex-shrink-0"
-                            title="Copiar"
+                            title={tr("m39dcf1cbeb")}
                           >
                             📋
                           </button>
                         </div>
                       </div>
                       <div className="flex justify-between items-start gap-1">
-                        <span className="text-gray-400 flex-shrink-0">Pass:</span>
+                        <span className="text-gray-400 flex-shrink-0">{tr("mf0028ff6a6")}</span>
                         <div className="flex items-center gap-1 flex-shrink-0">
                           <span className="font-mono text-white text-[9px] sm:text-xs truncate">{credentials.ssh_credentials?.password || 'N/A'}</span>
                           <button
-                            onClick={() => handleCopyToClipboard(credentials.ssh_credentials?.password || '', 'Senha SSH')}
+                            onClick={() => handleCopyToClipboard(credentials.ssh_credentials?.password || '', tr("mb8b90cc544"))}
                             className="text-blue-300 hover:text-blue-200 flex-shrink-0"
-                            title="Copiar"
+                            title={tr("m39dcf1cbeb")}
                           >
                             📋
                           </button>
                         </div>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-400">Conexões:</span>
+                        <span className="text-gray-400">{tr("m80318f4894")}</span>
                         <span className="text-yellow-400">{credentials.ssh_credentials?.limit || 'N/A'}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-400">Expira:</span>
+                        <span className="text-gray-400">{tr("m6ca653daaa")}</span>
                         <span className="text-orange-300">{credentials.ssh_credentials?.expiration_date ? formatDate(credentials.ssh_credentials.expiration_date) : 'N/A'}</span>
                       </div>
                     </div>
@@ -792,7 +775,7 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
                     <h4 className="font-semibold text-white text-xs sm:text-sm mb-1.5 flex items-center gap-1">
                       <span>🌐</span>
                       <span>V2Ray</span>
-                      <span className="px-1.5 py-0.5 bg-purple-600/50 text-[10px] rounded">ATIVO</span>
+                      <span className="px-1.5 py-0.5 bg-purple-600/50 text-[10px] rounded">{tr("mba2d8673ae")}</span>
                     </h4>
                     <div className="space-y-1 text-[10px] sm:text-xs">
                       <div className="flex justify-between items-start gap-1">
@@ -802,18 +785,18 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
                           <button
                             onClick={() => handleCopyToClipboard(credentials.v2ray_credentials?.uuid || '', 'UUID V2Ray')}
                             className="text-purple-300 hover:text-purple-200 flex-shrink-0"
-                            title="Copiar UUID completo"
+                            title={tr("m06ec235648")}
                           >
                             📋
                           </button>
                         </div>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-400">Conexões:</span>
+                        <span className="text-gray-400">{tr("m80318f4894")}</span>
                         <span className="text-yellow-400">{credentials.v2ray_credentials?.limit || 'N/A'}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-400">Expira:</span>
+                        <span className="text-gray-400">{tr("m6ca653daaa")}</span>
                         <span className="text-orange-300">{credentials.v2ray_credentials?.expiration_date ? formatDate(credentials.v2ray_credentials.expiration_date) : 'N/A'}</span>
                       </div>
                     </div>
@@ -823,7 +806,7 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
                 {/* Email */}
                 <div className="bg-blue-900/20 border-2 border-blue-600/30 p-2.5 sm:p-3 rounded-lg text-center">
                   <p className="text-blue-200 text-[10px] sm:text-xs">
-                    ✉️ Credenciais enviadas para:<br/>
+                    {tr("m856854b296")}<br/>
                     <strong className="text-white truncate">{email}</strong>
                   </p>
                 </div>
@@ -836,8 +819,7 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
                 onClick={handleClose}
                 className="flex-1 min-h-[44px] sm:min-h-[48px] px-3 rounded-xl btn-secondary text-sm font-semibold"
               >
-                Fechar
-              </button>
+                {tr("m0f2bd88ef0")}</button>
               <button
                 onClick={() => {
                   resetPolling();
@@ -847,8 +829,7 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
                 className="flex-1 min-h-[44px] sm:min-h-[48px] px-3 rounded-xl text-white text-sm font-semibold"
                 style={{ background: 'var(--accent)' }}
               >
-                Ver credenciais
-              </button>
+                {tr("mf258392015")}</button>
             </div>
           </div>
         );
@@ -862,7 +843,7 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
   const currentStepIndex = steps.indexOf(currentStep);
 
   return (
-    <Modal onClose={handleClose} title="Comprar Plano" icon={ShoppingCart}>
+    <Modal onClose={handleClose} title={tr("m116f0f4785")} icon={ShoppingCart}>
       <div className="p-2 sm:p-4 lg:p-6">
         {/* Indicador de progresso - compacto no mobile */}
         <div className="flex items-center justify-center mb-4 sm:mb-6">
@@ -913,7 +894,7 @@ export function PurchaseModal({ onClose, onOpenCredentials }: PurchaseModalProps
                 : 'bg-rose-500/15 border-rose-500/30 text-rose-400'
             }`}
           >
-            <p>{error}</p>
+            <p>{localizeMessage(error || "")}</p>
           </div>
         )}
       </div>

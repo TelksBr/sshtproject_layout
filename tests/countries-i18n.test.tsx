@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test, { beforeEach } from 'node:test';
 import React, { act } from 'react';
 import { JSDOM } from 'jsdom';
-import { COUNTRY_NAMES } from '../src/utils/countryNames';
+import { COUNTRY_CODES } from '../src/utils/countryNames';
 import { COUNTRY_STORAGE_KEY, determineInitialCountry, extractCountryFromText, getAvailableCountries, getCountryDisplayName } from '../src/utils/countryUtils';
 import { detectInitialLocale, I18nProvider, LOCALE_STORAGE_KEY, useTranslation } from '../src/i18n/I18nContext';
 import { LANGUAGES, isSupportedLocale } from '../src/i18n/registry';
@@ -38,16 +38,20 @@ test('all 249 country flags are recognized and named without Intl.DisplayNames',
   const original = Intl.DisplayNames;
   Object.defineProperty(Intl, 'DisplayNames', { configurable: true, value: undefined });
   try {
-    assert.equal(Object.keys(COUNTRY_NAMES.en).length, 249);
-    for (const code of Object.keys(COUNTRY_NAMES.en)) {
+    assert.equal(COUNTRY_CODES.length, 249);
+    for (const code of COUNTRY_CODES) {
       const flag = Array.from(code, letter => String.fromCodePoint(0x1f1e6 + letter.charCodeAt(0) - 65)).join('');
       assert.equal(extractCountryFromText(`${flag} Mobile`)?.code, code);
-      for (const locale of ['pt-BR', 'pt-AO', 'en', 'es']) {
+    }
+    for (const locale of Object.keys(LANGUAGES)) {
+      for (const code of COUNTRY_CODES) {
         assert.notEqual(getCountryDisplayName(code, locale), code);
       }
     }
     assert.equal(getCountryDisplayName('ZA', 'pt-BR'), 'África do Sul');
     assert.equal(getCountryDisplayName('ZA', 'en'), 'South Africa');
+    assert.equal(getCountryDisplayName('ZA', 'fr'), 'Afrique du Sud');
+    assert.equal(getCountryDisplayName('ZA', 'ar'), 'جنوب أفريقيا');
   } finally {
     Object.defineProperty(Intl, 'DisplayNames', { configurable: true, value: original });
   }
@@ -105,7 +109,7 @@ test('countries sharing a language reuse one locale, while meaningful scripts an
   assert.equal(resolveLocaleTag('xx-invalid'), null);
   assert.equal(resolveLocaleTag('pt-'), null);
   assert.equal(parseLocaleTag('fr-Latn-CA-u-ca-gregory')?.region, 'CA');
-  for (const code of Object.keys(COUNTRY_NAMES.en)) assert.ok(isSupportedLocale(getLanguageForCountry(code)), code);
+  for (const code of COUNTRY_CODES) assert.ok(isSupportedLocale(getLanguageForCountry(code)), code);
 });
 
 test('preferred device languages win over a multilingual country, without inferring a country from a bare language', () => {

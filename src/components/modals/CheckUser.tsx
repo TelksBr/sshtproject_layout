@@ -1,3 +1,4 @@
+import { localizeMessage, message as tr, useMessages } from '../../i18n/messages';
 import { useState } from 'react';
 import { CalendarClock, RefreshCw, AlertTriangle, Search } from '../../utils/icons';
 import { Modal } from './Modal';
@@ -10,6 +11,7 @@ interface CheckUserProps {
 }
 
 export function CheckUser({ onClose }: CheckUserProps) {
+  useMessages();
   const [username, setUsername] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -17,7 +19,7 @@ export function CheckUser({ onClose }: CheckUserProps) {
 
   const handleCheck = async () => {
     if (!username.trim()) {
-      setError('Por favor, insira um nome de usuário');
+      setError(tr("m2469ab9124"));
       return;
     }
 
@@ -39,7 +41,7 @@ export function CheckUser({ onClose }: CheckUserProps) {
         });
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao buscar informações do usuário');
+      setError(err instanceof Error ? err.message : tr("meb71224d8c"));
     } finally {
       setLoading(false);
     }
@@ -47,7 +49,7 @@ export function CheckUser({ onClose }: CheckUserProps) {
 
   if (error) {
     return (
-      <Modal onClose={onClose} title="Erro" icon={AlertTriangle}>
+      <Modal onClose={onClose} title={tr("m6dba8ec268")} icon={AlertTriangle}>
         <div className="flex-1">
           <header className="flex items-center gap-3 mb-6">
             <div className="w-12 h-12 lg:w-14 lg:h-14 2xl:w-16 2xl:h-16 rounded-full bg-[#1a1624] flex items-center justify-center">
@@ -56,13 +58,12 @@ export function CheckUser({ onClose }: CheckUserProps) {
           </header>
 
           <div className="p-4 lg:p-6 2xl:p-8 rounded-lg glass-effect text-center">
-            <p className="text-[#b7abc9]/80 text-sm lg:text-base 2xl:text-lg mb-4">{error}</p>
+            <p className="text-[#b7abc9]/80 text-sm lg:text-base 2xl:text-lg mb-4">{localizeMessage(error || "")}</p>
             <button
               onClick={() => setError(null)}
               className="w-full min-h-[44px] lg:min-h-[48px] 2xl:min-h-[56px] rounded-lg font-medium bg-[#8b5cf6] text-[#b7abc9] hover:bg-[#8b5cf6]/90 transition-colors text-sm lg:text-base 2xl:text-lg"
             >
-              Tentar Novamente
-            </button>
+              {tr("mfe3fe85b0c")}</button>
           </div>
         </div>
       </Modal>
@@ -70,16 +71,16 @@ export function CheckUser({ onClose }: CheckUserProps) {
   }
 
   return (
-    <Modal onClose={onClose} title="Consultar Usuário" icon={CalendarClock}>
+    <Modal onClose={onClose} title={tr("m4b29727380")} icon={CalendarClock}>
       <div className="flex-1">
         {!userInfo ? (
           <div className="p-4 lg:p-5 2xl:p-6 rounded-lg glass-effect">
             <div className="flex gap-2 mb-4">
-              <input
+              <input dir="auto"
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="Nome do usuário"
+                placeholder={tr("mf1fcdc3a60")}
                 className="flex-1 min-h-[44px] lg:min-h-[48px] 2xl:min-h-[56px] px-4 rounded-xl outline-none allow-select text-sm lg:text-base 2xl:text-lg"
                 style={{ background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--border)' }}
               />
@@ -105,7 +106,7 @@ export function CheckUser({ onClose }: CheckUserProps) {
                 type="button"
                 onClick={() => setUserInfo(null)}
                 className="p-2 rounded-full hover:bg-[#8b5cf6]/10 transition-colors"
-                aria-label="Nova consulta"
+                aria-label={tr("m80beb3cf08")}
               >
                 <RefreshCw className="w-5 h-5 text-[#8b5cf6]" />
               </button>

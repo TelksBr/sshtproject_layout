@@ -1,3 +1,4 @@
+import { message as tr } from '../i18n/messages';
 // Utilitário para validação de email
 export interface EmailValidationResult {
   isValid: boolean;
@@ -9,7 +10,7 @@ export function validateEmail(email: string): EmailValidationResult {
   if (!email || email.trim().length === 0) {
     return {
       isValid: false,
-      error: 'Email é obrigatório'
+      error: tr("mb155fbd87f")
     };
   }
 
@@ -19,7 +20,7 @@ export function validateEmail(email: string): EmailValidationResult {
   if (trimmedEmail.length < 5) {
     return {
       isValid: false,
-      error: 'Email muito curto'
+      error: tr("ma143deaa1d")
     };
   }
 
@@ -27,7 +28,7 @@ export function validateEmail(email: string): EmailValidationResult {
   if (trimmedEmail.length > 100) {
     return {
       isValid: false,
-      error: 'Email muito longo (máximo 100 caracteres)'
+      error: tr("m4c5fd1b405")
     };
   }
 
@@ -37,7 +38,7 @@ export function validateEmail(email: string): EmailValidationResult {
   if (!emailRegex.test(trimmedEmail)) {
     return {
       isValid: false,
-      error: 'Formato de email inválido'
+      error: tr("m5a7bf599da")
     };
   }
 
@@ -47,7 +48,7 @@ export function validateEmail(email: string): EmailValidationResult {
   if (emailParts.length !== 2) {
     return {
       isValid: false,
-      error: 'Email deve conter apenas um @'
+      error: tr("m141da48335")
     };
   }
 
@@ -57,7 +58,7 @@ export function validateEmail(email: string): EmailValidationResult {
   if (localPart.length === 0 || localPart.length > 64) {
     return {
       isValid: false,
-      error: 'Parte local do email inválida'
+      error: tr("mc6d9dc7fd3")
     };
   }
 
@@ -65,7 +66,7 @@ export function validateEmail(email: string): EmailValidationResult {
   if (domainPart.length === 0 || domainPart.length > 63) {
     return {
       isValid: false,
-      error: 'Domínio do email inválido'
+      error: tr("me9d0f9f338")
     };
   }
 
@@ -73,7 +74,7 @@ export function validateEmail(email: string): EmailValidationResult {
   if (!domainPart.includes('.')) {
     return {
       isValid: false,
-      error: 'Domínio deve conter pelo menos um ponto'
+      error: tr("meb1dff29f4")
     };
   }
 
@@ -83,7 +84,7 @@ export function validateEmail(email: string): EmailValidationResult {
       domainPart.startsWith('-') || domainPart.endsWith('-')) {
     return {
       isValid: false,
-      error: 'Email não pode começar ou terminar com . ou -'
+      error: tr("m87776e6c48")
     };
   }
 

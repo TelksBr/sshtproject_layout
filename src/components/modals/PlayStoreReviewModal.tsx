@@ -1,3 +1,4 @@
+import { message as tr, useMessages } from '../../i18n/messages';
 import { Star } from '../../utils/icons';
 import { Modal } from './Modal';
 
@@ -7,8 +8,9 @@ interface PlayStoreReviewModalProps {
 }
 
 export function PlayStoreReviewModal({ onAccept, onDecline }: PlayStoreReviewModalProps) {
+  useMessages();
   return (
-    <Modal onClose={onDecline} title="Avalie o app" icon={Star}>
+    <Modal onClose={onDecline} title={tr("m65c83103b2")} icon={Star}>
       <div className="flex-1 p-4">
         <div className="p-5 rounded-xl glass-effect text-center">
           <div
@@ -19,11 +21,9 @@ export function PlayStoreReviewModal({ onAccept, onDecline }: PlayStoreReviewMod
           </div>
 
           <h3 className="text-base font-medium mb-2" style={{ color: 'var(--text)' }}>
-            Está gostando da conexão?
-          </h3>
+            {tr("m0658bd23ee")}</h3>
           <p className="text-sm mb-6 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-            Se o app está te ajudando, deixe uma avaliação na Play Store. Leva só alguns segundos e nos ajuda bastante.
-          </p>
+            {tr("mac872b3279")}</p>
 
           <div className="grid gap-2">
             <button
@@ -32,16 +32,14 @@ export function PlayStoreReviewModal({ onAccept, onDecline }: PlayStoreReviewMod
               className="w-full min-h-[44px] rounded-xl font-semibold text-white touch-manipulation"
               style={{ background: 'var(--accent)' }}
             >
-              Avaliar na Play Store
-            </button>
+              {tr("m52d88b9b3c")}</button>
             <button
               type="button"
               onClick={onDecline}
               className="w-full min-h-[44px] rounded-xl font-medium touch-manipulation"
               style={{ background: 'var(--surface)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
             >
-              Agora não
-            </button>
+              {tr("ma73293ea3f")}</button>
           </div>
         </div>
       </div>

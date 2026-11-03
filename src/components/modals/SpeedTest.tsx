@@ -1,3 +1,4 @@
+import { localizeMessage, message as tr, useMessages } from '../../i18n/messages';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Download, Upload, RefreshCw, Server, ChevronDown } from '../../utils/icons';
 import { Modal } from './Modal';
@@ -8,6 +9,7 @@ interface SpeedTestProps {
 }
 
 export function SpeedTest({ onClose }: SpeedTestProps) {
+  useMessages();
   const [testing, setTesting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showServers, setShowServers] = useState(false);
@@ -77,7 +79,7 @@ export function SpeedTest({ onClose }: SpeedTestProps) {
       setServers(availableServers);
       setSelectedServer(availableServers[0]);
     } catch (err) {
-      setError('Falha ao carregar servidores de teste');
+      setError(tr("m72f14b9704"));
     } finally {
       setLoading(false);
     }
@@ -85,7 +87,7 @@ export function SpeedTest({ onClose }: SpeedTestProps) {
 
   const startTest = async () => {
     if (!selectedServer) {
-      setError('Selecione um servidor para iniciar o teste');
+      setError(tr("m2c6d1e456a"));
       return;
     }
 
@@ -96,7 +98,7 @@ export function SpeedTest({ onClose }: SpeedTestProps) {
     try {
       await runSpeedTest(selectedServer, updateResult);
     } catch (err) {
-      setError('Falha ao realizar o teste de velocidade. Por favor, tente novamente.');
+      setError(tr("ma6b0689ec7"));
     } finally {
       setTesting(false);
       setCurrentPhase(null);
@@ -106,18 +108,18 @@ export function SpeedTest({ onClose }: SpeedTestProps) {
   const getPhaseLabel = () => {
     switch (currentPhase) {
       case 'ping':
-        return 'Medindo latência...';
+        return tr("m8acb829323");
       case 'download':
-        return 'Testando download...';
+        return tr("m49af968202");
       case 'upload':
-        return 'Testando upload...';
+        return tr("m7a8e3accc4");
       default:
-        return 'Iniciar Teste';
+        return tr("m6def21ec72");
     }
   };
 
   return (
-    <Modal onClose={onClose} title="Speed Test" icon={Download}>
+    <Modal onClose={onClose} title={tr("md23ced7772")} icon={Download}>
       <div className="flex-1 p-4">
         <div className="grid gap-4">
           {/* Server Selection */}
@@ -125,18 +127,18 @@ export function SpeedTest({ onClose }: SpeedTestProps) {
             <button
               onClick={() => setShowServers(!showServers)}
               disabled={loading || testing}
-              className="w-full p-4 rounded-xl text-left transition-colors flex items-center justify-between touch-manipulation disabled:opacity-50"
+              className="w-full p-4 rounded-xl text-start transition-colors flex items-center justify-between touch-manipulation disabled:opacity-50"
               style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
             >
               <div className="flex items-center gap-3">
                 <Server className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--accent)' }} />
                 <div>
                   <span className="block text-sm font-semibold truncate" style={{ color: 'var(--text)' }}>
-                    {loading ? 'Carregando servidores...' : selectedServer?.location.city || 'Selecione um servidor'}
+                    {loading ? tr("me5f91f0a19") : selectedServer?.location.city || tr("m5e57dbaf6d")}
                   </span>
                   {selectedServer && (
                     <span className="block text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
-                      Ping: {selectedServer?.ping === undefined ? 'Medindo...' : `${selectedServer.ping}ms`}
+                      {tr("m3175cc0386") + " "}{selectedServer?.ping === undefined ? 'Medindo...' : `${selectedServer.ping}ms`}
                     </span>
                   )}
                 </div>
@@ -154,7 +156,7 @@ export function SpeedTest({ onClose }: SpeedTestProps) {
                       setSelectedServer(server);
                       setShowServers(false);
                     }}
-                    className="w-full p-3 rounded-lg hover:bg-[var(--accent-dim)] transition-colors text-left flex items-center justify-between touch-manipulation"
+                    className="w-full p-3 rounded-lg hover:bg-[var(--accent-dim)] transition-colors text-start flex items-center justify-between touch-manipulation"
                   >
                     <div>
                       <span className="block text-sm font-semibold" style={{ color: 'var(--text)' }}>
@@ -168,8 +170,7 @@ export function SpeedTest({ onClose }: SpeedTestProps) {
                       {server.ping === undefined ? (
                         <span className="inline-flex items-center gap-1">
                           <svg className="animate-spin w-3 h-3 mr-1 text-[var(--accent)]" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
-                          Medindo...
-                        </span>
+                          {tr("mb0c7e849e4")}</span>
                       ) : `${server.ping}ms`}
                     </span>
                   </button>
@@ -204,7 +205,7 @@ export function SpeedTest({ onClose }: SpeedTestProps) {
 
             {error && (
               <div className="p-3 rounded-lg bg-rose-500/15 border border-rose-500/30">
-                <p className="text-rose-400 text-sm font-medium">{error}</p>
+                <p className="text-rose-400 text-sm font-medium">{localizeMessage(error || "")}</p>
               </div>
             )}
 
@@ -220,7 +221,7 @@ export function SpeedTest({ onClose }: SpeedTestProps) {
                   {getPhaseLabel()}
                 </>
               ) : (
-                'Iniciar Teste'
+                tr("m6def21ec72")
               )}
             </button>
           </div>
@@ -229,7 +230,7 @@ export function SpeedTest({ onClose }: SpeedTestProps) {
             <div className="p-4 rounded-xl" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
               <div className="flex items-center gap-2 mb-1">
                 <Upload className="w-4 h-4" style={{ color: 'var(--accent)' }} />
-                <span className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Upload</span>
+                <span className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>{tr("m865e89de78")}</span>
               </div>
               <span className="text-xl font-bold font-mono" style={{ color: 'var(--text)' }}>{results.upload} Mbps</span>
             </div>
@@ -237,7 +238,7 @@ export function SpeedTest({ onClose }: SpeedTestProps) {
             <div className="p-4 rounded-xl" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
               <div className="flex items-center gap-2 mb-1">
                 <RefreshCw className="w-4 h-4" style={{ color: 'var(--accent)' }} />
-                <span className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Ping</span>
+                <span className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>{tr("m6a4c3a4483")}</span>
               </div>
               <span className="text-xl font-bold font-mono" style={{ color: 'var(--text)' }}>{results.ping} ms</span>
             </div>

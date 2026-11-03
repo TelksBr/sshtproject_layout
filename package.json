@@ -9,14 +9,18 @@
   ],
   "scripts": {
     "dev": "vite --host",
-    "build": "tsc -b && vite build",
+    "build": "npm run i18n:pack && npm run i18n:audit && tsc -b && vite build",
     "preview": "vite preview --host --port 80",
     "test:logs": "tsx --test tests/vpn-log-time.test.ts tests/vpn-log-html.test.ts",
-    "test:i18n": "tsx --test tests/countries-i18n.test.tsx",
+    "test:i18n": "tsx --test tests/countries-i18n.test.tsx tests/i18n-coverage.test.tsx tests/i18n-source.test.mjs",
+    "i18n:pack": "node scripts/pack-i18n-messages.mjs",
+    "i18n:countries": "tsx scripts/generate-country-messages.ts",
+    "i18n:audit": "node scripts/i18n-source.mjs --check",
     "check:i18n-size": "node scripts/check-i18n-size.mjs"
   },
   "dependencies": {
     "dompurify": "^3.4.17",
+    "fflate": "0.8.3",
     "lucide-react": "0.525.0",
     "qrcode": "^1.5.4",
     "react": "^19.2.8",

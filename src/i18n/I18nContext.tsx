@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo, useLayoutEffect } from 'react';
 import type { LocaleType, TranslationKey, TranslationSchema } from './types';
 import { en } from './locales/en';
 import { LANGUAGES } from './registry';
+import { setMessageLocale } from './messages';
 import { getLanguageForCountry, resolveLocaleTag } from './localeMatching';
 import { getWebViewLocaleCountry, getSavedCountryPreference } from '../utils/countryUtils';
 
@@ -61,7 +62,8 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCountryState(countryCode);
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    setMessageLocale(localeState);
     document.documentElement.lang = localeState;
     document.documentElement.dir = LANGUAGES[localeState].direction;
     try {

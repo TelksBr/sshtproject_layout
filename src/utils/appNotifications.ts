@@ -1,3 +1,4 @@
+import { getMessageLocale, message as tr } from '../i18n/messages';
 import { getStorageItem, setStorageItem } from './storageUtils';
 
 export interface AppNotification {
@@ -49,7 +50,7 @@ export function parseAppNotification(payload: unknown): Omit<AppNotification, 'i
     try {
       data = JSON.parse(trimmed);
     } catch {
-      return { title: 'Notificação', message: trimmed };
+      return { title: tr("m674fd72a17"), message: trimmed };
     }
   }
 
@@ -69,7 +70,7 @@ export function parseAppNotification(payload: unknown): Omit<AppNotification, 'i
   if (!title && !message && !image) return null;
 
   return {
-    title: title || 'Notificação',
+    title: title || tr("m674fd72a17"),
     message,
     image,
   };
@@ -96,13 +97,13 @@ export function saveAppNotifications(items: AppNotification[]): void {
 export function formatNotificationTime(timestamp: number): string {
   const diff = Date.now() - timestamp;
   const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return 'agora';
-  if (minutes < 60) return `há ${minutes} min`;
+  if (minutes < 1) return tr("mf7070d57bb");
+  if (minutes < 60) return tr("mc3307a2d41", { p0: minutes });
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `há ${hours}h`;
+  if (hours < 24) return tr("mcf66515dac", { p0: hours });
   const days = Math.floor(hours / 24);
-  if (days < 7) return `há ${days}d`;
-  return new Date(timestamp).toLocaleDateString('pt-BR', {
+  if (days < 7) return tr("m60e915d3a7", { p0: days });
+  return new Date(timestamp).toLocaleDateString(getMessageLocale(), {
     day: '2-digit',
     month: '2-digit',
     hour: '2-digit',

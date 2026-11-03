@@ -1,3 +1,4 @@
+import { message as tr, useMessages } from '../../i18n/messages';
 import { AlertTriangle, Wifi, Trash2 } from '../../utils/icons';
 import { Modal } from './Modal';
 import { cleanAppData } from '../../utils/appFunctions';
@@ -8,6 +9,7 @@ interface CleanDataConfirmProps {
 }
 
 export function CleanDataConfirm({ onClose }: CleanDataConfirmProps) {
+  useMessages();
   const handleCleanData = () => {
     clearIconCache();
     cleanAppData();
@@ -15,7 +17,7 @@ export function CleanDataConfirm({ onClose }: CleanDataConfirmProps) {
   };
 
   return (
-    <Modal onClose={onClose} title="Limpar Dados" icon={Trash2}>
+    <Modal onClose={onClose} title={tr("mda484f014a")} icon={Trash2}>
       <div className="flex-1 p-4">
         <div className="p-6 rounded-lg glass-effect text-center">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-500/20 flex items-center justify-center">
@@ -23,23 +25,20 @@ export function CleanDataConfirm({ onClose }: CleanDataConfirmProps) {
           </div>
 
           <h3 className="text-lg font-bold mb-4" style={{ color: 'var(--text)' }}>
-            Atenção!
-          </h3>
+            {tr("md1113d1a72")}</h3>
 
           <div className="space-y-4 mb-6" style={{ color: 'var(--text-muted)' }}>
             <p className="text-sm font-medium">
-              Ao limpar os dados do aplicativo, todas as configurações serão removidas, incluindo:
-            </p>
-            <ul className="list-disc list-inside text-left space-y-1.5 text-xs font-medium">
-              <li>Configurações de conexão</li>
-              <li>Dados de usuário</li>
-              <li>Preferências do aplicativo</li>
+              {tr("m66d7f5b9c7")}</p>
+            <ul className="list-disc list-inside text-start space-y-1.5 text-xs font-medium">
+              <li>{tr("mbaa39e16ae")}</li>
+              <li>{tr("m993200bbb8")}</li>
+              <li>{tr("mda839e9841")}</li>
             </ul>
             <div className="flex items-center justify-center gap-3 p-4 rounded-xl text-xs leading-relaxed" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
               <Wifi className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--accent)' }} />
               <p>
-                É necessário ter uma conexão estável com a internet para baixar as configurações novamente.
-              </p>
+                {tr("m1696a41aa2")}</p>
             </div>
           </div>
 
@@ -49,15 +48,13 @@ export function CleanDataConfirm({ onClose }: CleanDataConfirmProps) {
               className="w-full h-12 rounded-xl font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30 hover:bg-rose-500/30 transition-all flex items-center justify-center gap-2 touch-manipulation active:scale-[0.98]"
             >
               <Trash2 className="w-5 h-5" />
-              Limpar Dados
-            </button>
+              {tr("mda484f014a")}</button>
             <button
               onClick={onClose}
               className="w-full h-12 rounded-xl font-semibold transition-all touch-manipulation active:scale-[0.98]"
               style={{ background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--border)' }}
             >
-              Cancelar
-            </button>
+              {tr("mbb9dbb406d")}</button>
           </div>
         </div>
       </div>
