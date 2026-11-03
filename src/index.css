@@ -321,6 +321,18 @@
   overflow: hidden;
 }
 
+[dir="rtl"] .sidebar-drawer {
+  left: auto;
+  right: 0;
+}
+
+@media (max-width: 1023px) {
+  [dir="rtl"] .sidebar-drawer:not(.is-open) {
+    -webkit-transform: translate3d(100%, 0, 0);
+    transform: translate3d(100%, 0, 0);
+  }
+}
+
 @media (max-width: 1023px) {
   .sidebar-drawer {
     -webkit-transform: translate3d(-100%, 0, 0);

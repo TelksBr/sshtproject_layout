@@ -1,0 +1,57 @@
+import type { TranslationSchema } from '../types';
+
+export const hi: TranslationSchema = {
+  languageSelector: { search: 'भाषा खोजें...', noResults: 'कोई भाषा नहीं मिली' },
+  common: {
+    paste: 'चिपकाएँ',
+    loading: 'लोड हो रहा है...', error: 'त्रुटि', back: 'वापस', close: 'बंद करें', cancel: 'रद्द करें', confirm: 'पुष्टि करें', save: 'सहेजें',
+    active: 'सक्रिय', inUse: 'उपयोग में', all: 'सभी', other: 'अन्य', categories: 'श्रेणियाँ', configs: 'कॉन्फ़िगरेशन',
+    online: 'ऑनलाइन', offline: 'ऑफ़लाइन',
+  },
+  header: {
+    connected: 'कनेक्ट है', connecting: 'कनेक्ट हो रहा है...', stopping: 'कनेक्शन बंद हो रहा है...', noNetwork: 'नेटवर्क नहीं है',
+    auth: 'प्रमाणीकरण हो रहा है...', authFailed: 'प्रमाणीकरण विफल', disconnected: 'कनेक्ट नहीं है', openMenu: 'मेनू खोलें',
+    themeAuto: 'ऑटो', themeDark: 'डार्क', themeLight: 'लाइट', themeAutoToast: 'थीम: स्वचालित (SDK)',
+    themeDarkToast: 'थीम: डार्क', themeLightToast: 'थीम: लाइट',
+  },
+  serverSelector: {
+    autoConnectTitle: 'ऑटो कनेक्ट', allCategoriesSub: 'सभी श्रेणियाँ', chooseConfig: 'कॉन्फ़िगरेशन चुनें',
+    noCategory: 'कोई श्रेणी नहीं', updateConfigs: 'कॉन्फ़िगरेशन अपडेट करें', checkUser: 'खाता जाँचें', airplaneMode: 'हवाई जहाज़ मोड',
+    filterByCountry: 'देश के अनुसार फ़िल्टर करें', filtered: '(फ़िल्टर किया गया)', searchPlaceholder: 'कॉन्फ़िगरेशन या श्रेणी खोजें...',
+    searchInCountryPlaceholder: '{country} में खोजें...', categoriesTitle: 'श्रेणियाँ', configsTitle: 'कॉन्फ़िगरेशन',
+    availableConfigsCount: '{count} कॉन्फ़िगरेशन उपलब्ध हैं', currentConfig: 'वर्तमान कॉन्फ़िगरेशन:',
+    selectConfigPrompt: 'कनेक्ट करने के लिए कॉन्फ़िगरेशन चुनें', noResultsTitle: 'कोई परिणाम नहीं',
+    noResultsDesc: '“{query}” के लिए कोई श्रेणी या कॉन्फ़िगरेशन नहीं मिला।', noCategoryForCountryTitle: 'इस देश के लिए कोई श्रेणी नहीं',
+    noCategoryForCountryDesc: 'चुने हुए झंडे वाली कोई श्रेणी नहीं मिली।', seeAllCountries: 'सभी देश देखें ({count})',
+    noConfigsFoundTitle: 'कोई कॉन्फ़िगरेशन नहीं मिला',
+    noConfigsFoundDesc: 'नवीनतम कॉन्फ़िगरेशन डाउनलोड करने के लिए स्थिर इंटरनेट कनेक्शन आवश्यक है।',
+    checkConnectionPrompt: 'अपना कनेक्शन जाँचें और फिर से प्रयास करें',
+  },
+  connectionForm: {
+    connected: 'डिस्कनेक्ट करें', connecting: 'कनेक्ट हो रहा है...', disconnected: 'कनेक्ट करें', stopping: 'बंद हो रहा है...', cancel: 'रद्द करें',
+    credentialsAlreadySet: 'इस कॉन्फ़िगरेशन के लॉगिन विवरण पहले से तय हैं।', usernamePlaceholder: 'उपयोगकर्ता नाम',
+    passwordPlaceholder: 'पासवर्ड', uuidPlaceholder: 'UUID', showPassword: 'पासवर्ड दिखाएँ', hidePassword: 'पासवर्ड छिपाएँ',
+    showUuid: 'UUID दिखाएँ', hideUuid: 'UUID छिपाएँ', uuidHelpTitle: 'UUID क्या है?',
+    uuidHelpDesc1: 'यह आपके V2Ray की विशिष्ट लॉगिन कुंजी है।', uuidHelpDesc2: 'खरीद के बाद बॉट से प्राप्त होती है।',
+    uuidHelpExample: 'उदाहरण:', uuidHelpWarning: 'बिना अतिरिक्त स्पेस के कॉपी करें।', authFailedError: 'प्रमाणीकरण विफल',
+    noNetworkError: 'इंटरनेट कनेक्शन नहीं है', recordsButton: 'लॉग', autoConnectButton: 'ऑटो कनेक्ट',
+  },
+  networkStats: { title: 'आँकड़े', download: 'डाउनलोड', upload: 'अपलोड', total: 'कुल: {total}' },
+  sidebar: {
+    quickActions: 'त्वरित कार्रवाइयाँ', notifications: 'सूचनाएँ', myCredentials: 'मेरे लॉगिन विवरण', generateTest: 'ट्रायल बनाएँ (ईमेल)',
+    recoverLogin: 'खाता पुनर्प्राप्त करें', main: 'मुख्य', tutorials: 'ट्यूटोरियल', servers: 'सर्वर', checkUser: 'खाता जाँचें',
+    tools: 'टूल', autoTest: 'स्वचालित परीक्षण', speedTest: 'स्पीड टेस्ट', hotspot: 'हॉटस्पॉट', ipFinder: 'IP खोजें',
+    support: 'सहायता', settings: 'सेटिंग', customDns: 'कस्टम DNS', errorReport: 'त्रुटि रिपोर्ट', battery: 'बैटरी',
+    apnSettings: 'APN सेटिंग', networkSettings: 'नेटवर्क सेटिंग', checkUpdates: 'अपडेट जाँचें', activeBadge: 'सक्रिय',
+    language: 'भाषा', selectLanguage: 'भाषा चुनें',
+    terms: 'शर्तें', privacy: 'गोपनीयता', clearData: 'डेटा मिटाएँ',
+  },
+  countryFilter: { filterByCountry: 'देश के अनुसार फ़िल्टर करें', filtered: '(फ़िल्टर किया गया)', all: 'सभी', other: 'अन्य', categoriesLabel: 'श्रेणियाँ', configsLabel: 'कॉन्फ़िगरेशन' },
+  autoConnect: {
+    modalTitle: 'फ़िल्टर और पहुँच', confirmTitle: 'परीक्षण की पुष्टि करें', regionFilter: 'क्षेत्र / देश', allRegions: 'सभी क्षेत्र',
+    categoriesFilter: 'श्रेणियाँ', allCategories: 'सभी श्रेणियाँ', allCategoriesInRegion: 'सभी श्रेणियाँ ({region})',
+    configTypeLabel: 'कॉन्फ़िगरेशन का प्रकार', typeAll: 'सभी (SSH + V2Ray)', typeSsh: 'SSH / Proxy', typeV2ray: 'V2Ray',
+    configsToTest: '{count} कॉन्फ़िगरेशन का परीक्षण होगा', credentialsTitle: 'लॉगिन विवरण',
+    noConfigsFound: 'इस क्षेत्र में कोई कॉन्फ़िगरेशन नहीं मिला', regionLabel: 'क्षेत्र:',
+  },
+};

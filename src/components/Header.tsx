@@ -72,12 +72,11 @@ const Header = memo(function Header({ onMenuClick, localIP, localIPv6, onOpenDeb
       <button
         type="button"
         onClick={handleIpClick}
-        className="flex items-center gap-1.5 px-2.5 min-h-[44px] rounded-xl flex-1 min-w-0 touch-manipulation active:opacity-70 transition-opacity cursor-pointer text-left"
+        className="flex items-center gap-1.5 px-2.5 min-h-[44px] rounded-xl flex-1 min-w-0 touch-manipulation active:opacity-70 transition-opacity cursor-pointer text-start"
         style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-        title="Toque 5 vezes para abrir o Suíte de Debug SDK"
       >
         <EthernetPort className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
-        <span className="min-w-0 flex flex-col" id="ip-status">
+        <span className="min-w-0 flex flex-col" id="ip-status" dir="ltr">
           <span className="text-xs font-mono truncate" style={{ color: 'var(--text-muted)' }}>
             {localIP}
           </span>
@@ -96,8 +95,8 @@ const Header = memo(function Header({ onMenuClick, localIP, localIPv6, onOpenDeb
         onClick={handleThemeToggle}
         className="flex items-center gap-1.5 px-2.5 min-h-[44px] rounded-xl flex-shrink-0 touch-manipulation active:opacity-70 transition-all cursor-pointer select-none"
         style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-        title={`Tema: ${mode === 'auto' ? 'Automático (SDK)' : mode === 'dark' ? 'Escuro' : 'Claro'} (Clique para alternar)`}
-        aria-label="Alternar Tema"
+        title={mode === 'auto' ? t('header.themeAutoToast') : mode === 'dark' ? t('header.themeDarkToast') : t('header.themeLightToast')}
+        aria-label={mode === 'auto' ? t('header.themeAutoToast') : mode === 'dark' ? t('header.themeDarkToast') : t('header.themeLightToast')}
       >
         <ThemeIcon className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--accent)' }} />
         <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>

@@ -714,7 +714,7 @@ function SetupStep({
         <button
           type="button"
           onClick={() => updateConfig({ selectedCategories: [] })}
-          className={`w-full min-h-[44px] mb-2 px-3 rounded-xl text-left text-sm font-semibold touch-manipulation transition-all flex items-center justify-between`}
+          className={`w-full min-h-[44px] mb-2 px-3 rounded-xl text-start text-sm font-semibold touch-manipulation transition-all flex items-center justify-between`}
           style={{
             background: (autoConnectConfig?.selectedCategories || []).length === 0 ? 'var(--accent)' : 'var(--bg-elevated)',
             color: (autoConnectConfig?.selectedCategories || []).length === 0 ? '#ffffff' : 'var(--text)',
@@ -746,7 +746,7 @@ function SetupStep({
                   key={category.id}
                   type="button"
                   onClick={() => toggleCategory(category.id)}
-                  className={`w-full min-h-[44px] px-3 rounded-xl text-left text-sm flex items-center gap-2 touch-manipulation transition-all`}
+                  className={`w-full min-h-[44px] px-3 rounded-xl text-start text-sm flex items-center gap-2 touch-manipulation transition-all`}
                   style={{
                     background: selected ? 'var(--accent)' : 'var(--bg-elevated)',
                     color: selected ? '#ffffff' : 'var(--text)',
@@ -773,18 +773,18 @@ function SetupStep({
           <div className="flex items-center gap-2">
             <Key className="w-4 h-4" style={{ color: 'var(--accent)' }} />
             <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text)' }}>
-              Credenciais de Acesso
+              {t('autoConnect.credentialsTitle')}
             </span>
           </div>
 
           {requiredCredentials.username && (
             <div>
-              <label className="text-[11px] mb-1 block font-medium" style={{ color: 'var(--text-muted)' }}>Usuário SSH</label>
+              <label className="text-[11px] mb-1 block font-medium" style={{ color: 'var(--text-muted)' }}>{t('connectionForm.usernamePlaceholder')} SSH</label>
               <input
                 type="text"
                 value={username}
                 onChange={(e) => onUsernameChange(e.target.value)}
-                placeholder="Digite seu usuário..."
+                placeholder={t('connectionForm.usernamePlaceholder')}
                 className="w-full min-h-[44px] px-3 rounded-xl text-sm outline-none allow-select"
                 style={{
                   background: 'var(--bg-elevated)',
@@ -798,13 +798,14 @@ function SetupStep({
 
           {requiredCredentials.password && (
             <div>
-              <label className="text-[11px] mb-1 block font-medium" style={{ color: 'var(--text-muted)' }}>Senha SSH</label>
+              <label className="text-[11px] mb-1 block font-medium" style={{ color: 'var(--text-muted)' }}>{t('connectionForm.passwordPlaceholder')} SSH</label>
               <div className="relative">
                 <input
+                  dir="ltr"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => onPasswordChange(e.target.value)}
-                  placeholder="Digite sua senha..."
+                  placeholder={t('connectionForm.passwordPlaceholder')}
                   className="w-full min-h-[44px] px-3 pr-11 rounded-xl text-sm outline-none allow-select"
                   style={{
                     background: 'var(--bg-elevated)',
@@ -817,7 +818,7 @@ function SetupStep({
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute inset-y-0 right-0 min-w-[44px] flex items-center justify-center touch-manipulation"
                   style={{ color: 'var(--text-muted)' }}
-                  aria-label={showPassword ? 'Ocultar senha' : 'Exibir senha'}
+                  aria-label={showPassword ? t('connectionForm.hidePassword') : t('connectionForm.showPassword')}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -836,23 +837,24 @@ function SetupStep({
                   style={{ color: 'var(--accent)' }}
                 >
                   <HelpCircle className="w-3.5 h-3.5" />
-                  Ajuda
+                  {t('connectionForm.uuidHelpTitle')}
                 </button>
               </div>
 
               {showUuidHelp && (
                 <div className="mb-2 p-2.5 rounded-xl text-xs space-y-1" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
-                  <p className="font-semibold" style={{ color: 'var(--text)' }}>Chave de acesso V2Ray</p>
-                  <p>É o código identificador gerado na compra para conectar em servidores V2Ray/VMess/VLess.</p>
+                  <p className="font-semibold" style={{ color: 'var(--text)' }}>{t('connectionForm.uuidHelpTitle')}</p>
+                  <p>{t('connectionForm.uuidHelpDesc1')}</p>
                 </div>
               )}
 
               <div className="relative">
                 <input
+                  dir="ltr"
                   type={showUuid ? 'text' : 'password'}
                   value={uuid}
                   onChange={(e) => onUuidChange(e.target.value)}
-                  placeholder="Cole seu UUID V2Ray..."
+                  placeholder={t('connectionForm.uuidPlaceholder')}
                   className="w-full min-h-[44px] px-3 pr-20 rounded-xl text-sm outline-none font-mono allow-select"
                   style={{
                     background: 'var(--bg-elevated)',
@@ -865,7 +867,7 @@ function SetupStep({
                   <button
                     type="button"
                     onClick={handlePasteUuid}
-                    title="Colar UUID"
+                    title={`${t('common.paste')} UUID`}
                     className="min-w-[36px] h-full flex items-center justify-center touch-manipulation"
                     style={{ color: 'var(--text-muted)' }}
                   >
@@ -876,7 +878,7 @@ function SetupStep({
                     onClick={() => setShowUuid(!showUuid)}
                     className="min-w-[36px] h-full flex items-center justify-center touch-manipulation"
                     style={{ color: 'var(--text-muted)' }}
-                    aria-label={showUuid ? 'Ocultar UUID' : 'Exibir UUID'}
+                    aria-label={showUuid ? t('connectionForm.hideUuid') : t('connectionForm.showUuid')}
                   >
                     {showUuid ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>

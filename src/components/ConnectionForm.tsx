@@ -320,6 +320,7 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
           <div className="relative">
             <input
               className="w-full min-h-[44px] xl:h-12 2xl:h-14 px-3 xl:px-4 pr-11 rounded-xl input-field outline-none text-sm xl:text-base 2xl:text-lg allow-select"
+              dir="ltr"
               type={showPassword ? 'text' : 'password'}
               placeholder={t('connectionForm.passwordPlaceholder')}
               value={passwordValue}
@@ -341,6 +342,7 @@ export function ConnectionForm({ vpnState }: ConnectionFormProps) {
           <div className="relative">
             <input
               className="w-full min-h-[44px] xl:h-12 2xl:h-14 px-3 xl:px-4 pr-[5.5rem] rounded-xl input-field outline-none text-sm xl:text-base 2xl:text-lg allow-select"
+              dir="ltr"
               type={showUUID ? 'text' : 'password'}
               placeholder={t('connectionForm.uuidPlaceholder')}
               value={uuidValue}

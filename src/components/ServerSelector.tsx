@@ -504,7 +504,7 @@ export function ServerSelector() {
                               <div className={`w-3 h-3 rounded-full flex-shrink-0 ${
                                 isActiveCategory ? 'bg-[#8b5cf6]' : 'bg-[#8b5cf6]/20'
                               }`} />
-                              <div className="flex-1 text-left min-w-0">
+                              <div className="flex-1 text-start min-w-0">
                                 <div className="flex items-center gap-2">
                                   <h3 className={`font-medium text-sm truncate ${
                                     isActiveCategory ? 'text-white' : 'text-[#b7abc9]'
@@ -573,7 +573,7 @@ export function ServerSelector() {
                               />
                             )}
 
-                            <div className="flex-1 text-left min-w-0">
+                            <div className="flex-1 text-start min-w-0">
                               <div className="flex items-center gap-2 mb-1">
                                 <h3 className={`text-sm font-medium truncate transition-colors ${
                                   isActiveConfig ? 'text-white' : 'text-[#b7abc9]'
@@ -656,7 +656,7 @@ export function ServerSelector() {
                                   : 'bg-[var(--accent)]/20'
                               }`} />
                               
-                              <div className="flex-1 text-left">
+                              <div className="flex-1 text-start">
                                 <div className="flex items-center gap-2">
                                   <h3 className="font-semibold text-sm transition-colors" style={{ color: 'var(--text)' }}>
                                     {category.name}
@@ -727,7 +727,7 @@ export function ServerSelector() {
                               />
                             )}
                             
-                            <div className="flex-1 text-left min-w-0">
+                            <div className="flex-1 text-start min-w-0">
                               <div className="flex items-center gap-2 mb-1">
                                 <h3 className="text-sm font-semibold truncate transition-colors" style={{ color: 'var(--text)' }}>
                                   {config.name}

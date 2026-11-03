@@ -1,0 +1,57 @@
+import type { TranslationSchema } from '../types';
+
+export const ru: TranslationSchema = {
+  languageSelector: { search: 'Поиск языка...', noResults: 'Языки не найдены' },
+  common: {
+    paste: 'Вставить',
+    loading: 'Загрузка...', error: 'Ошибка', back: 'Назад', close: 'Закрыть', cancel: 'Отмена', confirm: 'Подтвердить', save: 'Сохранить',
+    active: 'АКТИВНА', inUse: 'ИСПОЛЬЗУЕТСЯ', all: 'Все', other: 'Другие', categories: 'категории', configs: 'конфигурации',
+    online: 'В сети', offline: 'Не в сети',
+  },
+  header: {
+    connected: 'Подключено', connecting: 'Подключение...', stopping: 'Отключение...', noNetwork: 'Нет сети',
+    auth: 'Аутентификация...', authFailed: 'Ошибка аутентификации', disconnected: 'Отключено', openMenu: 'Открыть меню',
+    themeAuto: 'Авто', themeDark: 'Тёмная', themeLight: 'Светлая', themeAutoToast: 'Тема: Автоматическая (SDK)',
+    themeDarkToast: 'Тема: Тёмная', themeLightToast: 'Тема: Светлая',
+  },
+  serverSelector: {
+    autoConnectTitle: 'АВТОПОДКЛЮЧЕНИЕ', allCategoriesSub: 'Все категории', chooseConfig: 'ВЫБЕРИТЕ КОНФИГУРАЦИЮ',
+    noCategory: 'Нет категории', updateConfigs: 'Обновить конфигурации', checkUser: 'Проверить учётную запись', airplaneMode: 'Режим полёта',
+    filterByCountry: 'Фильтр по стране', filtered: '(отфильтровано)', searchPlaceholder: 'Поиск конфигурации или категории...',
+    searchInCountryPlaceholder: 'Поиск в {country}...', categoriesTitle: 'Категории', configsTitle: 'Конфигурации',
+    availableConfigsCount: 'Доступно конфигураций: {count}', currentConfig: 'Текущая конфигурация:',
+    selectConfigPrompt: 'Выберите конфигурацию для подключения', noResultsTitle: 'Нет результатов',
+    noResultsDesc: 'По запросу «{query}» категории и конфигурации не найдены.', noCategoryForCountryTitle: 'Нет категорий для этой страны',
+    noCategoryForCountryDesc: 'Категории с выбранным флагом не найдены.', seeAllCountries: 'Все страны ({count})',
+    noConfigsFoundTitle: 'Конфигурации не найдены',
+    noConfigsFoundDesc: 'Для загрузки новых конфигураций требуется стабильное подключение к Интернету.',
+    checkConnectionPrompt: 'Проверьте подключение и повторите попытку',
+  },
+  connectionForm: {
+    connected: 'ОТКЛЮЧИТЬ', connecting: 'ПОДКЛЮЧЕНИЕ...', disconnected: 'ПОДКЛЮЧИТЬ', stopping: 'ОТКЛЮЧЕНИЕ...', cancel: 'ОТМЕНА',
+    credentialsAlreadySet: 'Данные для входа в этой конфигурации уже заданы.', usernamePlaceholder: 'Имя пользователя',
+    passwordPlaceholder: 'Пароль', uuidPlaceholder: 'UUID', showPassword: 'Показать пароль', hidePassword: 'Скрыть пароль',
+    showUuid: 'Показать UUID', hideUuid: 'Скрыть UUID', uuidHelpTitle: 'Что такое UUID?',
+    uuidHelpDesc1: 'Это уникальный ключ входа для вашего V2Ray.', uuidHelpDesc2: 'Бот отправляет его после покупки.',
+    uuidHelpExample: 'Пример:', uuidHelpWarning: 'Копируйте без лишних пробелов.', authFailedError: 'Ошибка аутентификации',
+    noNetworkError: 'Нет подключения к Интернету', recordsButton: 'Журналы', autoConnectButton: 'Автоподключение',
+  },
+  networkStats: { title: 'Статистика', download: 'Загрузка', upload: 'Отправка', total: 'Всего: {total}' },
+  sidebar: {
+    quickActions: 'Быстрые действия', notifications: 'Уведомления', myCredentials: 'Мои данные для входа', generateTest: 'Создать пробный доступ (Email)',
+    recoverLogin: 'Восстановить учётную запись', main: 'Главное', tutorials: 'Инструкции', servers: 'Серверы', checkUser: 'Проверить учётную запись',
+    tools: 'Инструменты', autoTest: 'Автоматический тест', speedTest: 'Тест скорости', hotspot: 'Точка доступа', ipFinder: 'Поиск IP',
+    support: 'Поддержка', settings: 'Настройки', customDns: 'Свой DNS', errorReport: 'Отчёт об ошибке', battery: 'Батарея',
+    apnSettings: 'Настройки APN', networkSettings: 'Настройки сети', checkUpdates: 'Проверить обновления', activeBadge: 'Активно',
+    language: 'Язык', selectLanguage: 'Выбрать язык',
+    terms: 'Условия', privacy: 'Конфиденциальность', clearData: 'Очистить данные',
+  },
+  countryFilter: { filterByCountry: 'Фильтр по стране', filtered: '(отфильтровано)', all: 'Все', other: 'Другие', categoriesLabel: 'категории', configsLabel: 'конфигурации' },
+  autoConnect: {
+    modalTitle: 'Фильтры и доступ', confirmTitle: 'Подтвердить тест', regionFilter: 'Регион / Страна', allRegions: 'Все регионы',
+    categoriesFilter: 'Категории', allCategories: 'Все категории', allCategoriesInRegion: 'Все категории ({region})',
+    configTypeLabel: 'Тип конфигурации', typeAll: 'Все (SSH + V2Ray)', typeSsh: 'SSH / Proxy', typeV2ray: 'V2Ray',
+    configsToTest: 'Будет проверено конфигураций: {count}', credentialsTitle: 'Данные для входа',
+    noConfigsFound: 'В этом регионе конфигурации не найдены', regionLabel: 'Регион:',
+  },
+};

@@ -3,6 +3,7 @@ import type { TranslationSchema } from '../types';
 export const ptBR: TranslationSchema = {
   languageSelector: { search: 'Pesquisar idiomas...', noResults: 'Nenhum idioma encontrado' },
   common: {
+    paste: 'Colar',
     loading: 'Carregando...',
     error: 'Erro',
     back: 'Voltar',
@@ -117,9 +118,6 @@ export const ptBR: TranslationSchema = {
     activeBadge: 'Ativo',
     language: 'Idioma',
     selectLanguage: 'Selecionar Idioma',
-    portugueseBrazil: 'Português (Brasil)',
-    portugueseAngola: 'Português (Angola)',
-    spanishArgentina: 'Español (Argentina)',
     terms: 'Termos',
     privacy: 'Privacidade',
     clearData: 'Limpar Dados',

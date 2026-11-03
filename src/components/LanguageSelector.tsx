@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Globe, Search } from '../utils/icons';
 import { useTranslation, type LocaleType } from '../i18n';
@@ -16,7 +16,16 @@ export function LanguageSelector() {
   const dialogRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const current = LANGUAGES[locale];
-  const filtered = options.filter(([code, language]) => normalize(`${language.name} ${code}`).includes(normalize(query.trim())));
+  const displayOptions = useMemo(() => {
+    let displayNames: Intl.DisplayNames | undefined;
+    try {
+      if (typeof Intl.DisplayNames === 'function') displayNames = new Intl.DisplayNames([locale], { type: 'language' });
+    } catch { /* Native names remain available in older WebViews. */ }
+    return options.map(([code, language]) => ({
+      code, ...language, localizedName: displayNames?.of(code) || language.englishName,
+    }));
+  }, [locale]);
+  const filtered = displayOptions.filter(language => normalize(`${language.name} ${language.localizedName} ${language.englishName} ${language.code}`).includes(normalize(query.trim())));
 
   useEffect(() => {
     if (!open) return;
@@ -71,6 +80,7 @@ export function LanguageSelector() {
                 <input
                   ref={searchRef}
                   type="search"
+                  dir="auto"
                   value={query}
                   onChange={event => setQuery(event.target.value)}
                   aria-label={t('languageSelector.search')}
@@ -80,22 +90,26 @@ export function LanguageSelector() {
                 />
               </label>
               <div role="group" aria-label={t('sidebar.language')} className="max-h-[50vh] overflow-y-auto space-y-2">
-                {filtered.map(([code, language]) => (
+                {filtered.map(({ code, ...language }) => (
                   <button
                     key={code}
                     type="button"
                     lang={code}
+                    dir={language.direction}
                     aria-pressed={locale === code}
                     onClick={() => { setLocale(code); setOpen(false); }}
-                    className="w-full flex items-center justify-between gap-3 text-left min-h-[52px] px-4 rounded-xl border touch-manipulation focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
+                    className="w-full flex items-center justify-between gap-3 text-start min-h-[52px] px-4 rounded-xl border touch-manipulation focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
                     style={{
                       background: locale === code ? 'var(--accent-dim)' : 'var(--bg-elevated)',
                       borderColor: locale === code ? 'var(--accent)' : 'var(--border)',
                       color: 'var(--text)',
                     }}
                   >
-                    <span className="text-sm font-medium">{language.name}</span>
-                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{language.shortName}</span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-medium">{language.name}</span>
+                      {language.localizedName !== language.name && <span lang={locale} dir={current.direction} className="block text-xs" style={{ color: 'var(--text-muted)' }}>{language.localizedName}</span>}
+                    </span>
+                    <bdi className="text-xs flex-shrink-0" style={{ color: 'var(--text-muted)' }}>{language.shortName}</bdi>
                   </button>
                 ))}
                 {filtered.length === 0 && <p role="status" className="py-6 text-center text-sm" style={{ color: 'var(--text-muted)' }}>{t('languageSelector.noResults')}</p>}

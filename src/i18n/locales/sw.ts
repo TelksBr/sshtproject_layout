@@ -1,0 +1,57 @@
+import type { TranslationSchema } from '../types';
+
+export const sw: TranslationSchema = {
+  languageSelector: { search: 'Tafuta lugha...', noResults: 'Hakuna lugha iliyopatikana' },
+  common: {
+    paste: 'Bandika',
+    loading: 'Inapakia...', error: 'Hitilafu', back: 'Rudi', close: 'Funga', cancel: 'Ghairi', confirm: 'Thibitisha', save: 'Hifadhi',
+    active: 'INATUMIKA', inUse: 'INATUMIKA', all: 'Zote', other: 'Nyingine', categories: 'kategoria', configs: 'mipangilio',
+    online: 'Mtandaoni', offline: 'Nje ya mtandao',
+  },
+  header: {
+    connected: 'Imeunganishwa', connecting: 'Inaunganisha...', stopping: 'Inasitisha muunganisho...', noNetwork: 'Hakuna mtandao',
+    auth: 'Inathibitisha utambulisho...', authFailed: 'Uthibitishaji umeshindwa', disconnected: 'Haijaunganishwa', openMenu: 'Fungua menyu',
+    themeAuto: 'Otomatiki', themeDark: 'Giza', themeLight: 'Angavu', themeAutoToast: 'Mandhari: Otomatiki (SDK)',
+    themeDarkToast: 'Mandhari: Giza', themeLightToast: 'Mandhari: Angavu',
+  },
+  serverSelector: {
+    autoConnectTitle: 'UNGANISHA KIOTOMATIKI', allCategoriesSub: 'Kategoria zote', chooseConfig: 'CHAGUA MPANGILIO',
+    noCategory: 'Hakuna kategoria', updateConfigs: 'Sasisha mipangilio', checkUser: 'Kagua akaunti', airplaneMode: 'Hali ya ndege',
+    filterByCountry: 'Chuja kwa nchi', filtered: '(imechujwa)', searchPlaceholder: 'Tafuta mpangilio au kategoria...',
+    searchInCountryPlaceholder: 'Tafuta katika {country}...', categoriesTitle: 'Kategoria', configsTitle: 'Mipangilio',
+    availableConfigsCount: 'Mipangilio {count} inapatikana', currentConfig: 'Mpangilio wa sasa:',
+    selectConfigPrompt: 'Chagua mpangilio ili kuunganisha', noResultsTitle: 'Hakuna matokeo',
+    noResultsDesc: 'Hakuna kategoria au mpangilio uliopatikana kwa “{query}”.', noCategoryForCountryTitle: 'Hakuna kategoria kwa nchi hii',
+    noCategoryForCountryDesc: 'Hakuna kategoria yenye bendera iliyochaguliwa.', seeAllCountries: 'Angalia nchi zote ({count})',
+    noConfigsFoundTitle: 'Hakuna mipangilio iliyopatikana',
+    noConfigsFoundDesc: 'Muunganisho thabiti wa intaneti unahitajika ili kupakua mipangilio mipya.',
+    checkConnectionPrompt: 'Kagua muunganisho wako kisha ujaribu tena',
+  },
+  connectionForm: {
+    connected: 'KATA MUUNGANISHO', connecting: 'INAUNGANISHA...', disconnected: 'UNGANISHA', stopping: 'INASITISHA...', cancel: 'GHAIRI',
+    credentialsAlreadySet: 'Taarifa za kuingia za mpangilio huu tayari zimewekwa.', usernamePlaceholder: 'Jina la mtumiaji',
+    passwordPlaceholder: 'Nenosiri', uuidPlaceholder: 'UUID', showPassword: 'Onyesha nenosiri', hidePassword: 'Ficha nenosiri',
+    showUuid: 'Onyesha UUID', hideUuid: 'Ficha UUID', uuidHelpTitle: 'UUID ni nini?',
+    uuidHelpDesc1: 'Ni ufunguo wa kipekee wa kuingia kwenye V2Ray yako.', uuidHelpDesc2: 'Unatumwa na bot baada ya ununuzi.',
+    uuidHelpExample: 'Mfano:', uuidHelpWarning: 'Nakili bila nafasi za ziada.', authFailedError: 'Uthibitishaji umeshindwa',
+    noNetworkError: 'Hakuna muunganisho wa intaneti', recordsButton: 'Kumbukumbu', autoConnectButton: 'Unganisha kiotomatiki',
+  },
+  networkStats: { title: 'Takwimu', download: 'Kupakua', upload: 'Kupakia', total: 'Jumla: {total}' },
+  sidebar: {
+    quickActions: 'Vitendo vya haraka', notifications: 'Arifa', myCredentials: 'Taarifa zangu za kuingia', generateTest: 'Tengeneza jaribio (Barua pepe)',
+    recoverLogin: 'Rejesha akaunti', main: 'Kuu', tutorials: 'Mafunzo', servers: 'Seva', checkUser: 'Kagua akaunti',
+    tools: 'Zana', autoTest: 'Jaribio la kiotomatiki', speedTest: 'Jaribio la kasi', hotspot: 'Hotspot', ipFinder: 'Kitafutaji cha IP',
+    support: 'Msaada', settings: 'Mipangilio', customDns: 'DNS maalumu', errorReport: 'Ripoti ya hitilafu', battery: 'Betri',
+    apnSettings: 'Mipangilio ya APN', networkSettings: 'Mipangilio ya mtandao', checkUpdates: 'Tafuta masasisho', activeBadge: 'Inatumika',
+    language: 'Lugha', selectLanguage: 'Chagua lugha',
+    terms: 'Masharti', privacy: 'Faragha', clearData: 'Futa data',
+  },
+  countryFilter: { filterByCountry: 'Chuja kwa nchi', filtered: '(imechujwa)', all: 'Zote', other: 'Nyingine', categoriesLabel: 'kategoria', configsLabel: 'mipangilio' },
+  autoConnect: {
+    modalTitle: 'Vichujio na ufikiaji', confirmTitle: 'Thibitisha jaribio', regionFilter: 'Eneo / Nchi', allRegions: 'Maeneo yote',
+    categoriesFilter: 'Kategoria', allCategories: 'Kategoria zote', allCategoriesInRegion: 'Kategoria zote ({region})',
+    configTypeLabel: 'Aina ya mpangilio', typeAll: 'Zote (SSH + V2Ray)', typeSsh: 'SSH / Proxy', typeV2ray: 'V2Ray',
+    configsToTest: 'Mipangilio {count} itajaribiwa', credentialsTitle: 'Taarifa za kuingia',
+    noConfigsFound: 'Hakuna mipangilio iliyopatikana katika eneo hili', regionLabel: 'Eneo:',
+  },
+};

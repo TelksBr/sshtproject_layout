@@ -1,0 +1,57 @@
+import type { TranslationSchema } from '../types';
+
+export const it: TranslationSchema = {
+  languageSelector: { search: 'Cerca lingue...', noResults: 'Nessuna lingua trovata' },
+  common: {
+    paste: 'Incolla',
+    loading: 'Caricamento...', error: 'Errore', back: 'Indietro', close: 'Chiudi', cancel: 'Annulla', confirm: 'Conferma',
+    save: 'Salva', active: 'ATTIVA', inUse: 'IN USO', all: 'Tutti', other: 'Altri', categories: 'categorie',
+    configs: 'configurazioni', online: 'Online', offline: 'Offline',
+  },
+  header: {
+    connected: 'Connesso', connecting: 'Connessione...', stopping: 'Interruzione della connessione...', noNetwork: 'Nessuna rete',
+    auth: 'Autenticazione...', authFailed: 'Autenticazione non riuscita', disconnected: 'Disconnesso', openMenu: 'Apri menu',
+    themeAuto: 'Auto', themeDark: 'Scuro', themeLight: 'Chiaro', themeAutoToast: 'Tema: Automatico (SDK)',
+    themeDarkToast: 'Tema: Scuro', themeLightToast: 'Tema: Chiaro',
+  },
+  serverSelector: {
+    autoConnectTitle: 'CONNESSIONE AUTO', allCategoriesSub: 'Tutte le categorie', chooseConfig: 'SCEGLI UNA CONFIGURAZIONE',
+    noCategory: 'Nessuna categoria', updateConfigs: 'Aggiorna configurazioni', checkUser: 'Verifica account', airplaneMode: 'Modalità aereo',
+    filterByCountry: 'Filtra per paese', filtered: '(filtrato)', searchPlaceholder: 'Cerca configurazione o categoria...',
+    searchInCountryPlaceholder: 'Cerca in {country}...', categoriesTitle: 'Categorie', configsTitle: 'Configurazioni',
+    availableConfigsCount: '{count} configurazioni disponibili', currentConfig: 'Configurazione attuale:',
+    selectConfigPrompt: 'Seleziona una configurazione per connetterti', noResultsTitle: 'Nessun risultato',
+    noResultsDesc: 'Nessuna categoria o configurazione trovata per “{query}”.', noCategoryForCountryTitle: 'Nessuna categoria per questo paese',
+    noCategoryForCountryDesc: 'Nessuna categoria con la bandiera selezionata.', seeAllCountries: 'Vedi tutti i paesi ({count})',
+    noConfigsFoundTitle: 'Nessuna configurazione trovata',
+    noConfigsFoundDesc: 'Per scaricare le ultime configurazioni è necessaria una connessione Internet stabile.',
+    checkConnectionPrompt: 'Verifica la connessione e riprova',
+  },
+  connectionForm: {
+    connected: 'DISCONNETTI', connecting: 'CONNESSIONE...', disconnected: 'CONNETTI', stopping: 'INTERRUZIONE...', cancel: 'ANNULLA',
+    credentialsAlreadySet: 'Le credenziali di questa configurazione sono già impostate.', usernamePlaceholder: 'Nome utente',
+    passwordPlaceholder: 'Password', uuidPlaceholder: 'UUID', showPassword: 'Mostra password', hidePassword: 'Nascondi password',
+    showUuid: 'Mostra UUID', hideUuid: 'Nascondi UUID', uuidHelpTitle: 'Che cos’è un UUID?',
+    uuidHelpDesc1: 'È la chiave di accesso univoca del tuo V2Ray.', uuidHelpDesc2: 'Viene inviata dal bot dopo l’acquisto.',
+    uuidHelpExample: 'Esempio:', uuidHelpWarning: 'Copia senza spazi aggiuntivi.', authFailedError: 'Autenticazione non riuscita',
+    noNetworkError: 'Nessuna connessione Internet', recordsButton: 'Registri', autoConnectButton: 'Connessione auto',
+  },
+  networkStats: { title: 'Statistiche', download: 'Download', upload: 'Upload', total: 'Totale: {total}' },
+  sidebar: {
+    quickActions: 'Azioni rapide', notifications: 'Notifiche', myCredentials: 'Le mie credenziali', generateTest: 'Genera prova (Email)',
+    recoverLogin: 'Recupera account', main: 'Principali', tutorials: 'Guide', servers: 'Server', checkUser: 'Verifica account',
+    tools: 'Strumenti', autoTest: 'Test automatico', speedTest: 'Test di velocità', hotspot: 'Hotspot', ipFinder: 'Ricerca IP',
+    support: 'Assistenza', settings: 'Impostazioni', customDns: 'DNS personalizzato', errorReport: 'Rapporto errori', battery: 'Batteria',
+    apnSettings: 'Impostazioni APN', networkSettings: 'Impostazioni di rete', checkUpdates: 'Cerca aggiornamenti', activeBadge: 'Attivo',
+    language: 'Lingua', selectLanguage: 'Seleziona lingua',
+    terms: 'Termini', privacy: 'Privacy', clearData: 'Cancella dati',
+  },
+  countryFilter: { filterByCountry: 'Filtra per paese', filtered: '(filtrato)', all: 'Tutti', other: 'Altri', categoriesLabel: 'categorie', configsLabel: 'configurazioni' },
+  autoConnect: {
+    modalTitle: 'Filtri e accesso', confirmTitle: 'Conferma test', regionFilter: 'Regione / Paese', allRegions: 'Tutte le regioni',
+    categoriesFilter: 'Categorie', allCategories: 'Tutte le categorie', allCategoriesInRegion: 'Tutte le categorie ({region})',
+    configTypeLabel: 'Tipo di configurazione', typeAll: 'Tutti (SSH + V2Ray)', typeSsh: 'SSH / Proxy', typeV2ray: 'V2Ray',
+    configsToTest: '{count} configurazioni da testare', credentialsTitle: 'Credenziali di accesso',
+    noConfigsFound: 'Nessuna configurazione trovata in questa regione', regionLabel: 'Regione:',
+  },
+};

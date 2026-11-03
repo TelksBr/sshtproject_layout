@@ -1,28 +1,20 @@
 import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
-import type { LocaleType, TranslationSchema } from './types';
-import { ptBR } from './locales/pt-BR';
-import { LANGUAGES, isSupportedLocale } from './registry';
+import type { LocaleType, TranslationKey, TranslationSchema } from './types';
+import { en } from './locales/en';
+import { LANGUAGES } from './registry';
+import { getLanguageForCountry, resolveLocaleTag } from './localeMatching';
 import { getWebViewLocaleCountry, getSavedCountryPreference } from '../utils/countryUtils';
 
-export const LOCALE_STORAGE_KEY = 'app_i18n_locale';
+export { getLanguageForCountry } from './localeMatching';
 
-/**
- * Mapeia código de país ISO Alpha-2 para o locale de tradução correspondente.
- */
-export function getLanguageForCountry(countryCode: string | null | undefined): LocaleType {
-  const code = countryCode?.toUpperCase();
-  if (code === 'AO') return 'pt-AO';
-  if (['BR', 'PT', 'MZ', 'CV', 'GW', 'ST', 'TL'].includes(code || '')) return 'pt-BR';
-  if (['AR', 'ES', 'CL', 'UY', 'PY', 'CO', 'MX', 'PE', 'BO', 'EC', 'VE', 'CR', 'CU', 'DO', 'GT', 'HN', 'NI', 'PA', 'SV', 'GQ'].includes(code || '')) return 'es';
-  return code ? 'en' : 'pt-BR';
-}
+export const LOCALE_STORAGE_KEY = 'app_i18n_locale';
 
 export function detectInitialLocale(): { locale: LocaleType; country: string } {
   const deviceCountry = getWebViewLocaleCountry();
   const country = getSavedCountryPreference() || deviceCountry || 'all';
   try {
-    const saved = localStorage.getItem(LOCALE_STORAGE_KEY);
-    if (isSupportedLocale(saved)) return { locale: saved, country };
+    const saved = resolveLocaleTag(localStorage.getItem(LOCALE_STORAGE_KEY));
+    if (saved) return { locale: saved, country };
   } catch {
     // Device detection remains available when storage is blocked.
   }
@@ -30,13 +22,8 @@ export function detectInitialLocale(): { locale: LocaleType; country: string } {
     ? [navigator.language, ...(navigator.languages || [])]
     : [];
   for (const language of deviceLanguages) {
-    const normalized = language?.replace(/_/g, '-');
-    if (!normalized) continue;
-    const exact = Object.keys(LANGUAGES).find(code => code.toLowerCase() === normalized.toLowerCase());
-    if (isSupportedLocale(exact)) return { locale: exact, country };
-    const base = normalized.split('-')[0].toLowerCase();
-    if (base === 'pt') return { locale: normalized.toUpperCase().endsWith('-AO') ? 'pt-AO' : 'pt-BR', country };
-    if (isSupportedLocale(base)) return { locale: base, country };
+    const matched = resolveLocaleTag(language);
+    if (matched) return { locale: matched, country };
   }
   return { locale: getLanguageForCountry(deviceCountry), country };
 }
@@ -44,9 +31,10 @@ export function detectInitialLocale(): { locale: LocaleType; country: string } {
 interface I18nContextValue {
   locale: LocaleType;
   country: string;
+  direction: 'ltr' | 'rtl';
   setLocale: (locale: LocaleType) => void;
   setCountry: (countryCode: string) => void;
-  t: (path: string, params?: Record<string, string | number>) => string;
+  t: (path: TranslationKey, params?: Record<string, string | number>) => string;
   schema: TranslationSchema;
 }
 
@@ -58,10 +46,11 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [countryState, setCountryState] = useState(initial.country);
 
   const setLocale = useCallback((newLocale: LocaleType) => {
-    if (!isSupportedLocale(newLocale)) return;
-    setLocaleState(newLocale);
+    const matched = resolveLocaleTag(newLocale);
+    if (!matched) return;
+    setLocaleState(matched);
     try {
-      localStorage.setItem(LOCALE_STORAGE_KEY, newLocale);
+      localStorage.setItem(LOCALE_STORAGE_KEY, matched);
     } catch {
       // ignore
     }
@@ -74,12 +63,18 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     document.documentElement.lang = localeState;
+    document.documentElement.dir = LANGUAGES[localeState].direction;
+    try {
+      localStorage.setItem(LOCALE_STORAGE_KEY, localeState);
+    } catch {
+      // The selected language still works when storage is blocked.
+    }
   }, [localeState]);
 
   // Função de tradução com suporte a dot notation e interpolação {param}
-  const t = useCallback((path: string, params?: Record<string, string | number>): string => {
+  const t = useCallback((path: TranslationKey, params?: Record<string, string | number>): string => {
     const currentDict = LANGUAGES[localeState].translations;
-    const fallbackDict = ptBR;
+    const fallbackDict = en;
 
     const parts = path.split('.');
     let val: any = currentDict;
@@ -94,7 +89,7 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (params) {
       for (const [key, value] of Object.entries(params)) {
-        text = text.replace(new RegExp(`\\{${key}\\}`, 'g'), String(value));
+        text = text.split(`{${key}}`).join(String(value));
       }
     }
 
@@ -104,6 +99,7 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const value = useMemo<I18nContextValue>(() => ({
     locale: localeState,
     country: countryState,
+    direction: LANGUAGES[localeState].direction,
     setLocale,
     setCountry,
     t,

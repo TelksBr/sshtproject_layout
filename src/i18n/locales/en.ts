@@ -3,6 +3,7 @@ import type { TranslationSchema } from '../types';
 export const en: TranslationSchema = {
   languageSelector: { search: 'Search languages...', noResults: 'No languages found' },
   common: {
+    paste: 'Paste',
     loading: 'Loading...', error: 'Error', back: 'Back', close: 'Close', cancel: 'Cancel',
     confirm: 'Confirm', save: 'Save', active: 'ACTIVE', inUse: 'IN USE', all: 'All',
     other: 'Other', categories: 'categories', configs: 'configs', online: 'Online', offline: 'Offline',
@@ -49,8 +50,7 @@ export const en: TranslationSchema = {
     settings: 'Settings', customDns: 'Custom DNS', errorReport: 'Error report', battery: 'Battery',
     apnSettings: 'APN settings', networkSettings: 'Network settings', checkUpdates: 'Check for updates',
     activeBadge: 'Active', language: 'Language', selectLanguage: 'Select language',
-    portugueseBrazil: 'Portuguese (Brazil)', portugueseAngola: 'Portuguese (Angola)',
-    spanishArgentina: 'Spanish (Argentina)', terms: 'Terms', privacy: 'Privacy', clearData: 'Clear data',
+    terms: 'Terms', privacy: 'Privacy', clearData: 'Clear data',
   },
   countryFilter: {
     filterByCountry: 'Filter by country', filtered: '(filtered)', all: 'All', other: 'Other',

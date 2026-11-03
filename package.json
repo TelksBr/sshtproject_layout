@@ -12,7 +12,8 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview --host --port 80",
     "test:logs": "tsx --test tests/vpn-log-time.test.ts tests/vpn-log-html.test.ts",
-    "test:i18n": "tsx --test tests/countries-i18n.test.tsx"
+    "test:i18n": "tsx --test tests/countries-i18n.test.tsx",
+    "check:i18n-size": "node scripts/check-i18n-size.mjs"
   },
   "dependencies": {
     "dompurify": "^3.4.17",

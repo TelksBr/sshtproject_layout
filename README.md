@@ -7,9 +7,29 @@ Este documento apresenta a estrutura, padrões e principais convenções do proj
 
 Os filtros de servidores e do Auto Conect reconhecem automaticamente a bandeira no nome de cada categoria (por exemplo, `🇿🇦 Mobile`). Todos os 249 países e territórios ISO 3166-1 possuem nomes locais para uso offline e em WebViews sem `Intl.DisplayNames`. O filtro mostra os países que possuem configurações disponíveis, sem exigir cadastro manual no layout.
 
-O idioma da interface é escolhido pelo botão de globo no cabeçalho, com busca na lista de idiomas, e salvo no dispositivo. Alterar o país dos servidores não altera o idioma. Estão disponíveis português do Brasil, português de Angola, espanhol e inglês; os nomes dos países acompanham o idioma escolhido.
+O idioma da interface é escolhido pelo botão de globo no cabeçalho, com busca por nome nativo, nome traduzido ou código, e salvo no dispositivo. Alterar o país dos servidores não altera o idioma.
 
-Para incluir uma tradução, crie o dicionário em `src/i18n/locales/` seguindo `TranslationSchema` e registre-o em `src/i18n/registry.ts`. O tipo de idioma e as opções do seletor são derivados desse registro. Execute `npm run test:i18n` para validar os países, traduções, detecção e seletor.
+São 12 línguas em 14 opções: português brasileiro e português compartilhado por Portugal/África, espanhol, inglês, francês, alemão, italiano, árabe, russo, hindi, indonésio, suaíli e chinês simplificado/tradicional. Um mesmo dicionário atende aos países que compartilham uma língua; isso não representa tradução de todas as línguas existentes nesses países.
+
+### Detecção, variantes e compatibilidade
+
+A ordem de escolha é: preferência manual salva, primeiro idioma compatível da lista do aparelho, idioma regional de fallback e inglês. Sem qualquer indicação de país/idioma, mantém-se português brasileiro. O país funciona como sugestão inicial: não define a língua de todos os habitantes, especialmente em países multilíngues. Uma língua sem região, como `fr`, não inventa um país para o filtro de servidores.
+
+O resolvedor trata tags BCP 47, scripts, extensões e variantes regionais sem uma biblioteca ou polyfill. Por exemplo, `fr-CA` e `fr-SN` usam `fr`; `es-AR` e `es-MX` usam `es`; `pt-AO`, `pt-MZ` e `pt-PT` usam `pt-PT`, preservando o país original. Preferências antigas `pt-AO` são normalizadas automaticamente. Chinês distingue explicitamente `Hans`/`Hant`, incluindo Taiwan e Hong Kong.
+
+O português de Portugal/África herda o brasileiro e armazena somente diferenças. Novas variantes devem usar `extendLocale`, sem copiar um dicionário inteiro. O idioma escolhido atualiza `lang` e `dir` no documento; árabe usa RTL, e IPs, senhas e UUIDs mantêm LTR.
+
+### Peso e extensão
+
+O Vite usa `inlineDynamicImports` porque o app utiliza HTML inline no WebView. Todos os textos seguem no único bundle e funcionam offline; importar dicionários dinamicamente não reduziria esse HTML. Não foram adicionadas dependências de i18n, fontes, serviços de tradução ou solicitações de rede. Os nomes dos países usam o `Intl.DisplayNames` do dispositivo, com cache; em aparelhos antigos, os catálogos locais continuam disponíveis em português, espanhol e inglês, usando inglês para as demais línguas. Evita-se multiplicar 249 nomes de países por cada nova língua.
+
+Para incluir uma tradução, crie o dicionário em `src/i18n/locales/` seguindo `TranslationSchema` e registre-o em `src/i18n/registry.ts`. O tipo de idioma e as opções do seletor são derivados desse registro; as chaves de `t()` também são verificadas pelo TypeScript. Atualize o resolvedor apenas se a nova língua precisar de uma regra regional ou de script.
+
+Validação: `npm run test:i18n` verifica todos os países, chaves, mensagens não vazias, placeholders, herança, detecção, busca, persistência e RTL. Após `npm run build`, execute `npm run check:i18n-size`: o limite de crescimento é 80 KiB de JavaScript e 32 KiB em gzip sobre o build anterior à refatoração, medido na mesma árvore de trabalho.
+
+### Cobertura de tradução
+
+Os dicionários estão completos para as chaves de `TranslationSchema`: seletor de idiomas, cabeçalho, filtros de países/configurações, formulário de conexão, estatísticas, menu e mensagens já internacionalizadas do Auto Conect. Os controles comuns de fechar/voltar nos modais também usam o idioma selecionado. Ainda existem textos fixos em português em telas antigas, inclusive conteúdo de alguns modais, avisos e textos de termos/privacidade. Esses textos precisam de migração e revisão para declarar 100% de cobertura do aplicativo. Conteúdo recebido do SDK, nomes de servidores e categorias não é traduzido automaticamente.
 
 ---
 

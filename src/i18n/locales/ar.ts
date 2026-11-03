@@ -1,0 +1,55 @@
+import type { TranslationSchema } from '../types';
+
+export const ar: TranslationSchema = {
+  languageSelector: { search: 'البحث عن لغة...', noResults: 'لم يتم العثور على لغات' },
+  common: {
+    paste: 'لصق',
+    loading: 'جارٍ التحميل...', error: 'خطأ', back: 'رجوع', close: 'إغلاق', cancel: 'إلغاء', confirm: 'تأكيد', save: 'حفظ',
+    active: 'نشط', inUse: 'قيد الاستخدام', all: 'الكل', other: 'أخرى', categories: 'فئات', configs: 'إعدادات',
+    online: 'متصل', offline: 'غير متصل',
+  },
+  header: {
+    connected: 'متصل', connecting: 'جارٍ الاتصال...', stopping: 'جارٍ إيقاف الاتصال...', noNetwork: 'لا توجد شبكة',
+    auth: 'جارٍ التحقق من الهوية...', authFailed: 'فشل التحقق من الهوية', disconnected: 'غير متصل', openMenu: 'فتح القائمة',
+    themeAuto: 'تلقائي', themeDark: 'داكن', themeLight: 'فاتح', themeAutoToast: 'المظهر: تلقائي (SDK)',
+    themeDarkToast: 'المظهر: داكن', themeLightToast: 'المظهر: فاتح',
+  },
+  serverSelector: {
+    autoConnectTitle: 'اتصال تلقائي', allCategoriesSub: 'جميع الفئات', chooseConfig: 'اختر إعداد اتصال',
+    noCategory: 'لا توجد فئة', updateConfigs: 'تحديث الإعدادات', checkUser: 'التحقق من الحساب', airplaneMode: 'وضع الطيران',
+    filterByCountry: 'تصفية حسب البلد', filtered: '(تمت التصفية)', searchPlaceholder: 'البحث عن إعداد أو فئة...',
+    searchInCountryPlaceholder: 'البحث في {country}...', categoriesTitle: 'الفئات', configsTitle: 'الإعدادات',
+    availableConfigsCount: 'عدد الإعدادات المتاحة: {count}', currentConfig: 'الإعداد الحالي:',
+    selectConfigPrompt: 'اختر إعدادًا للاتصال', noResultsTitle: 'لا توجد نتائج',
+    noResultsDesc: 'لم يتم العثور على فئات أو إعدادات لـ «{query}».', noCategoryForCountryTitle: 'لا توجد فئات لهذا البلد',
+    noCategoryForCountryDesc: 'لم يتم العثور على فئات تحمل العلم المحدد.', seeAllCountries: 'عرض جميع البلدان ({count})',
+    noConfigsFoundTitle: 'لم يتم العثور على إعدادات',
+    noConfigsFoundDesc: 'يلزم اتصال مستقر بالإنترنت لتنزيل أحدث الإعدادات.', checkConnectionPrompt: 'تحقق من اتصالك وحاول مجددًا',
+  },
+  connectionForm: {
+    connected: 'قطع الاتصال', connecting: 'جارٍ الاتصال...', disconnected: 'اتصال', stopping: 'جارٍ الإيقاف...', cancel: 'إلغاء',
+    credentialsAlreadySet: 'بيانات الدخول لهذا الإعداد محددة بالفعل.', usernamePlaceholder: 'اسم المستخدم', passwordPlaceholder: 'كلمة المرور',
+    uuidPlaceholder: 'UUID', showPassword: 'إظهار كلمة المرور', hidePassword: 'إخفاء كلمة المرور', showUuid: 'إظهار UUID', hideUuid: 'إخفاء UUID',
+    uuidHelpTitle: 'ما هو UUID؟', uuidHelpDesc1: 'هو مفتاح الدخول الفريد لخدمة V2Ray الخاصة بك.',
+    uuidHelpDesc2: 'يرسله البوت بعد الشراء.', uuidHelpExample: 'مثال:', uuidHelpWarning: 'انسخه دون مسافات إضافية.',
+    authFailedError: 'فشل التحقق من الهوية', noNetworkError: 'لا يوجد اتصال بالإنترنت', recordsButton: 'السجلات', autoConnectButton: 'اتصال تلقائي',
+  },
+  networkStats: { title: 'الإحصائيات', download: 'تنزيل', upload: 'رفع', total: 'الإجمالي: {total}' },
+  sidebar: {
+    quickActions: 'إجراءات سريعة', notifications: 'الإشعارات', myCredentials: 'بيانات الدخول الخاصة بي', generateTest: 'إنشاء تجربة (البريد الإلكتروني)',
+    recoverLogin: 'استعادة الحساب', main: 'الرئيسية', tutorials: 'الشروحات', servers: 'الخوادم', checkUser: 'التحقق من الحساب',
+    tools: 'الأدوات', autoTest: 'اختبار تلقائي', speedTest: 'اختبار السرعة', hotspot: 'نقطة اتصال', ipFinder: 'البحث عن عنوان IP',
+    support: 'الدعم', settings: 'الإعدادات', customDns: 'DNS مخصص', errorReport: 'تقرير الأخطاء', battery: 'البطارية',
+    apnSettings: 'إعدادات APN', networkSettings: 'إعدادات الشبكة', checkUpdates: 'البحث عن تحديثات', activeBadge: 'نشط',
+    language: 'اللغة', selectLanguage: 'اختيار اللغة',
+    terms: 'الشروط', privacy: 'الخصوصية', clearData: 'مسح البيانات',
+  },
+  countryFilter: { filterByCountry: 'تصفية حسب البلد', filtered: '(تمت التصفية)', all: 'الكل', other: 'أخرى', categoriesLabel: 'فئات', configsLabel: 'إعدادات' },
+  autoConnect: {
+    modalTitle: 'التصفية والدخول', confirmTitle: 'تأكيد الاختبار', regionFilter: 'المنطقة / البلد', allRegions: 'جميع المناطق',
+    categoriesFilter: 'الفئات', allCategories: 'جميع الفئات', allCategoriesInRegion: 'جميع الفئات ({region})',
+    configTypeLabel: 'نوع الإعداد', typeAll: 'الكل (SSH + V2Ray)', typeSsh: 'SSH / Proxy', typeV2ray: 'V2Ray',
+    configsToTest: 'عدد الإعدادات التي سيتم اختبارها: {count}', credentialsTitle: 'بيانات الدخول',
+    noConfigsFound: 'لم يتم العثور على إعدادات في هذه المنطقة', regionLabel: 'المنطقة:',
+  },
+};

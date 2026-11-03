@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { X, ChevronLeft, type LucideIcon } from '../../utils/icons';
+import { useTranslation } from '../../i18n';
 
 interface ModalProps {
   children: React.ReactNode;
@@ -15,6 +16,7 @@ interface ModalProps {
 }
 
 export function Modal({ children, onClose, allowClose = true, title, icon: Icon, onBack, headerActions, bodyRef, onBodyScroll, overlayClassName }: ModalProps) {
+  const { t } = useTranslation();
   const [isClosing, setIsClosing] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [isDesktop, setIsDesktop] = useState(
@@ -95,7 +97,7 @@ export function Modal({ children, onClose, allowClose = true, title, icon: Icon,
                   onClick={onBack}
                   className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl touch-manipulation flex-shrink-0"
                   style={{ background: 'var(--bg-elevated)' }}
-                  aria-label="Voltar"
+                  aria-label={t('common.back')}
                 >
                   <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: 'var(--text-muted)' }} />
                 </button>
@@ -107,14 +109,14 @@ export function Modal({ children, onClose, allowClose = true, title, icon: Icon,
               {title && <h2 className="text-base sm:text-lg xl:text-xl 2xl:text-2xl font-semibold truncate" style={{ color: 'var(--text)' }}>{title}</h2>}
             </div>
           )}
-          <div className="flex items-center gap-1 ml-auto flex-shrink-0">
+          <div className="flex items-center gap-1 ms-auto flex-shrink-0">
             {headerActions}
             {allowClose && (
               <button
                 onClick={handleClose}
                 className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl touch-manipulation"
                 style={{ background: 'var(--bg-elevated)' }}
-                aria-label="Fechar"
+                aria-label={t('common.close')}
               >
                 <X className="w-5 h-5 sm:w-6 sm:h-6 xl:w-7 xl:h-7" style={{ color: 'var(--text-muted)' }} />
               </button>

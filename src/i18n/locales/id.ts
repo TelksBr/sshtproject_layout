@@ -1,0 +1,57 @@
+import type { TranslationSchema } from '../types';
+
+export const id: TranslationSchema = {
+  languageSelector: { search: 'Cari bahasa...', noResults: 'Bahasa tidak ditemukan' },
+  common: {
+    paste: 'Tempel',
+    loading: 'Memuat...', error: 'Kesalahan', back: 'Kembali', close: 'Tutup', cancel: 'Batal', confirm: 'Konfirmasi', save: 'Simpan',
+    active: 'AKTIF', inUse: 'DIGUNAKAN', all: 'Semua', other: 'Lainnya', categories: 'kategori', configs: 'konfigurasi',
+    online: 'Online', offline: 'Offline',
+  },
+  header: {
+    connected: 'Terhubung', connecting: 'Menghubungkan...', stopping: 'Menghentikan koneksi...', noNetwork: 'Tidak ada jaringan',
+    auth: 'Mengautentikasi...', authFailed: 'Autentikasi gagal', disconnected: 'Terputus', openMenu: 'Buka menu',
+    themeAuto: 'Otomatis', themeDark: 'Gelap', themeLight: 'Terang', themeAutoToast: 'Tema: Otomatis (SDK)',
+    themeDarkToast: 'Tema: Gelap', themeLightToast: 'Tema: Terang',
+  },
+  serverSelector: {
+    autoConnectTitle: 'KONEKSI OTOMATIS', allCategoriesSub: 'Semua kategori', chooseConfig: 'PILIH KONFIGURASI',
+    noCategory: 'Tidak ada kategori', updateConfigs: 'Perbarui konfigurasi', checkUser: 'Periksa akun', airplaneMode: 'Mode pesawat',
+    filterByCountry: 'Filter menurut negara', filtered: '(difilter)', searchPlaceholder: 'Cari konfigurasi atau kategori...',
+    searchInCountryPlaceholder: 'Cari di {country}...', categoriesTitle: 'Kategori', configsTitle: 'Konfigurasi',
+    availableConfigsCount: '{count} konfigurasi tersedia', currentConfig: 'Konfigurasi saat ini:',
+    selectConfigPrompt: 'Pilih konfigurasi untuk terhubung', noResultsTitle: 'Tidak ada hasil',
+    noResultsDesc: 'Kategori atau konfigurasi untuk “{query}” tidak ditemukan.', noCategoryForCountryTitle: 'Tidak ada kategori untuk negara ini',
+    noCategoryForCountryDesc: 'Tidak ada kategori dengan bendera yang dipilih.', seeAllCountries: 'Lihat semua negara ({count})',
+    noConfigsFoundTitle: 'Konfigurasi tidak ditemukan',
+    noConfigsFoundDesc: 'Koneksi internet yang stabil diperlukan untuk mengunduh konfigurasi terbaru.',
+    checkConnectionPrompt: 'Periksa koneksi Anda dan coba lagi',
+  },
+  connectionForm: {
+    connected: 'PUTUSKAN', connecting: 'MENGHUBUNGKAN...', disconnected: 'HUBUNGKAN', stopping: 'MENGHENTIKAN...', cancel: 'BATAL',
+    credentialsAlreadySet: 'Kredensial konfigurasi ini sudah ditetapkan.', usernamePlaceholder: 'Nama pengguna',
+    passwordPlaceholder: 'Kata sandi', uuidPlaceholder: 'UUID', showPassword: 'Tampilkan kata sandi', hidePassword: 'Sembunyikan kata sandi',
+    showUuid: 'Tampilkan UUID', hideUuid: 'Sembunyikan UUID', uuidHelpTitle: 'Apa itu UUID?',
+    uuidHelpDesc1: 'Ini adalah kunci login unik untuk V2Ray Anda.', uuidHelpDesc2: 'Dikirim oleh bot setelah pembelian.',
+    uuidHelpExample: 'Contoh:', uuidHelpWarning: 'Salin tanpa spasi tambahan.', authFailedError: 'Autentikasi gagal',
+    noNetworkError: 'Tidak ada koneksi internet', recordsButton: 'Log', autoConnectButton: 'Koneksi otomatis',
+  },
+  networkStats: { title: 'Statistik', download: 'Unduh', upload: 'Unggah', total: 'Total: {total}' },
+  sidebar: {
+    quickActions: 'Tindakan cepat', notifications: 'Notifikasi', myCredentials: 'Kredensial saya', generateTest: 'Buat uji coba (Email)',
+    recoverLogin: 'Pulihkan akun', main: 'Utama', tutorials: 'Panduan', servers: 'Server', checkUser: 'Periksa akun',
+    tools: 'Alat', autoTest: 'Tes otomatis', speedTest: 'Tes kecepatan', hotspot: 'Hotspot', ipFinder: 'Pencari IP',
+    support: 'Bantuan', settings: 'Pengaturan', customDns: 'DNS khusus', errorReport: 'Laporan kesalahan', battery: 'Baterai',
+    apnSettings: 'Pengaturan APN', networkSettings: 'Pengaturan jaringan', checkUpdates: 'Periksa pembaruan', activeBadge: 'Aktif',
+    language: 'Bahasa', selectLanguage: 'Pilih bahasa',
+    terms: 'Ketentuan', privacy: 'Privasi', clearData: 'Hapus data',
+  },
+  countryFilter: { filterByCountry: 'Filter menurut negara', filtered: '(difilter)', all: 'Semua', other: 'Lainnya', categoriesLabel: 'kategori', configsLabel: 'konfigurasi' },
+  autoConnect: {
+    modalTitle: 'Filter dan akses', confirmTitle: 'Konfirmasi tes', regionFilter: 'Wilayah / Negara', allRegions: 'Semua wilayah',
+    categoriesFilter: 'Kategori', allCategories: 'Semua kategori', allCategoriesInRegion: 'Semua kategori ({region})',
+    configTypeLabel: 'Jenis konfigurasi', typeAll: 'Semua (SSH + V2Ray)', typeSsh: 'SSH / Proxy', typeV2ray: 'V2Ray',
+    configsToTest: '{count} konfigurasi akan diuji', credentialsTitle: 'Kredensial login',
+    noConfigsFound: 'Tidak ada konfigurasi di wilayah ini', regionLabel: 'Wilayah:',
+  },
+};

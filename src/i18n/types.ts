@@ -1,5 +1,9 @@
 export type LocaleType = keyof typeof import('./registry').LANGUAGES;
 
+export type TranslationKey = {
+  [Section in keyof TranslationSchema]: `${Section}.${keyof TranslationSchema[Section] & string}`;
+}[keyof TranslationSchema];
+
 export interface TranslationSchema {
   languageSelector: {
     search: string;
@@ -13,6 +17,7 @@ export interface TranslationSchema {
     cancel: string;
     confirm: string;
     save: string;
+    paste: string;
     active: string;
     inUse: string;
     all: string;
@@ -120,9 +125,6 @@ export interface TranslationSchema {
     activeBadge: string;
     language: string;
     selectLanguage: string;
-    portugueseBrazil: string;
-    portugueseAngola: string;
-    spanishArgentina: string;
     terms: string;
     privacy: string;
     clearData: string;

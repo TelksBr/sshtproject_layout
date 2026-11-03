@@ -1,5 +1,8 @@
 import type { ConfigCategory } from '../types/config';
 import { COUNTRY_NAMES } from './countryNames';
+import { parseLocaleTag } from '../i18n/localeTag';
+
+const displayNameCache = new Map<string, Intl.DisplayNames>();
 
 export const FLAG_EMOJI_REGEX = /[\u{1F1E6}-\u{1F1FF}]{2}/u;
 
@@ -50,7 +53,11 @@ export function getCountryDisplayName(countryCode: string, preferredLocale?: str
   const loc = preferredLocale || (typeof navigator !== 'undefined' ? navigator.language : 'pt-BR');
   try {
     if (typeof Intl !== 'undefined' && 'DisplayNames' in Intl) {
-      const displayNames = new Intl.DisplayNames([loc, 'pt-BR', 'en'], { type: 'region' });
+      let displayNames = displayNameCache.get(loc);
+      if (!displayNames) {
+        displayNames = new Intl.DisplayNames([loc, 'en'], { type: 'region' });
+        displayNameCache.set(loc, displayNames);
+      }
       const name = displayNames.of(code);
       if (name && name !== code) return name;
     }
@@ -82,27 +89,15 @@ export function extractCountryFromText(text: string | null | undefined, preferre
  */
 export function getWebViewLocaleCountry(): string | null {
   try {
-    const rawLocales: (string | undefined)[] = [
-      typeof navigator !== 'undefined' ? navigator.language : undefined,
-      ...(typeof navigator !== 'undefined' && Array.isArray(navigator.languages) ? navigator.languages : []),
-      typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().locale : undefined,
-    ];
-
+    const rawLocales = typeof navigator !== 'undefined'
+      ? [navigator.language, ...(navigator.languages || [])].filter(Boolean)
+      : [];
+    if (rawLocales.length === 0 && typeof Intl !== 'undefined') {
+      rawLocales.push(Intl.DateTimeFormat().resolvedOptions().locale);
+    }
     for (const raw of rawLocales) {
-      if (!raw || typeof raw !== 'string') continue;
-      const normalized = raw.replace(/_/g, '-').trim();
-      const parts = normalized.split('-');
-
-      // Aceita scripts e ignora extensões BCP 47, ex: "en-ZA-u-hc-h12".
-      for (const part of parts.slice(1)) {
-        if (part.length === 1) break;
-        const region = part.toUpperCase();
-        if (/^[A-Z]{2}$/.test(region)) return region;
-      }
-
-      // Caso 2: idioma sem região
-      const lang = parts[0].toLowerCase();
-      if (lang === 'pt') return 'BR';
+      const region = parseLocaleTag(raw)?.region;
+      if (region && /^[A-Z]{2}$/.test(region)) return region;
     }
   } catch {
     // Fallback

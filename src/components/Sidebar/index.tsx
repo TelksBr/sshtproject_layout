@@ -41,7 +41,7 @@ interface MenuCategory {
 }
 
 export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
-  const { t } = useTranslation();
+  const { t, direction } = useTranslation();
   const { insets } = useAppLayout();
   const [showServersModal, setShowServersModal] = useState(false);
   const [showNotificationsModal, setShowNotificationsModal] = useState(false);
@@ -189,7 +189,7 @@ export function Sidebar({ isOpen, onClose, onNavigate }: SidebarProps) {
         ${isOpen ? 'is-open' : ''}
         ${!isOpen && mobileSettledClosed ? 'is-closed-settled' : ''}
       `}
-        style={{ ...menuStyle, height: '100%', maxHeight: '100%', background: 'var(--bg-elevated)', borderRight: '1px solid var(--border)' }}
+        style={{ ...menuStyle, height: '100%', maxHeight: '100%', background: 'var(--bg-elevated)', borderRight: direction === 'ltr' ? '1px solid var(--border)' : undefined, borderLeft: direction === 'rtl' ? '1px solid var(--border)' : undefined }}
       >
         <div className="flex flex-col h-full min-h-0">
           {/* Header */}
@@ -302,7 +302,7 @@ function MenuItem({ icon, label, onClick, className = '', iconClassName = '', ba
       <div className={`flex-shrink-0 ${iconClassName}`} style={{ color: 'var(--accent)' }}>
         {icon}
       </div>
-      <span className="text-sm lg:text-base 2xl:text-lg 3xl:text-xl font-medium truncate flex-1 text-left">{label}</span>
+      <span className="text-sm lg:text-base 2xl:text-lg 3xl:text-xl font-medium truncate flex-1 text-start">{label}</span>
       {typeof badge === 'number' && badge > 0 && (
         <span
           className="min-w-[20px] h-5 px-1.5 rounded-full text-[10px] lg:text-xs font-bold text-white flex items-center justify-center flex-shrink-0"

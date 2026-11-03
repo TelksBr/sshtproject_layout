@@ -3,6 +3,7 @@ import type { TranslationSchema } from '../types';
 export const es: TranslationSchema = {
   languageSelector: { search: 'Buscar idiomas...', noResults: 'No se encontraron idiomas' },
   common: {
+    paste: 'Pegar',
     loading: 'Cargando...',
     error: 'Error',
     back: 'Volver',
@@ -117,9 +118,6 @@ export const es: TranslationSchema = {
     activeBadge: 'Activo',
     language: 'Idioma',
     selectLanguage: 'Seleccionar Idioma',
-    portugueseBrazil: 'Portugués (Brasil)',
-    portugueseAngola: 'Portugués (Angola)',
-    spanishArgentina: 'Español (Argentina)',
     terms: 'Términos',
     privacy: 'Privacidad',
     clearData: 'Borrar Datos',
