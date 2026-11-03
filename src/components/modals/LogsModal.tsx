@@ -63,6 +63,67 @@ function loadLogLines(): string[] {
   }
 }
 
+function CopyableLogLine({ line, onCopy }: { line: string; onCopy: (line: string) => void }) {
+  useMessages();
+  const [isPressed, setIsPressed] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pressRef = useRef<{ id: number; x: number; y: number } | null>(null);
+
+  const cancelPress = useCallback(() => {
+    if (timerRef.current !== null) clearTimeout(timerRef.current);
+    timerRef.current = null;
+    pressRef.current = null;
+    setIsPressed(false);
+  }, []);
+
+  useEffect(() => cancelPress, [cancelPress, line]);
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      aria-label={tr("m06d3000a78", { p0: stripLogHtml(line) })}
+      title={tr("m4a7d76677c")}
+      className="no-select rounded cursor-copy transition-colors duration-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
+      style={{
+        touchAction: 'pan-y',
+        // Log rows must keep their text height despite global button touch targets.
+        minHeight: 0,
+        background: isPressed ? 'var(--bg-elevated)' : 'transparent',
+        boxShadow: isPressed ? 'inset 3px 0 0 var(--accent)' : 'none',
+      }}
+      onPointerDown={(event) => {
+        if (!event.isPrimary || event.button !== 0) return;
+        cancelPress();
+        setIsPressed(true);
+        pressRef.current = { id: event.pointerId, x: event.clientX, y: event.clientY };
+        timerRef.current = setTimeout(() => {
+          timerRef.current = null;
+          onCopy(line);
+        }, 500);
+      }}
+      onPointerMove={(event) => {
+        const press = pressRef.current;
+        if (press && press.id === event.pointerId && Math.hypot(event.clientX - press.x, event.clientY - press.y) > 10) {
+          cancelPress();
+        }
+      }}
+      onPointerUp={cancelPress}
+      onPointerCancel={cancelPress}
+      onPointerLeave={cancelPress}
+      onBlur={cancelPress}
+      onContextMenu={(event) => event.preventDefault()}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          if (!event.repeat) onCopy(line);
+        }
+      }}
+      dangerouslySetInnerHTML={{ __html: sanitizeLogHtml(line) }}
+    />
+  );
+}
+
 export function LogsModal({ onClose, initialTab = 'vpn', enableDebug }: LogsModalProps) {
   useMessages();
   const { showToast } = useToast();
@@ -120,6 +181,16 @@ export function LogsModal({ onClose, initialTab = 'vpn', enableDebug }: LogsModa
   }, [lines, activeTab]);
 
   const logsText = useMemo(() => lines.map(stripLogHtml).filter(Boolean).join('\n'), [lines]);
+
+  const handleCopyLine = (line: string) => {
+    try {
+      copyToClipboard(stripLogHtml(line));
+      vibrate(50);
+      showToast(tr("m3eec475b08"), 'success');
+    } catch {
+      showToast(tr("m6d8f41ae01"), 'error');
+    }
+  };
 
   const handleClear = () => {
     if (activeTab === 'vpn') {
@@ -309,13 +380,14 @@ export function LogsModal({ onClose, initialTab = 'vpn', enableDebug }: LogsModa
               </div>
             ) : (
               <div
-                className="text-[11px] sm:text-xs leading-5 font-mono break-words allow-select select-text space-y-1"
+                className="text-[11px] sm:text-xs leading-5 font-mono break-words"
                 style={{ color: 'var(--text)' }}
               >
                 {lines.map((line, index) => (
-                  <div
+                  <CopyableLogLine
                     key={index}
-                    dangerouslySetInnerHTML={{ __html: sanitizeLogHtml(line) }}
+                    line={line}
+                    onCopy={handleCopyLine}
                   />
                 ))}
               </div>
@@ -475,7 +547,7 @@ export function LogsModal({ onClose, initialTab = 'vpn', enableDebug }: LogsModa
         {activeTab === 'events' && (
           <div className="p-3 sm:p-4 space-y-3">
             <div className="flex items-center gap-2">
-              <input
+              <input dir="auto"
                 type="text"
                 value={eventFilter}
                 onChange={(e) => setEventFilter(e.target.value)}
